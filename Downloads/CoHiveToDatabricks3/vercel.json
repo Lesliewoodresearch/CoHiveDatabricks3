@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/databricks/auth",
+      "dest": "/api/databricks/auth.js"
+    },
+    {
+      "src": "/api/databricks/files",
+      "dest": "/api/databricks/files.js"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "DATABRICKS_CLIENT_ID": "@databricks-client-id",
+    "DATABRICKS_CLIENT_SECRET": "@databricks-client-secret",
+    "DATABRICKS_REDIRECT_URI": "@databricks-redirect-uri"
+  },
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
+  }
+}
