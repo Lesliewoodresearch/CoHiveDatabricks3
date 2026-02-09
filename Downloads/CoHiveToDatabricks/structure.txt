@@ -1,0 +1,66 @@
+.
+├── api
+│   ├── test.js
+│   └── upload-to-databricks.js
+├── index.html
+├── package.json
+├── README.md
+├── src
+│   ├── api
+│   │   └── databricks_files.py
+│   ├── App.tsx
+│   ├── app.yaml
+│   ├── assets
+│   │   ├── 11e423d80e5ce28fde4173da3dcb80d9f7d0c8fe.png
+│   │   ├── 53dc6cf554f69e479cfbd60a46741f158d11dd21.png
+│   │   └── 88105c0c8621f3d41d65e5be3ae75558f9de1753.png
+│   ├── Attributions.md
+│   ├── components
+│   │   ├── CentralHexView.tsx
+│   │   ├── ColorPaletteQuickRef.tsx
+│   │   ├── DatabricksFileBrowser.tsx
+│   │   ├── DatabricksOAuthLogin.tsx
+│   │   ├── DesignSystemGuide.tsx
+│   │   ├── figma
+│   │   ├── HexagonBreadcrumb.tsx
+│   │   ├── Login.tsx
+│   │   ├── OAuthCallback.tsx
+│   │   ├── ProcessFlow.tsx
+│   │   ├── ProcessWireframe.tsx
+│   │   ├── ResearcherModes-clean.tsx
+│   │   ├── ResearcherModes.tsx
+│   │   ├── ResearchView.tsx
+│   │   ├── ReviewView.tsx
+│   │   ├── TemplateManager.tsx
+│   │   └── ui
+│   ├── data
+│   │   ├── persona-content
+│   │   ├── personas.ts
+│   │   └── prompts
+│   ├── DATABRICKS_SETUP.md
+│   ├── guidelines
+│   │   └── Guidelines.md
+│   ├── index.css
+│   ├── INSTALLATION.md
+│   ├── main.tsx
+│   ├── new_confirm_line.js
+│   ├── public
+│   │   └── index.html
+│   ├── README.md
+│   ├── requirements.txt
+│   ├── styles
+│   │   ├── cohive-theme.ts
+│   │   └── globals.css
+│   ├── supabase
+│   │   └── migrations
+│   ├── temp_line.txt
+│   ├── temp_restart_update.txt
+│   ├── test_match.txt
+│   └── utils
+│       ├── databricksAuth.ts
+│       ├── databricksClient.ts
+│       └── safeFetch.ts
+├── structure.txt
+└── vite.config.ts
+
+17 directories, 47 files
