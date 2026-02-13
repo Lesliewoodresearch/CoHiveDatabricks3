@@ -11,10 +11,9 @@ import { initiateLogin } from '../utils/databricksAuth';
 interface DatabricksOAuthLoginProps {
   open: boolean;
   onClose: () => void;
-  currentStep?: string;
 }
 
-export function DatabricksOAuthLogin({ open, onClose, currentStep }: DatabricksOAuthLoginProps) {
+export function DatabricksOAuthLogin({ open, onClose }: DatabricksOAuthLoginProps) {
   const [workspaceHost, setWorkspaceHost] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -39,8 +38,8 @@ export function DatabricksOAuthLogin({ open, onClose, currentStep }: DatabricksO
     }
 
     try {
-      // Initiate OAuth flow with current step
-      initiateLogin(cleanHost, currentStep);
+      // Initiate OAuth flow
+      initiateLogin(cleanHost);
     } catch (err) {
       setError('Failed to initiate login. Please try again.');
     }

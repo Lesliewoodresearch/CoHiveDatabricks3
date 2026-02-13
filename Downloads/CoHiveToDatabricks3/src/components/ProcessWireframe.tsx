@@ -7,8 +7,11 @@ import { TemplateManager, UserTemplate, defaultTemplates } from './TemplateManag
 import { ResearcherModes } from './ResearcherModes';
 import { CentralHexView } from './CentralHexView';
 import { ReviewView } from './ReviewView';
+import { DatabricksOAuthLogin } from './DatabricksOAuthLogin';
+import { DatabricksFileSaver } from './DatabricksFileSaver';
 import cohiveLogo from 'figma:asset/88105c0c8621f3d41d65e5be3ae75558f9de1753.png';
-import { saveToKnowledgeBase, KnowledgeBaseFile, saveToUserFolder, UserFile, downloadFile } from '../utils/databricksAPI';
+import { uploadToKnowledgeBase, downloadFile } from '../utils/databricksAPI';
+import { isAuthenticated } from '../utils/databricksAuth';
 
 interface StepContent {
   id: string;
@@ -231,13 +234,22 @@ export default function ProcessWireframe() {
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [availableProjectTypes, setAvailableProjectTypes] = useState<string[]>([]);
   const [iterationSaved, setIterationSaved] = useState<boolean>(false);
+  const [isDatabricksAuthenticated, setIsDatabricksAuthenticated] = useState<boolean>(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const [showFileSaver, setShowFileSaver] = useState<boolean>(false);
+  const [fileSaverData, setFileSaverData] = useState<{ fileName: string; content: string } | null>(null);
 
-  // Wisdom hex recording/capturing states
+  //Wisdom hex recording/capturing states
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const [captureMethod, setCaptureMethod] = useState<'upload' | 'capture' | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  
+  // Browser environment check (for SSR compatibility)
+  const isBrowser = typeof window !== 'undefined';
+  const hasMediaDevices = isBrowser && typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
 
   // Helper function to generate default filename
   const generateDefaultFileName = (brand: string, projectType: string, creationDate?: number, editDate?: number) => {
@@ -254,6 +266,15 @@ export default function ProcessWireframe() {
     const editPart = editDate ? `_${formatDate(editDate)}` : '';
     
     return `${brandPart}_${projectTypePart}_${creationPart}${editPart}`;
+  };
+
+  // Helper to create a File-like object (File constructor not available in this environment)
+  const createFileFromBlob = (blob: Blob, fileName: string): File => {
+    // Cast the Blob as File and add the name and size properties
+    const file = blob as any;
+    file.name = fileName;
+    file.lastModified = Date.now();
+    return file as File;
   };
 
   // Load responses from localStorage on mount
@@ -620,6 +641,58 @@ export default function ProcessWireframe() {
       }
     }
   }, [currentTemplateId, templates]);
+
+  // Check Databricks authentication on mount and handle OAuth callback
+  useEffect(() => {
+    const checkAuthAndHandleCallback = async () => {
+      setIsCheckingAuth(true);
+      
+      try {
+        // Check if we're coming back from OAuth (URL has code and state params)
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const state = urlParams.get('state');
+        
+        if (code && state) {
+          // Handle OAuth callback
+          console.log('Detected OAuth callback, processing...');
+          const { handleOAuthCallback } = await import('../utils/databricksAuth');
+          
+          try {
+            await handleOAuthCallback();
+            console.log('OAuth callback handled successfully');
+            
+            // Get the step we should return to
+            const returnStep = sessionStorage.getItem('oauth_return_step');
+            if (returnStep) {
+              setActiveStepId(returnStep);
+              sessionStorage.removeItem('oauth_return_step');
+            }
+            
+            // Clean up URL parameters
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+            
+            setIsDatabricksAuthenticated(true);
+          } catch (error) {
+            console.error('OAuth callback failed:', error);
+            setIsDatabricksAuthenticated(false);
+          }
+        } else {
+          // Normal auth check (no OAuth callback)
+          const authenticated = isAuthenticated();
+          setIsDatabricksAuthenticated(authenticated);
+        }
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        setIsDatabricksAuthenticated(false);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+    
+    checkAuthAndHandleCallback();
+  }, []);
 
   // Helper function to get existing files for a brand/project type
   const getExistingFiles = (brand: string, projectType: string): ProjectFile[] => {
@@ -1145,30 +1218,103 @@ export default function ProcessWireframe() {
     brand?: string,
     projectType?: string
   ) => {
-    const wisdomFile: KnowledgeBaseFile = {
-      id: Date.now().toString(),
-      brand: brand || 'General',
-      projectType: projectType || 'General',
-      fileName,
-      isApproved: true,
-      uploadDate: Date.now(),
-      fileType: 'Wisdom',
-      content,
-      insightType,
-      inputMethod
-    };
+    // Check authentication first
+    if (!isDatabricksAuthenticated) {
+      alert('⚠️ Please sign in to Databricks before saving to the Knowledge Base.\n\nClick the "Sign In" button in the header to authenticate.');
+      setShowLoginModal(true);
+      return false;
+    }
 
-    const result = await saveToKnowledgeBase(wisdomFile);
-    
-    if (result.success) {
-      console.log('✅ Wisdom successfully saved to Databricks:', wisdomFile);
-      return true;
-    } else {
-      console.error('❌ Failed to save wisdom to Databricks:', result.error);
-      alert(`Failed to save to Knowledge Base: ${result.error || 'Unknown error'}`);
+    try {
+      const mimeType = getMimeTypeFromFileName(fileName);
+      let file: File;
+      
+      // Check if content is base64 encoded (for media files) or plain text
+      const isBase64 = content.includes('data:') || (content.includes(',') && !content.includes(' '));
+      
+      if (isBase64) {
+        // Handle base64 media content (photos, videos, audio recordings)
+        const base64Data = content.includes(',') ? content.split(',')[1] : content;
+        
+        // Convert base64 to blob
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: mimeType });
+        
+        // Create File object from Blob
+        file = createFileFromBlob(blob, fileName);
+      } else {
+        // Handle plain text content
+        const blob = new Blob([content], { type: 'text/plain' });
+        file = createFileFromBlob(blob, fileName);
+      }
+
+      // Determine scope based on insightType
+      let scope: 'general' | 'category' | 'brand';
+      if (insightType === 'General') {
+        scope = 'general';
+      } else if (insightType === 'Category') {
+        scope = 'category';
+      } else {
+        scope = 'brand';
+      }
+
+      // Upload to Databricks Knowledge Base
+      const result = await uploadToKnowledgeBase({
+        file,
+        scope,
+        category: projectType, // Map projectType to category
+        brand: brand || undefined,
+        projectType: projectType || undefined,
+        fileType: 'Wisdom',
+        tags: [insightType, inputMethod],
+        insightType: insightType as 'Brand' | 'Category' | 'General',
+        inputMethod: inputMethod as 'Text' | 'Voice' | 'Photo' | 'Video' | 'File',
+        userEmail: 'user@company.com', // TODO: Get from authentication system
+        userRole,
+      });
+      
+      if (result.success) {
+        console.log('✅ Wisdom successfully saved to Databricks:', fileName);
+        return true;
+      } else {
+        console.error('❌ Failed to save wisdom to Databricks:', result.error);
+        alert(`Failed to save to Knowledge Base: ${result.error || 'Unknown error'}`);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error saving wisdom:', error);
+      alert(`Failed to save wisdom: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }
   };
+
+  // Helper function to get MIME type from filename
+  function getMimeTypeFromFileName(fileName: string): string {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      'txt': 'text/plain',
+      'webm': 'audio/webm',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'mp4': 'video/mp4',
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xls': 'application/vnd.ms-excel',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'ppt': 'application/vnd.ms-powerpoint',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'csv': 'text/csv',
+    };
+    return mimeTypes[ext || ''] || 'application/octet-stream';
+  }
 
   // Check if current step is a central hexagon
   const centralHexIds = ['Luminaries', 'panelist', 'Consumers', 'competitors', 'Colleagues', 'cultural', 'test', 'Grade'];
@@ -1517,6 +1663,54 @@ export default function ProcessWireframe() {
                     <div className="text-red-900">Please complete the Enter step</div>
                     <div className="text-red-700 text-sm">All Enter questions must be answered before proceeding to the next step.</div>
                   </div>
+                </div>
+              )}
+
+              {/* Databricks Authentication Status - Show on Enter hex or any hex if not authenticated */}
+              {(activeStepId === 'Enter' || !isDatabricksAuthenticated) && (
+                <div className="mb-3">
+                  {isCheckingAuth ? (
+                    <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-2.5">
+                      <div className="flex items-center gap-2">
+                        <Database className="w-4 h-4 text-blue-600 animate-pulse" />
+                        <span className="text-gray-700 text-sm">Checking Databricks authentication...</span>
+                      </div>
+                    </div>
+                  ) : isDatabricksAuthenticated ? (
+                    <div className="bg-green-50 border-2 border-green-300 rounded-lg p-2.5">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <span className="text-gray-900 text-sm font-medium">Connected to Databricks</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <h4 className="text-gray-900 font-medium mb-1">Databricks Authentication Required</h4>
+                          <p className="text-gray-700 text-sm mb-3">
+                            CoHive integrates with Databricks to save your work, access your organization's Knowledge Base, 
+                            and power AI-driven insights across all workflow steps.
+                          </p>
+                          
+                          <button
+                            onClick={() => setShowLoginModal(true)}
+                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm flex items-center gap-2"
+                          >
+                            <Database className="w-4 h-4" />
+                            Sign In to Databricks
+                          </button>
+                          
+                          <div className="mt-3 text-xs text-gray-600">
+                            <p className="mb-1">✓ Secure OAuth 2.0 authentication</p>
+                            <p className="mb-1">✓ Your credentials never leave Databricks</p>
+                            <p>✓ Access your organization's shared Knowledge Base</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1991,7 +2185,14 @@ export default function ProcessWireframe() {
                               )}
                             </label>
                             
-                            <div className="space-y-3">
+                            {!hasMediaDevices && (
+                              <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
+                                ⚠️ Voice recording is not available in this environment. Please use a modern browser with microphone support.
+                              </div>
+                            )}
+                            
+                            {hasMediaDevices && (
+                              <div className="space-y-3">
                               {!isRecording && !responses[activeStepId]?.[idx] && (
                                 <button
                                   onClick={async () => {
@@ -2090,6 +2291,7 @@ export default function ProcessWireframe() {
                                 </div>
                               )}
                             </div>
+                            )}
                           </div>
                         );
                       }
@@ -2107,7 +2309,13 @@ export default function ProcessWireframe() {
                               )}
                             </label>
                             
-                            {!photoMethod && (
+                            {!hasMediaDevices && (
+                              <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
+                                ⚠️ Photo capture is not available in this environment. Please use a modern browser with camera support.
+                              </div>
+                            )}
+                            
+                            {!photoMethod && hasMediaDevices && (
                               <div className="space-y-2">
                                 <button
                                   onClick={() => {
@@ -2127,15 +2335,17 @@ export default function ProcessWireframe() {
                                 <button
                                   onClick={async () => {
                                     try {
-                                      const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                                      setStream(videoStream);
-                                      setResponses(prev => ({
-                                        ...prev,
-                                        [activeStepId]: {
-                                          ...prev[activeStepId],
-                                          photoMethod: 'capture'
-                                        }
-                                      }));
+                                      if (hasMediaDevices) {
+                                        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                                        setStream(videoStream);
+                                        setResponses(prev => ({
+                                          ...prev,
+                                          [activeStepId]: {
+                                            ...prev[activeStepId],
+                                            photoMethod: 'capture'
+                                          }
+                                        }));
+                                      }
                                     } catch (err) {
                                       alert('Unable to access camera. Please check your browser permissions.');
                                       console.error('Camera error:', err);
@@ -2320,7 +2530,13 @@ export default function ProcessWireframe() {
                               )}
                             </label>
                             
-                            {!videoMethod && (
+                            {!hasMediaDevices && (
+                              <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
+                                ⚠️ Video recording is not available in this environment. Please use a modern browser with camera support.
+                              </div>
+                            )}
+                            
+                            {!videoMethod && hasMediaDevices && (
                               <div className="space-y-2">
                                 <button
                                   onClick={() => {
@@ -2340,29 +2556,31 @@ export default function ProcessWireframe() {
                                 <button
                                   onClick={async () => {
                                     try {
-                                      const videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                                      setStream(videoStream);
-                                      
-                                      // Start recording
-                                      const recorder = new MediaRecorder(videoStream);
-                                      const chunks: Blob[] = [];
-                                      
-                                      recorder.ondataavailable = (e) => {
-                                        if (e.data.size > 0) {
-                                          chunks.push(e.data);
-                                        }
-                                      };
-                                      
-                                      setMediaRecorder(recorder);
-                                      setRecordedChunks(chunks);
-                                      
-                                      setResponses(prev => ({
-                                        ...prev,
-                                        [activeStepId]: {
-                                          ...prev[activeStepId],
-                                          videoMethod: 'capture'
-                                        }
-                                      }));
+                                      if (hasMediaDevices) {
+                                        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                                        setStream(videoStream);
+                                        
+                                        // Start recording
+                                        const recorder = new MediaRecorder(videoStream);
+                                        const chunks: Blob[] = [];
+                                        
+                                        recorder.ondataavailable = (e) => {
+                                          if (e.data.size > 0) {
+                                            chunks.push(e.data);
+                                          }
+                                        };
+                                        
+                                        setMediaRecorder(recorder);
+                                        setRecordedChunks(chunks);
+                                        
+                                        setResponses(prev => ({
+                                          ...prev,
+                                          [activeStepId]: {
+                                            ...prev[activeStepId],
+                                            videoMethod: 'capture'
+                                          }
+                                        }));
+                                      }
                                     } catch (err) {
                                       alert('Unable to access camera. Please check your browser permissions.');
                                       console.error('Camera error:', err);
@@ -2627,6 +2845,9 @@ export default function ProcessWireframe() {
                           </div>
                         );
                       }
+                      
+                      // Fallback for unhandled input methods
+                      return null;
                     }
                   }
                   
@@ -2804,6 +3025,14 @@ export default function ProcessWireframe() {
                                     handleResponseChange(idx, e.target.value);
                                     // If Save Iteration, save to Databricks and add file to projectFiles
                                     if (e.target.value === 'Save Iteration' && brand && projectType && currentFileName) {
+                                      // Check authentication first
+                                      if (!isDatabricksAuthenticated) {
+                                        alert('⚠️ Please sign in to Databricks before saving to the Knowledge Base.\n\nClick the "Sign In" button in the header to authenticate.');
+                                        setShowLoginModal(true);
+                                        handleResponseChange(idx, ''); // Clear the selection
+                                        return;
+                                      }
+
                                       // Save the CURRENT filename (not incremented)
                                       const newFile: ProjectFile = {
                                         brand,
@@ -2812,26 +3041,40 @@ export default function ProcessWireframe() {
                                         timestamp: Date.now()
                                       };
                                       
-                                      // Save to Databricks user folder
-                                      const userFile: UserFile = {
-                                        id: Date.now().toString(),
-                                        brand,
-                                        projectType,
-                                        fileName: currentFileName,
-                                        timestamp: Date.now(),
-                                        fileType: 'Iteration',
-                                        content: JSON.stringify({
-                                          responses,
-                                          hexExecutions,
-                                          completedSteps: Array.from(completedSteps)
-                                        }),
-                                        hexExecutions
-                                      };
+                                      // Prepare content
+                                      const content = JSON.stringify({
+                                        responses,
+                                        hexExecutions,
+                                        completedSteps: Array.from(completedSteps)
+                                      });
                                       
-                                      const result = await saveToUserFolder(userFile);
+                                      // Create File object for upload
+                                      const blob = new Blob([content], { type: 'application/json' });
+                                      const file = createFileFromBlob(blob, currentFileName);
+                                      
+                                      // Determine scope
+                                      let scope: 'general' | 'category' | 'brand' = 'brand';
+                                      if (!brand) {
+                                        scope = projectType ? 'category' : 'general';
+                                      }
+                                      
+                                      // Upload to Databricks Knowledge Base with iteration metadata
+                                      const result = await uploadToKnowledgeBase({
+                                        file,
+                                        scope,
+                                        category: projectType,
+                                        brand: brand || undefined,
+                                        projectType: projectType || undefined,
+                                        fileType: 'Findings',
+                                        tags: ['Iteration', brand, projectType].filter(Boolean) as string[],
+                                        iterationType: 'iteration',
+                                        includedHexes: Array.from(completedSteps),
+                                        userEmail: 'user@company.com', // TODO: Get from authentication system
+                                        userRole,
+                                      });
                                       
                                       if (result.success) {
-                                        console.log('✅ Iteration saved to Databricks user folder:', currentFileName);
+                                        console.log('✅ Iteration saved to Databricks Knowledge Base:', currentFileName);
                                         
                                         // Also keep in localStorage for local reference
                                         const updatedFiles = [...projectFiles, newFile];
@@ -3067,63 +3310,40 @@ export default function ProcessWireframe() {
                               <input
                                 type="radio"
                                 name="saveOrDownload"
-                                value="Save"
-                                checked={responses[activeStepId]?.[idx] === 'Save'}
-                                onChange={async (e) => {
+                                value="SaveWorkspace"
+                                checked={responses[activeStepId]?.[idx] === 'SaveWorkspace'}
+                                onChange={(e) => {
                                   handleResponseChange(idx, e.target.value);
-                                  // Save the summary file to Databricks user folder
-                                  if (e.target.value === 'Save' && brand && projectType) {
+                                  // Open Databricks file saver to save file to Databricks workspace
+                                  if (e.target.value === 'SaveWorkspace' && brand && projectType) {
                                     const summaryFileName = responses[activeStepId]?.['summaryFileName'] || getSummaryFileName(currentFileName || '');
                                     if (summaryFileName) {
-                                      // Save to Databricks
-                                      const userFile: UserFile = {
-                                        id: Date.now().toString(),
+                                      const summaryData = {
                                         brand,
                                         projectType,
                                         fileName: summaryFileName,
                                         timestamp: Date.now(),
-                                        fileType: 'Summary',
-                                        content: JSON.stringify({
-                                          responses,
-                                          selectedFiles: responses[activeStepId]?.[1]?.split(',').filter(Boolean) || [],
-                                          outputOptions: responses[activeStepId]?.[2]?.split(',').filter(Boolean) || [],
-                                          hexExecutions,
-                                          completedSteps: Array.from(completedSteps)
-                                        }),
-                                        hexExecutions
+                                        responses,
+                                        selectedFiles: responses[activeStepId]?.[1]?.split(',').filter(Boolean) || [],
+                                        outputOptions: responses[activeStepId]?.[2]?.split(',').filter(Boolean) || [],
+                                        hexExecutions,
+                                        completedSteps: Array.from(completedSteps)
                                       };
                                       
-                                      const result = await saveToUserFolder(userFile);
+                                      const fileName = summaryFileName.endsWith('.json') ? summaryFileName : `${summaryFileName}.json`;
+                                      const content = JSON.stringify(summaryData, null, 2);
                                       
-                                      if (result.success) {
-                                        console.log('✅ Summary saved to Databricks user folder:', summaryFileName);
-                                        
-                                        // Also keep in localStorage for local reference
-                                        const newFile: ProjectFile = {
-                                          brand,
-                                          projectType,
-                                          fileName: summaryFileName,
-                                          timestamp: Date.now()
-                                        };
-                                        const updatedFiles = [...projectFiles, newFile];
-                                        setProjectFiles(updatedFiles);
-                                        localStorage.setItem('cohive_projects', JSON.stringify(updatedFiles));
-                                        
-                                        alert('✅ Summary saved to Databricks user folder!');
-                                        
-                                        // Clear the radio button selection so it can be used again
-                                        handleResponseChange(idx, '');
-                                      } else {
-                                        alert(`Failed to save to Databricks: ${result.error || 'Unknown error'}`);
-                                        // Clear the radio button on error too
-                                        handleResponseChange(idx, '');
-                                      }
+                                      setFileSaverData({ fileName, content });
+                                      setShowFileSaver(true);
+                                      
+                                      // Clear the radio button selection so it can be used again
+                                      handleResponseChange(idx, '');
                                     }
                                   }
                                 }}
                                 className="w-4 h-4"
                               />
-                              <span className="text-gray-700">Save to Databricks</span>
+                              <span className="text-gray-700">Save to Databricks Workspace</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
                               <input
@@ -3216,6 +3436,36 @@ export default function ProcessWireframe() {
           </div>
         </div>
       </div>
+
+      {/* Databricks OAuth Login Modal */}
+      <DatabricksOAuthLogin
+        open={showLoginModal}
+        currentStep={activeStepId}
+        onClose={() => {
+          setShowLoginModal(false);
+          // Recheck auth status after modal closes
+          setTimeout(() => {
+            const authenticated = isAuthenticated();
+            setIsDatabricksAuthenticated(authenticated);
+          }, 500);
+        }}
+      />
+
+      {/* Databricks File Saver */}
+      {fileSaverData && (
+        <DatabricksFileSaver
+          open={showFileSaver}
+          onClose={() => {
+            setShowFileSaver(false);
+            setFileSaverData(null);
+          }}
+          fileName={fileSaverData.fileName}
+          fileContent={fileSaverData.content}
+          onSaveSuccess={(path) => {
+            console.log('File saved successfully to:', path);
+          }}
+        />
+      )}
     </div>
   );
 }

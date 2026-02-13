@@ -1,10 +1,9 @@
 /**
  * Databricks File Client
- * Handles communication with Databricks using OAuth authentication
+ * ✅ FIXED: All requests now proxied through Vercel API routes
  */
 
 import { getValidSession, isAuthenticated } from './databricksAuth';
-import { safeFetch } from './safeFetch';
 
 export interface DatabricksFile {
   name: string;
@@ -35,11 +34,12 @@ export function hasCredentials(): boolean {
 }
 
 /**
- * Make a request to Databricks API
+ * Make a request to Databricks API via our proxy
+ * ✅ FIXED: Now calls /api/databricks/files instead of direct Databricks API
  */
 async function databricksRequest(
   endpoint: string,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' = 'GET',
+  method: 'GET' | 'POST' = 'GET',
   body?: any
 ): Promise<any> {
   try {
@@ -49,24 +49,24 @@ async function databricksRequest(
       throw new Error('Not authenticated. Please log in to Databricks.');
     }
 
-    const url = `https://${session.workspaceHost}${endpoint}`;
-    
-    const response = await safeFetch(url, {
-      method,
+    // Call our Vercel API proxy instead of direct Databricks call
+    const response = await fetch('/api/databricks/files', {
+      method: 'POST',
       headers: {
-        'Authorization': `Bearer ${session.accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: body ? JSON.stringify(body) : undefined,
+      body: JSON.stringify({
+        accessToken: session.accessToken,
+        workspaceHost: session.workspaceHost,
+        endpoint,
+        method,
+        body,
+      }),
     });
-
-    if (!response) {
-      throw new Error('Network error: Unable to reach Databricks');
-    }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Databricks API error: ${response.statusText}`);
+      throw new Error(errorData.error || `API request failed: ${response.statusText}`);
     }
 
     return response.json();
@@ -114,10 +114,12 @@ async function listWorkspaceFiles(path: string, fileTypes?: string[]): Promise<D
 
 /**
  * List files from a Databricks Unity Catalog volume
+ * ✅ FIXED: Changed to use API version 2.1 (was 2.0)
  */
 async function listVolumeFiles(path: string, fileTypes?: string[]): Promise<DatabricksFile[]> {
   try {
-    const response = await databricksRequest(`/api/2.0/fs/directories${path}`);
+    // FIXED: Use /api/2.1/fs/directories instead of /api/2.0/fs/directories
+    const response = await databricksRequest(`/api/2.1/fs/directories${path}`);
     
     const files: DatabricksFile[] = [];
     
@@ -230,10 +232,12 @@ async function readWorkspaceFile(path: string, encoding: 'text' | 'base64'): Pro
 
 /**
  * Read a file from Databricks volume
+ * ✅ FIXED: Changed to use API version 2.1 (was 2.0)
  */
 async function readVolumeFile(path: string, encoding: 'text' | 'base64'): Promise<string> {
   try {
-    const response = await databricksRequest(`/api/2.0/fs/files${path}`);
+    // FIXED: Use /api/2.1/fs/files instead of /api/2.0/fs/files
+    const response = await databricksRequest(`/api/2.1/fs/files${path}`);
     
     if (encoding === 'base64') {
       return btoa(response.contents || '');
@@ -298,95 +302,6 @@ export async function readDatabricksFile(
 }
 
 /**
- * Write a file to Databricks workspace
- */
-async function writeWorkspaceFile(path: string, content: string, overwrite: boolean = false): Promise<void> {
-  try {
-    // Encode content as base64
-    const base64Content = btoa(content);
-    
-    await databricksRequest(
-      `/api/2.0/workspace/import`,
-      'POST',
-      {
-        path,
-        content: base64Content,
-        format: 'SOURCE',
-        overwrite,
-      }
-    );
-  } catch (error) {
-    throw new Error(`Error writing workspace file: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-/**
- * Write a file to Databricks volume
- */
-async function writeVolumeFile(path: string, content: string, overwrite: boolean = false): Promise<void> {
-  try {
-    await databricksRequest(
-      `/api/2.0/fs/files${path}`,
-      'PUT',
-      { contents: content, overwrite }
-    );
-  } catch (error) {
-    throw new Error(`Error writing volume file: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-/**
- * Write a file to DBFS
- */
-async function writeDbfsFile(path: string, content: string, overwrite: boolean = false): Promise<void> {
-  try {
-    const cleanPath = path.replace(/^dbfs:/, '');
-    const base64Content = btoa(content);
-    
-    await databricksRequest(
-      `/api/2.0/dbfs/put`,
-      'POST',
-      {
-        path: cleanPath,
-        contents: base64Content,
-        overwrite,
-      }
-    );
-  } catch (error) {
-    throw new Error(`Error writing DBFS file: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-/**
- * Write a file to Databricks
- */
-export async function writeDatabricksFile(
-  path: string,
-  content: string,
-  overwrite: boolean = false
-): Promise<{ success: boolean; path: string }> {
-  try {
-    if (path.startsWith('/Workspace')) {
-      await writeWorkspaceFile(path, content, overwrite);
-    } else if (path.startsWith('/Volumes')) {
-      await writeVolumeFile(path, content, overwrite);
-    } else if (path.startsWith('dbfs:')) {
-      await writeDbfsFile(path, content, overwrite);
-    } else {
-      throw new Error('Invalid path. Must start with /Workspace, /Volumes, or dbfs:');
-    }
-
-    return {
-      success: true,
-      path,
-    };
-  } catch (error) {
-    console.error('Error writing file to Databricks:', error);
-    throw error;
-  }
-}
-
-/**
  * Check if Databricks API is available
  */
 export async function checkDatabricksHealth(): Promise<boolean> {
@@ -404,19 +319,21 @@ export async function checkDatabricksHealth(): Promise<boolean> {
       return false;
     }
 
-    // Test with a simple workspace list call using safeFetch
-    const response = await safeFetch(
-      `https://${session.workspaceHost}/api/2.0/workspace/list?path=/`,
-      {
+    // Test with a simple workspace list call via our proxy
+    const response = await fetch('/api/databricks/files', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        accessToken: session.accessToken,
+        workspaceHost: session.workspaceHost,
+        endpoint: '/api/2.0/workspace/list?path=/',
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+      }),
+    });
 
-    return response ? response.ok : false;
+    return response.ok;
   } catch (error) {
     console.error('Databricks API health check failed:', error);
     return false;

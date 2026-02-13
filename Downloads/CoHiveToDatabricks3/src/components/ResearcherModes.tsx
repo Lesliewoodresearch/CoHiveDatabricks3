@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DatabricksFileBrowser } from './DatabricksFileBrowser';
+import { uploadToKnowledgeBase } from '../utils/databricksAPI';
+import { Upload } from 'lucide-react';
 
 interface ResearchFile {
   id: string;
@@ -184,6 +186,63 @@ export function ResearcherModes({
     setShowDatabricksBrowser(false);
   };
 
+  // Handle uploading file from computer to Databricks
+  const handleUploadToDatabricks = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedBrand || !selectedProjectType) {
+      if (!selectedBrand || !selectedProjectType) {
+        alert('Please select Brand and Project Type first');
+      }
+      return;
+    }
+
+    try {
+      // Upload to Databricks Knowledge Base using the File object directly
+      const result = await uploadToKnowledgeBase({
+        file: file,
+        scope: 'brand',
+        category: selectedProjectType,
+        brand: selectedBrand,
+        projectType: selectedProjectType,
+        fileType: 'Synthesis',
+        tags: [],
+        userEmail: 'user@company.com',
+        userRole: canApproveResearch ? 'research-leader' : 'research-analyst',
+      });
+        
+      if (result.success) {
+        console.log('File uploaded to Databricks:', file.name);
+        
+        // Read file content for local reference only
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const content = e.target?.result as string;
+          
+          const newFile: Omit<ResearchFile, 'id' | 'uploadDate'> = {
+            brand: selectedBrand,
+            projectType: selectedProjectType,
+            fileName: file.name,
+            isApproved: false,
+            fileType: 'synthesis',
+            content: content,
+            source: result.filePath ? `Databricks: ${result.filePath}` : `Databricks KB: ${file.name}`
+          };
+          
+          onCreateResearchFile(newFile);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Failed to upload: ' + (result.error || 'Unknown error'));
+      }
+      
+      event.target.value = '';
+
+    } catch (error) {
+      console.error('Error uploading file to Databricks:', error);
+      alert('Failed to upload file. Please try again.');
+    }
+  };
+
   const handleCreatePersonaFile = () => {
     if (!selectedHexagon || !personaFileForm.fileName.trim()) return;
 
@@ -227,7 +286,7 @@ export function ResearcherModes({
           </p>
         </div>
 
-        <div className={`grid ${canApproveResearch ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}>
+        <div className="grid grid-cols-3 gap-4">
           {/* Synthesis Mode */}
           <button
             onClick={() => setMode('synthesis')}
@@ -260,23 +319,29 @@ export function ResearcherModes({
             </div>
           </button>
 
-          {/* Read/Edit/Approve Mode - Only for Research Leaders */}
-          {canApproveResearch && (
-            <button
-              onClick={() => setMode('read-edit-approve')}
-              className="bg-white border-2 border-gray-300 rounded-lg p-6 hover:border-green-500 hover:bg-green-50 transition-colors text-left group"
-            >
-              <div>
-                <h4 className="text-gray-900">Read, Edit, or Approve</h4>
-                <p className="text-gray-600 text-sm">
-                  Read, edit, or approve any synthesis or persona file
-                </p>
-                <div className="mt-3 text-xs text-green-600 group-hover:text-green-700">
-                  • View all files • Edit content • Approve/unapprove
-                </div>
+          {/* Read Files Mode - Available for all researchers, with different permissions */}
+          <button
+            onClick={() => setMode('read-edit-approve')}
+            className="bg-white border-2 border-gray-300 rounded-lg p-6 hover:border-green-500 hover:bg-green-50 transition-colors text-left group"
+          >
+            <div>
+              <h4 className="text-gray-900">
+                {canApproveResearch ? 'Read, Edit, or Approve' : 'Read Files'}
+              </h4>
+              <p className="text-gray-600 text-sm">
+                {canApproveResearch 
+                  ? 'Read, edit, or approve any synthesis or persona file'
+                  : 'View all synthesis and persona files in the knowledge base'
+                }
+              </p>
+              <div className="mt-3 text-xs text-green-600 group-hover:text-green-700">
+                {canApproveResearch 
+                  ? '• View all files • Edit content • Approve/unapprove'
+                  : '• View all files • Read content • Learn from existing research'
+                }
               </div>
-            </button>
-          )}
+            </div>
+          </button>
         </div>
       </div>
     );
@@ -308,19 +373,17 @@ export function ResearcherModes({
               >
                 Personas
               </button>
-              {canApproveResearch && (
-                <button
-                  onClick={() => {
-                    setMode('read-edit-approve');
-                    setSynthesisOption(null);
-                    setSynthesisResponses({});
-                    setUploadedFiles([]);
-                  }}
-                  className="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
-                >
-                  Read/Edit/Approve
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  setMode('read-edit-approve');
+                  setSynthesisOption(null);
+                  setSynthesisResponses({});
+                  setUploadedFiles([]);
+                }}
+                className="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
+              >
+                {canApproveResearch ? 'Read/Edit/Approve' : 'Read Files'}
+              </button>
             </div>
           </div>
         </div>
@@ -343,92 +406,128 @@ export function ResearcherModes({
           <label className="block text-gray-900 mb-3">
             1. Select Synthesis Approach
           </label>
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 p-3 rounded cursor-pointer hover:bg-gray-50">
-              <input
-                type="radio"
-                name="synthesisOption"
-                value="new-synthesis"
-                checked={synthesisOption === 'new-synthesis'}
-                onChange={(e) => setSynthesisOption(e.target.value as 'new-synthesis')}
-                className="w-4 h-4"
-              />
-              <div className="flex-1">
-                <div className="text-gray-900 font-semibold">New Synthesis</div>
-                <p className="text-gray-600 text-sm">Start a new synthesis for an existing brand and project type</p>
+          
+          {/* Show full list if no selection made */}
+          {!synthesisOption && (
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 p-3 rounded cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="synthesisOption"
+                  value="new-synthesis"
+                  checked={synthesisOption === 'new-synthesis'}
+                  onChange={(e) => setSynthesisOption(e.target.value as 'new-synthesis')}
+                  className="w-4 h-4"
+                />
+                <div className="flex-1">
+                  <div className="text-gray-900 font-semibold">New Synthesis</div>
+                  <p className="text-gray-600 text-sm">Start a new synthesis for an existing brand and project type</p>
+                </div>
+              </label>
+              <label className="flex items-center gap-2 p-3 rounded cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="synthesisOption"
+                  value="new-brand"
+                  checked={synthesisOption === 'new-brand'}
+                  onChange={(e) => setSynthesisOption(e.target.value as 'new-brand')}
+                  className="w-4 h-4"
+                />
+                <div className="flex-1">
+                  <div className="text-gray-900 font-semibold">New Brand</div>
+                  <p className="text-gray-600 text-sm">Start synthesis for a new brand with existing project type</p>
+                </div>
+              </label>
+              <label className="flex items-center gap-2 p-3 rounded cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="synthesisOption"
+                  value="new-project-type"
+                  checked={synthesisOption === 'new-project-type'}
+                  onChange={(e) => setSynthesisOption(e.target.value as 'new-project-type')}
+                  className="w-4 h-4"
+                />
+                <div className="flex-1">
+                  <div className="text-gray-900 font-semibold">New Project Type</div>
+                  <p className="text-gray-600 text-sm">Start synthesis for existing brand with new project type</p>
+                </div>
+              </label>
+              <label className="flex items-center gap-2 p-3 rounded cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="synthesisOption"
+                  value="edit-existing"
+                  checked={synthesisOption === 'edit-existing'}
+                  onChange={(e) => setSynthesisOption(e.target.value as 'edit-existing')}
+                  className="w-4 h-4"
+                />
+                <div className="flex-1">
+                  <div className="text-gray-900 font-semibold">Edit Existing Synthesis</div>
+                  <p className="text-gray-600 text-sm">Modify an existing synthesis file</p>
+                </div>
+              </label>
+              <label className="flex items-center gap-2 p-3 rounded cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="synthesisOption"
+                  value="add-studies"
+                  checked={synthesisOption === 'add-studies'}
+                  onChange={(e) => setSynthesisOption(e.target.value as 'add-studies')}
+                  className="w-4 h-4"
+                />
+                <div className="flex-1">
+                  <div className="text-gray-900 font-semibold">Add Studies to Existing Synthesis</div>
+                  <p className="text-gray-600 text-sm">Incorporate additional research studies into existing analysis</p>
+                </div>
+              </label>
+              <label className="flex items-center gap-2 p-3 rounded cursor-pointer hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="synthesisOption"
+                  value="review-edits"
+                  checked={synthesisOption === 'review-edits'}
+                  onChange={(e) => setSynthesisOption(e.target.value as 'review-edits')}
+                  className="w-4 h-4"
+                />
+                <div className="flex-1">
+                  <div className="text-gray-900 font-semibold">Review Suggested Edits</div>
+                  <p className="text-gray-600 text-sm">Review and approve suggested edits to synthesis files</p>
+                </div>
+              </label>
+            </div>
+          )}
+          
+          {/* Show only selected option with change button */}
+          {synthesisOption && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 p-3 rounded bg-blue-50 border-2 border-blue-300">
+                <div className="flex-1">
+                  <div className="text-gray-900 font-semibold">
+                    {synthesisOption === 'new-synthesis' && 'New Synthesis'}
+                    {synthesisOption === 'new-brand' && 'New Brand'}
+                    {synthesisOption === 'new-project-type' && 'New Project Type'}
+                    {synthesisOption === 'edit-existing' && 'Edit Existing Synthesis'}
+                    {synthesisOption === 'add-studies' && 'Add Studies to Existing Synthesis'}
+                    {synthesisOption === 'review-edits' && 'Review Suggested Edits'}
+                  </div>
+                  <p className="text-gray-600 text-sm">
+                    {synthesisOption === 'new-synthesis' && 'Start a new synthesis for an existing brand and project type'}
+                    {synthesisOption === 'new-brand' && 'Start synthesis for a new brand with existing project type'}
+                    {synthesisOption === 'new-project-type' && 'Start synthesis for existing brand with new project type'}
+                    {synthesisOption === 'edit-existing' && 'Modify an existing synthesis file'}
+                    {synthesisOption === 'add-studies' && 'Incorporate additional research studies into existing analysis'}
+                    {synthesisOption === 'review-edits' && 'Review and approve suggested edits to synthesis files'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSynthesisOption(null)}
+                  className="px-3 py-1 text-sm bg-white border-2 border-gray-300 text-gray-700 rounded hover:bg-gray-50"
+                >
+                  Change
+                </button>
               </div>
-            </label>
-            <label className="flex items-center gap-2 p-3 rounded cursor-pointer hover:bg-gray-50">
-              <input
-                type="radio"
-                name="synthesisOption"
-                value="new-brand"
-                checked={synthesisOption === 'new-brand'}
-                onChange={(e) => setSynthesisOption(e.target.value as 'new-brand')}
-                className="w-4 h-4"
-              />
-              <div className="flex-1">
-                <div className="text-gray-900 font-semibold">New Brand</div>
-                <p className="text-gray-600 text-sm">Start synthesis for a new brand with existing project type</p>
-              </div>
-            </label>
-            <label className="flex items-center gap-2 p-3 rounded cursor-pointer hover:bg-gray-50">
-              <input
-                type="radio"
-                name="synthesisOption"
-                value="new-project-type"
-                checked={synthesisOption === 'new-project-type'}
-                onChange={(e) => setSynthesisOption(e.target.value as 'new-project-type')}
-                className="w-4 h-4"
-              />
-              <div className="flex-1">
-                <div className="text-gray-900 font-semibold">New Project Type</div>
-                <p className="text-gray-600 text-sm">Start synthesis for existing brand with new project type</p>
-              </div>
-            </label>
-            <label className="flex items-center gap-2 p-3 rounded cursor-pointer hover:bg-gray-50">
-              <input
-                type="radio"
-                name="synthesisOption"
-                value="edit-existing"
-                checked={synthesisOption === 'edit-existing'}
-                onChange={(e) => setSynthesisOption(e.target.value as 'edit-existing')}
-                className="w-4 h-4"
-              />
-              <div className="flex-1">
-                <div className="text-gray-900 font-semibold">Edit Existing Synthesis</div>
-                <p className="text-gray-600 text-sm">Modify an existing synthesis file</p>
-              </div>
-            </label>
-            <label className="flex items-center gap-2 p-3 rounded cursor-pointer hover:bg-gray-50">
-              <input
-                type="radio"
-                name="synthesisOption"
-                value="add-studies"
-                checked={synthesisOption === 'add-studies'}
-                onChange={(e) => setSynthesisOption(e.target.value as 'add-studies')}
-                className="w-4 h-4"
-              />
-              <div className="flex-1">
-                <div className="text-gray-900 font-semibold">Add Studies to Existing Synthesis</div>
-                <p className="text-gray-600 text-sm">Incorporate additional research studies into existing analysis</p>
-              </div>
-            </label>
-            <label className="flex items-center gap-2 p-3 rounded cursor-pointer hover:bg-gray-50">
-              <input
-                type="radio"
-                name="synthesisOption"
-                value="review-edits"
-                checked={synthesisOption === 'review-edits'}
-                onChange={(e) => setSynthesisOption(e.target.value as 'review-edits')}
-                className="w-4 h-4"
-              />
-              <div className="flex-1">
-                <div className="text-gray-900 font-semibold">Review Suggested Edits</div>
-                <p className="text-gray-600 text-sm">Review and approve suggested edits to synthesis files</p>
-              </div>
-            </label>
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Brand and Project Type Management */}
@@ -638,6 +737,23 @@ export function ResearcherModes({
                       No approved files available for {selectedBrand}
                     </p>
                   )}
+                </div>
+
+                {/* Upload file to Databricks */}
+                <div className="mt-4">
+                  <label className="w-full px-4 py-3 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center gap-2 cursor-pointer">
+                    <Upload className="w-5 h-5" />
+                    Upload File to Databricks
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.xlsx,.xls,.csv,.txt,.ppt,.pptx"
+                      className="hidden"
+                      onChange={handleUploadToDatabricks}
+                    />
+                  </label>
+                  <p className="text-xs text-gray-600 mt-2 text-center">
+                    Upload a file from your computer to Databricks Knowledge Base
+                  </p>
                 </div>
 
                 {/* Databricks file browser button */}
@@ -989,24 +1105,22 @@ export function ResearcherModes({
               >
                 Personas
               </button>
-              {canApproveResearch && (
-                <button
-                  onClick={() => {
-                    setMode('read-edit-approve');
-                    setSelectedHexagon(null);
-                    setPersonaFileForm({
-                      brandScope: 'single',
-                      brandName: brand,
-                      categoryName: '',
-                      fileName: '',
-                      fileType: ''
-                    });
-                  }}
-                  className="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
-                >
-                  Read/Edit/Approve
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  setMode('read-edit-approve');
+                  setSelectedHexagon(null);
+                  setPersonaFileForm({
+                    brandScope: 'single',
+                    brandName: brand,
+                    categoryName: '',
+                    fileName: '',
+                    fileType: ''
+                  });
+                }}
+                className="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
+              >
+                {canApproveResearch ? 'Read/Edit/Approve' : 'Read Files'}
+              </button>
             </div>
           </div>
         </div>
@@ -1027,36 +1141,59 @@ export function ResearcherModes({
         {/* Hexagon Grid */}
         <div className="bg-white border-2 border-gray-300 rounded-lg p-4">
           <h4 className="text-gray-900 mb-4">Select Workflow Step</h4>
-          <div className="grid grid-cols-2 gap-3">
-            {centralHexagons.map((hexagon) => {
-              const existingFiles = getPersonaFiles(hexagon.id);
-              const isSelected = selectedHexagon === hexagon.id;
-              
-              return (
-                <button
-                  key={hexagon.id}
-                  onClick={() => setSelectedHexagon(hexagon.id)}
-                  className={`p-4 border-2 rounded-lg text-left transition-all ${
-                    isSelected 
-                      ? `${hexagon.borderColor} ${hexagon.color}` 
-                      : 'border-gray-300 bg-white hover:border-gray-400'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
+          
+          {/* Show full grid if no selection made */}
+          {!selectedHexagon && (
+            <div className="grid grid-cols-2 gap-3">
+              {centralHexagons.map((hexagon) => {
+                const existingFiles = getPersonaFiles(hexagon.id);
+                
+                return (
+                  <button
+                    key={hexagon.id}
+                    onClick={() => setSelectedHexagon(hexagon.id)}
+                    className="p-4 border-2 rounded-lg text-left transition-all border-gray-300 bg-white hover:border-gray-400"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="text-gray-900 mb-1">{hexagon.label}</div>
+                        <div className="text-xs text-gray-600">
+                          {existingFiles.length} file{existingFiles.length !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          
+          {/* Show only selected hexagon with change button */}
+          {selectedHexagon && (
+            <div className="space-y-2">
+              {(() => {
+                const hexagon = centralHexagons.find(h => h.id === selectedHexagon);
+                const existingFiles = getPersonaFiles(selectedHexagon);
+                
+                return (
+                  <div className={`flex items-center gap-2 p-4 border-2 rounded-lg ${hexagon?.borderColor} ${hexagon?.color}`}>
                     <div className="flex-1">
-                      <div className="text-gray-900 mb-1">{hexagon.label}</div>
+                      <div className="text-gray-900 mb-1">{hexagon?.label}</div>
                       <div className="text-xs text-gray-600">
                         {existingFiles.length} file{existingFiles.length !== 1 ? 's' : ''}
                       </div>
                     </div>
-                    {isSelected && (
-                      <div className="text-blue-600 flex-shrink-0">✓</div>
-                    )}
+                    <button
+                      onClick={() => setSelectedHexagon(null)}
+                      className="px-3 py-1 text-sm bg-white border-2 border-gray-300 text-gray-700 rounded hover:bg-gray-50"
+                    >
+                      Change
+                    </button>
                   </div>
-                </button>
-              );
-            })}
-          </div>
+                );
+              })()}
+            </div>
+          )}
         </div>
 
         {/* File Creation Form */}
@@ -1303,7 +1440,7 @@ export function ResearcherModes({
                 onClick={() => setMode('read-edit-approve')}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg cursor-default"
               >
-                Read/Edit/Approve
+                {canApproveResearch ? 'Read/Edit/Approve' : 'Read Files'}
               </button>
             </div>
           </div>
@@ -1313,10 +1450,13 @@ export function ResearcherModes({
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-green-900 leading-tight">
-                Read/Edit/Approve Mode
+                {canApproveResearch ? 'Read/Edit/Approve Mode' : 'Read Files Mode'}
               </h3>
               <p className="text-green-700 text-sm">
-                Read, edit, or approve any synthesis or persona file
+                {canApproveResearch 
+                  ? 'Read, edit, or approve any synthesis or persona file'
+                  : 'View all synthesis and persona files in the knowledge base'
+                }
               </p>
             </div>
           </div>
@@ -1338,29 +1478,31 @@ export function ResearcherModes({
               </div>
             </div>
 
-            {/* Edit Section */}
-            <div className="bg-white border-2 border-gray-300 rounded-lg p-4">
-              <h4 className="text-gray-900 mb-3">
-                Edit File
-              </h4>
-              <textarea
-                className="w-full h-32 border-2 border-gray-300 bg-white rounded p-3 text-gray-700 resize-none focus:outline-none focus:border-green-500"
-                placeholder="Enter your edits here..."
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-              />
-              <button
-                onClick={() => {
-                  console.log('Saving edits for file:', selectedFile.id, editContent);
-                  alert(`Edits saved for: ${selectedFile.fileName}`);
-                  setEditContent('');
-                }}
-                disabled={!editContent.trim()}
-                className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Save Edits
-              </button>
-            </div>
+            {/* Edit Section - Only for Research Leaders */}
+            {canApproveResearch && (
+              <div className="bg-white border-2 border-gray-300 rounded-lg p-4">
+                <h4 className="text-gray-900 mb-3">
+                  Edit File
+                </h4>
+                <textarea
+                  className="w-full h-32 border-2 border-gray-300 bg-white rounded p-3 text-gray-700 resize-none focus:outline-none focus:border-green-500"
+                  placeholder="Enter your edits here..."
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                />
+                <button
+                  onClick={() => {
+                    console.log('Saving edits for file:', selectedFile.id, editContent);
+                    alert(`Edits saved for: ${selectedFile.fileName}`);
+                    setEditContent('');
+                  }}
+                  disabled={!editContent.trim()}
+                  className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  Save Edits
+                </button>
+              </div>
+            )}
 
             {/* Approval Section */}
             {canApproveResearch && (

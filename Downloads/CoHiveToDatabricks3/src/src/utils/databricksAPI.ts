@@ -16,7 +16,7 @@ export interface KnowledgeBaseFile {
   category?: string;
   brand?: string;
   projectType?: string;
-  fileType: 'Synthesis' | 'Wisdom' | 'Findings' | 'Research' | 'Persona';
+  fileType: 'Synthesis' | 'Wisdom';
   isApproved: boolean;
   uploadDate: string;
   uploadedBy: string;
@@ -30,8 +30,6 @@ export interface KnowledgeBaseFile {
   contentSummary?: string;
   insightType?: 'Brand' | 'Category' | 'General';
   inputMethod?: 'Text' | 'Voice' | 'Photo' | 'Video' | 'File';
-  iterationType?: 'iteration' | 'summary';
-  includedHexes?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -42,13 +40,11 @@ export interface UploadFileParams {
   category?: string;
   brand?: string;
   projectType?: string;
-  fileType: 'Synthesis' | 'Wisdom' | 'Findings' | 'Research' | 'Persona';
+  fileType: 'Synthesis' | 'Wisdom';
   tags?: string[];
   contentSummary?: string;
   insightType?: 'Brand' | 'Category' | 'General';
   inputMethod?: 'Text' | 'Voice' | 'Photo' | 'Video' | 'File';
-  iterationType?: 'iteration' | 'summary';
-  includedHexes?: string[];
   userEmail: string;
   userRole: string;
 }
@@ -57,16 +53,13 @@ export interface ListFilesParams {
   scope?: 'general' | 'category' | 'brand';
   category?: string;
   brand?: string;
-  fileType?: 'Synthesis' | 'Wisdom' | 'Findings' | 'Research' | 'Persona';
+  fileType?: 'Synthesis' | 'Wisdom';
   isApproved?: boolean;
   projectType?: string;
   uploadedBy?: string;
   searchTerm?: string;
   includeGeneral?: boolean;
   includeCategory?: boolean;
-  iterationType?: 'iteration' | 'summary';
-  startDate?: string;
-  endDate?: string;
   limit?: number;
   offset?: number;
   sortBy?: 'upload_date' | 'citation_count' | 'file_name';
@@ -82,10 +75,11 @@ async function getAuthData() {
     throw new Error('Not authenticated. Please sign in to Databricks.');
   }
   return {
-    accessToken: session.accessToken,
+    accessToken: session.accessToken,  // ✅ Fixed!
     workspaceHost: session.workspaceHost,
   };
 }
+
 
 /**
  * Upload a file to the Knowledge Base
@@ -100,7 +94,7 @@ export async function uploadToKnowledgeBase(params: UploadFileParams): Promise<{
     console.log('📤 Uploading to Knowledge Base:', params.file.name);
     
     const auth = await getAuthData();
-    
+
     // Convert file to base64
     const fileContent = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -130,8 +124,6 @@ export async function uploadToKnowledgeBase(params: UploadFileParams): Promise<{
         contentSummary: params.contentSummary,
         insightType: params.insightType,
         inputMethod: params.inputMethod,
-        iterationType: params.iterationType,
-        includedHexes: params.includedHexes,
         userEmail: params.userEmail,
         userRole: params.userRole,
         ...auth,
@@ -170,7 +162,7 @@ export async function listKnowledgeBaseFiles(
   try {
     console.log('📥 Fetching Knowledge Base files with filters:', params);
     
-    const auth = await getAuthData();
+   const auth = await getAuthData();
     
     // Build query string
     const queryParams = new URLSearchParams();
@@ -189,9 +181,6 @@ export async function listKnowledgeBaseFiles(
     if (params.offset) queryParams.append('offset', String(params.offset));
     if (params.sortBy) queryParams.append('sortBy', params.sortBy);
     if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
-    if (params.iterationType) queryParams.append('iterationType', params.iterationType);
-    if (params.startDate) queryParams.append('startDate', params.startDate);
-    if (params.endDate) queryParams.append('endDate', params.endDate);
     
     queryParams.append('accessToken', auth.accessToken);
     queryParams.append('workspaceHost', auth.workspaceHost);
@@ -234,7 +223,7 @@ export async function approveKnowledgeBaseFile(
   try {
     console.log('✅ Approving file:', fileId);
     
-    const auth = await getAuthData();
+   const auth = await getAuthData();
     
     const response = await fetch('/api/databricks/knowledge-base/approve', {
       method: 'POST',
@@ -288,7 +277,7 @@ export async function updateKnowledgeBaseMetadata(
   try {
     console.log('📝 Updating metadata for:', fileId);
     
-    const auth = await getAuthData();
+   const auth = await getAuthData();
     
     const response = await fetch('/api/databricks/knowledge-base/update', {
       method: 'PATCH',
@@ -382,58 +371,6 @@ export function downloadFile(fileName: string, content: string, mimeType: string
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
   console.log('✅ File downloaded:', fileName);
-}
-
-/**
- * Download a file from the Knowledge Base
- */
-export async function downloadKnowledgeBaseFile(
-  fileId: string,
-  fileName: string
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    console.log('📥 Downloading file from Knowledge Base:', fileId);
-    
-    const auth = await getAuthData();
-    
-    const queryParams = new URLSearchParams();
-    queryParams.append('fileId', fileId);
-    queryParams.append('accessToken', auth.accessToken);
-    queryParams.append('workspaceHost', auth.workspaceHost);
-
-    const response = await fetch(
-      `/api/databricks/knowledge-base/download?${queryParams}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Download failed: ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    
-    // Download file to user's computer
-    const content = result.content || '';
-    const mimeType = result.mimeType || 'application/octet-stream';
-    downloadFile(fileName, content, mimeType);
-    
-    console.log('✅ File downloaded successfully:', fileName);
-    
-    return { success: true };
-    
-  } catch (error) {
-    console.error('❌ Download error:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Download failed' 
-    };
-  }
 }
 
 /**
