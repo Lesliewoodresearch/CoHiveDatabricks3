@@ -10,8 +10,8 @@ import { ReviewView } from './ReviewView';
 import { DatabricksOAuthLogin } from './DatabricksOAuthLogin';
 import { DatabricksFileSaver } from './DatabricksFileSaver';
 import cohiveLogo from 'figma:asset/88105c0c8621f3d41d65e5be3ae75558f9de1753.png';
-import { uploadToKnowledgeBase, downloadFile } from '../utils/databricksAPI';
-import { isAuthenticated } from '../utils/databricksAuth';
+import { uploadToKnowledgeBase, downloadFile } from '../src/utils/databricksAPI';
+import { isAuthenticated } from '../src/utils/databricksAuth';
 
 interface StepContent {
   id: string;
@@ -656,7 +656,7 @@ export default function ProcessWireframe() {
         if (code && state) {
           // Handle OAuth callback
           console.log('Detected OAuth callback, processing...');
-          const { handleOAuthCallback } = await import('../utils/databricksAuth');
+          const { handleOAuthCallback } = await import('../src/utils/databricksAuth');
           
           try {
             await handleOAuthCallback();

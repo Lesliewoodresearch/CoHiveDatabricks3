@@ -6,7 +6,7 @@ import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { Database, LogIn, AlertCircle, Info } from 'lucide-react';
 import { colors } from '../styles/cohive-theme';
-import { initiateLogin } from '../utils/databricksAuth';
+import { initiateLogin } from '../src/utils/databricksAuth';
 
 interface DatabricksOAuthLoginProps {
   open: boolean;

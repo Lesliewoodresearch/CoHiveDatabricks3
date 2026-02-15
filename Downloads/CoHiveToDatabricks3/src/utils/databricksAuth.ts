@@ -1,6 +1,6 @@
 /**
  * Databricks OAuth Authentication
- * FIXED: Token exchange now happens server-side via API route
+ * Handles OAuth 2.0 flow with Databricks for secure authentication
  */
 
 interface DatabricksOAuthConfig {
@@ -27,7 +27,7 @@ interface DatabricksSession {
 const OAUTH_CONFIG: DatabricksOAuthConfig = {
   clientId: (typeof import.meta.env !== 'undefined' && import.meta.env.VITE_DATABRICKS_CLIENT_ID) || '',
   redirectUri: (typeof import.meta.env !== 'undefined' && import.meta.env.VITE_DATABRICKS_REDIRECT_URI) || (typeof window !== 'undefined' ? `${window.location.origin}/oauth/callback` : ''),
-  scopes: ['all-apis', 'offline_access'],
+  scopes: ['all-apis', 'offline_access'], // offline_access for refresh token
 };
 
 const SESSION_KEY = 'cohive_databricks_session';
@@ -53,33 +53,32 @@ export function getAuthorizationUrl(workspaceHost: string): string {
 
 /**
  * Exchange authorization code for access token
- * ✅ FIXED: Now calls server-side API route
  */
 export async function exchangeCodeForToken(
   code: string,
   workspaceHost: string
 ): Promise<DatabricksSession> {
   try {
-    // Call our Vercel API route instead of direct Databricks call
-    const response = await fetch('/api/databricks/auth', {
+    const response = await fetch(`https://${workspaceHost}/oidc/v1/token`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({
-        code,
-        workspaceHost,
-        grantType: 'authorization_code',
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: OAUTH_CONFIG.redirectUri,
+        client_id: OAUTH_CONFIG.clientId,
       }),
     }).catch(err => {
       console.error('Network error during token exchange:', err);
-      throw new Error('Unable to connect to authentication server. Please check your network connection.');
+      throw new Error('Unable to connect to Databricks. Please check your network connection.');
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      console.error('Token exchange failed:', response.status, errorData);
-      throw new Error(errorData.error || 'Failed to exchange authorization code for token');
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.error('Token exchange failed:', response.status, errorText);
+      throw new Error('Failed to exchange authorization code for token');
     }
 
     const tokenData: DatabricksTokenResponse = await response.json();
@@ -103,7 +102,6 @@ export async function exchangeCodeForToken(
 
 /**
  * Refresh access token using refresh token
- * ✅ FIXED: Now calls server-side API route
  */
 export async function refreshAccessToken(): Promise<DatabricksSession | null> {
   const session = getSession();
@@ -113,15 +111,15 @@ export async function refreshAccessToken(): Promise<DatabricksSession | null> {
   }
 
   try {
-    const response = await fetch('/api/databricks/auth', {
+    const response = await fetch(`https://${session.workspaceHost}/oidc/v1/token`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({
-        refreshToken: session.refreshToken,
-        workspaceHost: session.workspaceHost,
-        grantType: 'refresh_token',
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: session.refreshToken,
+        client_id: OAUTH_CONFIG.clientId,
       }),
     }).catch(err => {
       console.error('Network error during token refresh:', err);
@@ -168,7 +166,6 @@ export async function getValidSession(): Promise<DatabricksSession | null> {
     const needsRefresh = expiresIn < 5 * 60 * 1000;
 
     if (needsRefresh && session.refreshToken) {
-      console.log('[Auth] Token expiring soon, refreshing...');
       return await refreshAccessToken();
     }
 
@@ -212,6 +209,16 @@ export function clearSession(): void {
   sessionStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem('oauth_state');
   sessionStorage.removeItem('oauth_workspace_host');
+  sessionStorage.removeItem('oauth_return_step');
+}
+
+/**
+ * Check if URL has OAuth callback parameters
+ */
+export function hasOAuthCallback(): boolean {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  return !!(params.get('code') && params.get('state'));
 }
 
 /**
@@ -225,7 +232,12 @@ export function isAuthenticated(): boolean {
 /**
  * Initiate OAuth login flow
  */
-export function initiateLogin(workspaceHost: string): void {
+export function initiateLogin(workspaceHost: string, returnToStep?: string): void {
+  // Store the current step to return to after OAuth
+  if (returnToStep) {
+    sessionStorage.setItem('oauth_return_step', returnToStep);
+  }
+  
   const authUrl = getAuthorizationUrl(workspaceHost);
   window.location.href = authUrl;
 }
@@ -251,10 +263,10 @@ export async function handleOAuthCallback(): Promise<DatabricksSession | null> {
   }
 
   if (state !== storedState) {
-    throw new Error('OAuth state mismatch - possible CSRF attack');
+    throw new Error('OAuth state mismatch');
   }
 
-  // Exchange code for token via API route
+  // Exchange code for token
   const session = await exchangeCodeForToken(code, workspaceHost);
 
   // Clean up

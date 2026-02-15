@@ -22,8 +22,8 @@ import {
   hasCredentials,
   DATABRICKS_PATHS,
   type DatabricksFile 
-} from '../utils/databricksClient';
-import { getWorkspaceHost } from '../utils/databricksAuth';
+} from '../src/utils/databricksClient';
+import { getWorkspaceHost } from '../src/utils/databricksAuth';
 import { DatabricksOAuthLogin } from './DatabricksOAuthLogin';
 import { colors, spacing } from '../styles/cohive-theme';
 

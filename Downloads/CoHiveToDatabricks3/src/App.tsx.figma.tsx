@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router';
 import ProcessWireframe from "./components/ProcessWireframe";
 import { Login } from "./components/Login";
 import { OAuthCallback } from "./components/OAuthCallback";
@@ -52,12 +52,14 @@ function OAuthCallbackWrapper() {
 
 export default function App() {
   return (
-    <Routes>
-      {/* OAuth callback route */}
-      <Route path="/oauth/callback" element={<OAuthCallbackWrapper />} />
-      
-      {/* Main app route */}
-      <Route path="*" element={<AppContent />} />
-    </Routes>
+    <BrowserRouter>
+      <Routes>
+        {/* OAuth callback route */}
+        <Route path="/oauth/callback" element={<OAuthCallbackWrapper />} />
+        
+        {/* Main app route */}
+        <Route path="*" element={<AppContent />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

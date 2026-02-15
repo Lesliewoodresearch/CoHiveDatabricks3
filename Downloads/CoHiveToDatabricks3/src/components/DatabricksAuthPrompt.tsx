@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AlertCircle, Database, CheckCircle } from 'lucide-react';
-import { getValidSession, initiateLogin, isAuthenticated } from '../utils/databricksAuth';
+import { getValidSession, initiateLogin, isAuthenticated } from '../src/utils/databricksAuth';
 
 interface DatabricksAuthPromptProps {
   onAuthChange?: (authenticated: boolean) => void;

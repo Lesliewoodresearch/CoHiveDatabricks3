@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { DatabricksFileBrowser } from './DatabricksFileBrowser';
-import { uploadToKnowledgeBase } from '../utils/databricksAPI';
-import { Upload } from 'lucide-react';
+import { uploadToKnowledgeBase, approveKnowledgeBaseFile, deleteKnowledgeBaseFile, updateKnowledgeBaseMetadata } from '../src/utils/databricksAPI';
+import { executeAIPrompt, runAIAgent } from '../src/utils/databricksAI';
+import { Upload, CheckCircle, Trash2, Edit, Bot, Sparkles } from 'lucide-react';
 
 interface ResearchFile {
   id: string;
@@ -240,6 +241,165 @@ export function ResearcherModes({
     } catch (error) {
       console.error('Error uploading file to Databricks:', error);
       alert('Failed to upload file. Please try again.');
+    }
+  };
+
+  // Handle approving files
+  const handleApproveFiles = async () => {
+    if (selectedDatabricksFiles.length === 0) {
+      alert('Please select files to approve');
+      return;
+    }
+
+    try {
+      const results = await Promise.all(
+        selectedDatabricksFiles.map(file =>
+          approveKnowledgeBaseFile(
+            file.id,
+            'user@company.com',
+            canApproveResearch ? 'research-leader' : 'research-analyst',
+            'Approved from synthesis workflow'
+          )
+        )
+      );
+
+      const successCount = results.filter(r => r.success).length;
+      alert(`Successfully approved ${successCount} of ${selectedDatabricksFiles.length} files`);
+      
+      // Refresh the file list or update local state
+      setSelectedDatabricksFiles([]);
+    } catch (error) {
+      console.error('Error approving files:', error);
+      alert('Failed to approve files. Please try again.');
+    }
+  };
+
+  // Handle deleting files
+  const handleDeleteFiles = async () => {
+    if (selectedDatabricksFiles.length === 0) {
+      alert('Please select files to delete');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${selectedDatabricksFiles.length} file(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const results = await Promise.all(
+        selectedDatabricksFiles.map(file =>
+          deleteKnowledgeBaseFile(
+            file.id,
+            'user@company.com',
+            canApproveResearch ? 'research-leader' : 'research-analyst'
+          )
+        )
+      );
+
+      const successCount = results.filter(r => r.success).length;
+      alert(`Successfully deleted ${successCount} of ${selectedDatabricksFiles.length} files`);
+      
+      // Clear selection
+      setSelectedDatabricksFiles([]);
+    } catch (error) {
+      console.error('Error deleting files:', error);
+      alert('Failed to delete files. Please try again.');
+    }
+  };
+
+  // Handle updating file metadata
+  const handleUpdateMetadata = async () => {
+    if (selectedDatabricksFiles.length === 0) {
+      alert('Please select files to update');
+      return;
+    }
+
+    const newTags = window.prompt('Enter tags (comma-separated):');
+    if (newTags === null) return;
+
+    const tagsArray = newTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+
+    try {
+      const results = await Promise.all(
+        selectedDatabricksFiles.map(file =>
+          updateKnowledgeBaseMetadata(
+            file.id,
+            { tags: tagsArray },
+            'user@company.com',
+            canApproveResearch ? 'research-leader' : 'research-analyst'
+          )
+        )
+      );
+
+      const successCount = results.filter(r => r.success).length;
+      alert(`Successfully updated metadata for ${successCount} of ${selectedDatabricksFiles.length} files`);
+    } catch (error) {
+      console.error('Error updating metadata:', error);
+      alert('Failed to update metadata. Please try again.');
+    }
+  };
+
+  // Handle running AI Agent
+  const handleRunAIAgent = async () => {
+    if (selectedDatabricksFiles.length === 0) {
+      alert('Please select files to analyze with AI Agent');
+      return;
+    }
+
+    const task = window.prompt('Enter the task for the AI Agent (e.g., "Summarize key insights from these files"):');
+    if (!task) return;
+
+    try {
+      const result = await runAIAgent({
+        task: `${task}\n\nAnalyze these files: ${selectedDatabricksFiles.map(f => f.fileName).join(', ')}`,
+        systemPrompt: 'You are a helpful AI assistant analyzing research files for brand synthesis.',
+        enableKnowledgeBase: true,
+        enableSQLQuery: true,
+        brand: selectedBrand,
+        category: selectedProjectType,
+        userEmail: 'user@company.com',
+        userRole: canApproveResearch ? 'research-leader' : 'research-analyst',
+      });
+
+      if (result.success) {
+        alert(`AI Agent Response:\n\n${result.response}\n\nCompleted in ${result.iterations} iterations using ${result.toolsUsed} tools.`);
+      } else {
+        alert('AI Agent failed: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error running AI Agent:', error);
+      alert('Failed to run AI Agent. Please try again.');
+    }
+  };
+
+  // Handle executing AI Prompt
+  const handleExecuteAIPrompt = async () => {
+    if (selectedDatabricksFiles.length === 0) {
+      alert('Please select files to analyze with AI');
+      return;
+    }
+
+    const userPrompt = window.prompt('Enter your prompt (e.g., "What are the key themes?"):');
+    if (!userPrompt) return;
+
+    try {
+      const result = await executeAIPrompt({
+        prompt: `${userPrompt}\n\nContext: Analyzing files: ${selectedDatabricksFiles.map(f => f.fileName).join(', ')}`,
+        systemPrompt: 'You are a helpful AI assistant analyzing research files.',
+        includeKnowledgeBase: true,
+        knowledgeBaseQuery: selectedBrand,
+        userEmail: 'user@company.com',
+        userRole: canApproveResearch ? 'research-leader' : 'research-analyst',
+      });
+
+      if (result.success) {
+        alert(`AI Response:\n\n${result.response}\n\nTokens used: ${result.usage.totalTokens}`);
+      } else {
+        alert('AI Prompt failed: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error executing AI prompt:', error);
+      alert('Failed to execute AI prompt. Please try again.');
     }
   };
 
@@ -772,6 +932,66 @@ export function ResearcherModes({
                   </p>
                 </div>
 
+                {/* Additional Databricks Commands */}
+                <div className="mt-6 space-y-3">
+                  <h5 className="text-sm font-semibold text-gray-900">Databricks File Operations</h5>
+                  
+                  {/* Approve Files Button */}
+                  <button
+                    onClick={handleApproveFiles}
+                    disabled={selectedDatabricksFiles.length === 0}
+                    className="w-full px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Approve Selected Files
+                  </button>
+                  
+                  {/* Update Metadata Button */}
+                  <button
+                    onClick={handleUpdateMetadata}
+                    disabled={selectedDatabricksFiles.length === 0}
+                    className="w-full px-4 py-2 bg-amber-600 text-white rounded hover:bg-amber-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Update Metadata
+                  </button>
+                  
+                  {/* Delete Files Button */}
+                  <button
+                    onClick={handleDeleteFiles}
+                    disabled={selectedDatabricksFiles.length === 0}
+                    className="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Selected Files
+                  </button>
+                </div>
+
+                {/* AI Commands */}
+                <div className="mt-6 space-y-3">
+                  <h5 className="text-sm font-semibold text-gray-900">Databricks AI Tools</h5>
+                  
+                  {/* Run AI Agent Button */}
+                  <button
+                    onClick={handleRunAIAgent}
+                    disabled={selectedDatabricksFiles.length === 0}
+                    className="w-full px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <Bot className="w-4 h-4" />
+                    Run AI Agent
+                  </button>
+                  
+                  {/* Execute AI Prompt Button */}
+                  <button
+                    onClick={handleExecuteAIPrompt}
+                    disabled={selectedDatabricksFiles.length === 0}
+                    className="w-full px-4 py-2 bg-violet-600 text-white rounded hover:bg-violet-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Execute AI Prompt
+                  </button>
+                </div>
+
                 {/* Selected files summary */}
                 {selectedDatabricksFiles.length > 0 && (
                   <div className="mt-4 p-3 bg-purple-50 border-2 border-purple-200 rounded">
@@ -874,6 +1094,63 @@ export function ResearcherModes({
                     </div>
                   ))}
                 </div>
+              )}
+
+              {/* Additional Databricks Commands for Add Studies */}
+              {selectedDatabricksFiles.length > 0 && (
+                <>
+                  <div className="mt-4 space-y-2">
+                    <h5 className="text-xs font-semibold text-gray-900">File Operations</h5>
+                    
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleApproveFiles}
+                        className="flex-1 px-3 py-2 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700 flex items-center justify-center gap-1"
+                      >
+                        <CheckCircle className="w-3 h-3" />
+                        Approve
+                      </button>
+                      
+                      <button
+                        onClick={handleUpdateMetadata}
+                        className="flex-1 px-3 py-2 text-xs bg-amber-600 text-white rounded hover:bg-amber-700 flex items-center justify-center gap-1"
+                      >
+                        <Edit className="w-3 h-3" />
+                        Update
+                      </button>
+                      
+                      <button
+                        onClick={handleDeleteFiles}
+                        className="flex-1 px-3 py-2 text-xs bg-red-600 text-white rounded hover:bg-red-700 flex items-center justify-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 space-y-2">
+                    <h5 className="text-xs font-semibold text-gray-900">AI Tools</h5>
+                    
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleRunAIAgent}
+                        className="flex-1 px-3 py-2 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center justify-center gap-1"
+                      >
+                        <Bot className="w-3 h-3" />
+                        AI Agent
+                      </button>
+                      
+                      <button
+                        onClick={handleExecuteAIPrompt}
+                        className="flex-1 px-3 py-2 text-xs bg-violet-600 text-white rounded hover:bg-violet-700 flex items-center justify-center gap-1"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        AI Prompt
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           </div>
