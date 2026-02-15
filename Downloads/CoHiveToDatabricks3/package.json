@@ -57,3 +57,6 @@
             "build": "vite build"
       }
 }
+"scripts": {
+  "fix-imports": "node fix-react-router-imports.js"
+}
