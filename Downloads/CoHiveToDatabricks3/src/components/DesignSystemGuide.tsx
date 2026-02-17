@@ -1,6 +1,6 @@
 import { colors, hexagon, spacing, stepColors, typography } from '../styles/cohive-theme';
 import { HexagonBreadcrumb } from './HexagonBreadcrumb';
-import { Rocket, Database, CheckCircle, TestTube, Users, BarChart3, MessageSquare } from 'lucide-react';
+import { Rocket, Database, CheckCircle, TestTube, Users, BarChart3, MessageSquare } from 'lucide-react@0.487.0';
 
 /**
  * Design System Guide Component

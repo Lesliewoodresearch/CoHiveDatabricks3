@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Palette, X } from 'lucide-react';
+import { Palette, X } from 'lucide-react@0.487.0';
 import { colors, stepColors } from '../styles/cohive-theme';
 
 /**

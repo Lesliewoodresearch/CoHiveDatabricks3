@@ -1,4 +1,4 @@
-import { Settings, User, Database, Save, X, Plus, Edit2, Check } from 'lucide-react';
+import { Settings, User, Database, Save, X, Plus, Edit2, Check } from 'lucide-react@0.487.0';
 import { useState } from 'react';
 
 export interface UserTemplate {

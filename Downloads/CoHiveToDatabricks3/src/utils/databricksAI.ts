@@ -3,7 +3,7 @@
  * 
  * Frontend utility functions for executing prompts and running AI agents.
  * 
- * Location: src/utils/databricksAI.ts
+ * Location: utils/databricksAI.ts
  */
 
 import { getValidSession } from './databricksAuth';

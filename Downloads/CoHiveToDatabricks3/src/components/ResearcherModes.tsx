@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { DatabricksFileBrowser } from './DatabricksFileBrowser';
 import { uploadToKnowledgeBase, approveKnowledgeBaseFile, deleteKnowledgeBaseFile, updateKnowledgeBaseMetadata } from '../utils/databricksAPI';
 import { executeAIPrompt, runAIAgent } from '../utils/databricksAI';
-import { Upload, CheckCircle, Trash2, Edit, Bot, Sparkles } from 'lucide-react';
+import { isAuthenticated } from '../utils/databricksAuth';
+import { Upload, CheckCircle, Trash2, Edit, Bot, Sparkles } from 'lucide-react@0.487.0';
 
 interface ResearchFile {
   id: string;
@@ -197,6 +198,13 @@ export function ResearcherModes({
       return;
     }
 
+    // Check authentication first
+    if (!isAuthenticated()) {
+      alert('⚠️ Please sign in to Databricks before uploading to the Knowledge Base.\n\nYou need to authenticate first.');
+      event.target.value = '';
+      return;
+    }
+
     try {
       // Upload to Databricks Knowledge Base using the File object directly
       const result = await uploadToKnowledgeBase({
@@ -251,6 +259,12 @@ export function ResearcherModes({
       return;
     }
 
+    // Check authentication first
+    if (!isAuthenticated()) {
+      alert('⚠️ Please sign in to Databricks before approving files.\n\nYou need to authenticate first.');
+      return;
+    }
+
     try {
       const results = await Promise.all(
         selectedDatabricksFiles.map(file =>
@@ -282,6 +296,12 @@ export function ResearcherModes({
     }
 
     if (!confirm(`Are you sure you want to delete ${selectedDatabricksFiles.length} file(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    // Check authentication first
+    if (!isAuthenticated()) {
+      alert('⚠️ Please sign in to Databricks before deleting files.\n\nYou need to authenticate first.');
       return;
     }
 
@@ -318,6 +338,12 @@ export function ResearcherModes({
     if (newTags === null) return;
 
     const tagsArray = newTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+
+    // Check authentication first
+    if (!isAuthenticated()) {
+      alert('⚠️ Please sign in to Databricks before updating metadata.\n\nYou need to authenticate first.');
+      return;
+    }
 
     try {
       const results = await Promise.all(

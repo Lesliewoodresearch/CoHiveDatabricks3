@@ -1,4 +1,4 @@
-import { Database, Cpu, GitBranch, BarChart3, Rocket, PlayCircle, Settings, FileText, Users, Globe, MessageSquare, TestTube, CheckCircle, Save, AlertCircle, User, Download, Upload, RotateCcw, Mic, Camera, Video, StopCircle, File } from 'lucide-react';
+import { Database, Cpu, GitBranch, BarChart3, Rocket, PlayCircle, Settings, FileText, Users, Globe, MessageSquare, TestTube, CheckCircle, Save, AlertCircle, User, Download, Upload, RotateCcw, Mic, Camera, Video, StopCircle, File } from 'lucide-react@0.487.0';
 import { ProcessFlow, processSteps } from './ProcessFlow';
 import { useState, useEffect } from 'react';
 import React from 'react';
@@ -656,7 +656,7 @@ export default function ProcessWireframe() {
         if (code && state) {
           // Handle OAuth callback
           console.log('Detected OAuth callback, processing...');
-          const { handleOAuthCallback } = await import('../utils/databricksAuth');
+          const { handleOAuthCallback } = await import('../utils/databricksAuth.ts');
           
           try {
             await handleOAuthCallback();

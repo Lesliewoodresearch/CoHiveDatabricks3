@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Info, X } from "lucide-react";
+import { Info, X } from "lucide-react@0.487.0";
 import { HexagonBreadcrumb } from "./HexagonBreadcrumb";
 import { stepColors } from "../styles/cohive-theme";
 import cohiveLogo from "figma:asset/88105c0c8621f3d41d65e5be3ae75558f9de1753.png";

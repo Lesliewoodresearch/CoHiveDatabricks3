@@ -4,7 +4,7 @@ import {
   PlayCircle,
   FileText,
   ChevronRight,
-} from "lucide-react";
+} from "lucide-react@0.487.0";
 import gemIcon from "figma:asset/53dc6cf554f69e479cfbd60a46741f158d11dd21.png";
 import { getPersonasForHex, type PersonaLevel1, type PersonaLevel2, type PersonaLevel3 } from "../data/personas";
 

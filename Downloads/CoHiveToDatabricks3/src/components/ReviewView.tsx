@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Download, Trash2, ChevronDown, RefreshCw, Filter, X } from 'lucide-react';
+import { Download, Trash2, ChevronDown, RefreshCw, Filter, X } from 'lucide-react@0.487.0';
 import { listKnowledgeBaseFiles, deleteKnowledgeBaseFile, downloadKnowledgeBaseFile, downloadFile, KnowledgeBaseFile } from '../utils/databricksAPI';
 import { getValidSession } from '../utils/databricksAuth';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react@0.487.0';
 
 interface ReviewViewProps {
   projectFiles: any[];

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, Database, CheckCircle } from 'lucide-react';
+import { AlertCircle, Database, CheckCircle } from 'lucide-react@0.487.0';
 import { getValidSession, initiateLogin, isAuthenticated } from '../utils/databricksAuth';
 
 interface DatabricksAuthPromptProps {

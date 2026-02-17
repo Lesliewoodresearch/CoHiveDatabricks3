@@ -1,4 +1,4 @@
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon } from 'lucide-react@0.487.0';
 import { hexagon, getHexStateStyles, effects } from '../styles/cohive-theme';
 
 interface HexagonBreadcrumbProps {

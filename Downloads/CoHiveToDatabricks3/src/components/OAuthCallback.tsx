@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { handleOAuthCallback } from '../utils/databricksAuth';
-import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react@0.487.0';
 import { colors } from '../styles/cohive-theme';
 
 interface OAuthCallbackProps {

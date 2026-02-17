@@ -3,7 +3,7 @@
  * 
  * PRODUCTION MODE - Connects to real Databricks Unity Catalog
  * 
- * Location: src/utils/databricksAPI.ts
+ * Location: utils/databricksAPI.ts
  */
 
 import { getValidSession } from './databricksAuth';

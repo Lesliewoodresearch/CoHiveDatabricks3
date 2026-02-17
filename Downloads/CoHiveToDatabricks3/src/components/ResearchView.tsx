@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { DatabricksFileBrowser } from './DatabricksFileBrowser';
-import { Database } from 'lucide-react';
+import { Database } from 'lucide-react@0.487.0';
 
 interface ResearchFile {
   id: string;
