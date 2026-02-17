@@ -1,13 +1,13 @@
 {
   "name": "cohive-databricks3",
   "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "fix-imports": "node fix-react-router-imports.js"
-  },
+"scripts": {
+  "dev": "vite",
+  "build": "vite build",
+  "preview": "vite preview",
+  "fix-imports": "node fix-react-router-imports.js",
+  "vercel-build": "vite build"
+},
   "dependencies": {
     "@databricks/sql": "^1.12.0",
     "@radix-ui/react-accordion": "^1.2.3",
