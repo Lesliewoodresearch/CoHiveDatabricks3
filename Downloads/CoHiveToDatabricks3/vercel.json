@@ -1,5 +1,9 @@
 {
+  "buildCommand": "npm ci && npm run build",
+  "installCommand": "npm ci",
+  "framework": null,
+  "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
