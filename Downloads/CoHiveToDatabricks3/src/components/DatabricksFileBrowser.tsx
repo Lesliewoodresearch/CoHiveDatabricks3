@@ -28,8 +28,8 @@ import {
   DATABRICKS_PATHS,
   RESEARCH_FILE_TYPES,
   type DatabricksFile 
-} from '../src/utils/databricksClient';
-import { logout, getWorkspaceHost } from '../src/utils/databricksAuth';
+} from '../utils/databricksClient';
+import { logout, getWorkspaceHost } from '../utils/databricksAuth';
 import { DatabricksOAuthLogin } from './DatabricksOAuthLogin';
 import { colors, spacing } from '../styles/cohive-theme';
 

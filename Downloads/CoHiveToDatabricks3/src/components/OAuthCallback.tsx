@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { handleOAuthCallback } from '../src/utils/databricksAuth';
+import { handleOAuthCallback } from '../utils/databricksAuth';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { colors } from '../styles/cohive-theme';
 

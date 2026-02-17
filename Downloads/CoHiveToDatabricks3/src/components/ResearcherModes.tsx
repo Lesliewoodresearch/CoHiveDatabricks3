@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DatabricksFileBrowser } from './DatabricksFileBrowser';
-import { uploadToKnowledgeBase, approveKnowledgeBaseFile, deleteKnowledgeBaseFile, updateKnowledgeBaseMetadata } from '../src/utils/databricksAPI';
-import { executeAIPrompt, runAIAgent } from '../src/utils/databricksAI';
+import { uploadToKnowledgeBase, approveKnowledgeBaseFile, deleteKnowledgeBaseFile, updateKnowledgeBaseMetadata } from '../utils/databricksAPI';
+import { executeAIPrompt, runAIAgent } from '../utils/databricksAI';
 import { Upload, CheckCircle, Trash2, Edit, Bot, Sparkles } from 'lucide-react';
 
 interface ResearchFile {
