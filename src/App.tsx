@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router';
 import ProcessWireframe from "./components/ProcessWireframe";
 import { Login } from "./components/Login";
 import { OAuthCallback } from "./components/OAuthCallback";
+import { isAuthenticated as isDatabricksAuthenticated } from './utils/databricksAuth';
 import gemIcon from "figma:asset/53dc6cf554f69e479cfbd60a46741f158d11dd21.png";
 
 function AppContent() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    // Check if user previously logged in (stored in localStorage)
+    return localStorage.getItem('cohive_logged_in') === 'true';
+  });
 
   // Set favicon to the gem icon
   useEffect(() => {
@@ -19,6 +23,7 @@ function AppContent() {
 
   const handleLogin = () => {
     setIsLoggedIn(true);
+    localStorage.setItem('cohive_logged_in', 'true');
   };
 
   if (!isLoggedIn) {
@@ -38,12 +43,16 @@ function OAuthCallbackWrapper() {
   return (
     <OAuthCallback 
       onSuccess={() => {
-        console.log('✅ OAuth successful, redirecting to app...');
-        navigate('/');
+        console.log('✅ OAuth successful, returning to app...');
+        // Get the path we should return to (defaults to /app if hex page)
+        const returnPath = sessionStorage.getItem('oauth_return_path') || '/';
+        sessionStorage.removeItem('oauth_return_path');
+        navigate(returnPath);
       }}
       onError={(error) => {
         console.error('❌ OAuth error:', error);
-        alert(`Authentication failed: ${error.message}`);
+        alert(`Authentication failed: ${error.message}. Please try again.`);
+        // Return to app, not landing page
         navigate('/');
       }}
     />
@@ -52,12 +61,14 @@ function OAuthCallbackWrapper() {
 
 export default function App() {
   return (
-    <Routes>
-      {/* OAuth callback route */}
-      <Route path="/oauth/callback" element={<OAuthCallbackWrapper />} />
-      
-      {/* Main app route */}
-      <Route path="*" element={<AppContent />} />
-    </Routes>
+    <BrowserRouter>
+      <Routes>
+        {/* OAuth callback route */}
+        <Route path="/oauth/callback" element={<OAuthCallbackWrapper />} />
+        
+        {/* Main app route */}
+        <Route path="*" element={<AppContent />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

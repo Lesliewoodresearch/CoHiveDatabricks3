@@ -29,11 +29,14 @@ export interface KnowledgeBaseFile {
   fileSizeBytes: number;
   contentSummary?: string;
   insightType?: 'Brand' | 'Category' | 'General';
-  inputMethod?: 'Text' | 'Voice' | 'Photo' | 'Video' | 'File';
+  inputMethod?: 'Text' | 'Voice' | 'Photo' | 'Video' | 'File' | 'Interview';
   iterationType?: 'iteration' | 'summary';
   includedHexes?: string[];
   createdAt: string;
   updatedAt: string;
+  cleaningStatus?: 'uncleaned' | 'cleaned' | 'in_progress'; // NEW: Track cleaning status
+  cleanedAt?: string; // NEW: When AI cleaned the data
+  cleanedBy?: string; // NEW: Who/what cleaned it
 }
 
 export interface UploadFileParams {
@@ -46,11 +49,13 @@ export interface UploadFileParams {
   tags?: string[];
   contentSummary?: string;
   insightType?: 'Brand' | 'Category' | 'General';
-  inputMethod?: 'Text' | 'Voice' | 'Photo' | 'Video' | 'File';
+  inputMethod?: 'Text' | 'Voice' | 'Photo' | 'Video' | 'File' | 'Interview';
   iterationType?: 'iteration' | 'summary';
   includedHexes?: string[];
   userEmail: string;
   userRole: string;
+  cleaningStatus?: 'uncleaned' | 'cleaned'; // NEW: Allow marking as uncleaned
+  allowUncleaned?: boolean; // NEW: Flag to allow saving without brand/project
 }
 
 export interface ListFilesParams {
@@ -134,6 +139,8 @@ export async function uploadToKnowledgeBase(params: UploadFileParams): Promise<{
         includedHexes: params.includedHexes,
         userEmail: params.userEmail,
         userRole: params.userRole,
+        cleaningStatus: params.cleaningStatus,
+        allowUncleaned: params.allowUncleaned,
         ...auth,
       }),
     });
@@ -447,3 +454,88 @@ export const KNOWLEDGE_BASE_CATEGORIES = [
 ] as const;
 
 export type KnowledgeBaseCategory = typeof KNOWLEDGE_BASE_CATEGORIES[number];
+
+/**
+ * Upload uncleaned data to the Knowledge Base
+ * This allows saving content without brand/project type for AI processing later
+ */
+export async function uploadUncleanedToKnowledgeBase(params: {
+  file: File;
+  fileType: 'Synthesis' | 'Wisdom' | 'Findings' | 'Research' | 'Persona';
+  tags?: string[];
+  contentSummary?: string;
+  insightType?: 'Brand' | 'Category' | 'General';
+  inputMethod?: 'Text' | 'Voice' | 'Photo' | 'Video' | 'File' | 'Interview';
+  userEmail: string;
+  userRole: string;
+  scope?: 'general' | 'category' | 'brand'; // Defaults to 'general'
+}): Promise<{ 
+  success: boolean; 
+  fileId?: string;
+  filePath?: string;
+  error?: string;
+}> {
+  try {
+    console.log('📤 Uploading UNCLEANED data to Knowledge Base:', params.file.name);
+    
+    const auth = await getAuthData();
+    
+    // Convert file to base64
+    const fileContent = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        resolve(base64.split(',')[1]); // Remove data:... prefix
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(params.file);
+    });
+
+    const response = await fetch('/api/databricks/knowledge-base/upload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        fileName: params.file.name,
+        fileContent,
+        fileSize: params.file.size,
+        scope: params.scope || 'general', // Default to general scope
+        category: undefined, // No category for uncleaned
+        brand: undefined, // No brand for uncleaned
+        projectType: undefined, // No project type for uncleaned
+        fileType: params.fileType,
+        tags: [...(params.tags || []), 'Uncleaned', 'Needs-AI-Processing'],
+        contentSummary: params.contentSummary,
+        insightType: params.insightType,
+        inputMethod: params.inputMethod,
+        userEmail: params.userEmail,
+        userRole: params.userRole,
+        cleaningStatus: 'uncleaned', // Mark as uncleaned
+        allowUncleaned: true, // Allow upload without brand/project
+        ...auth,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ Uncleaned data uploaded successfully:', result.fileId);
+    
+    return { 
+      success: true, 
+      fileId: result.fileId,
+      filePath: result.filePath,
+    };
+    
+  } catch (error) {
+    console.error('❌ Uncleaned upload error:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Upload failed' 
+    };
+  }
+}

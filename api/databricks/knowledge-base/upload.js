@@ -30,6 +30,10 @@ export default async function handler(req, res) {
       insightType,
       inputMethod,
       
+      // NEW: Cleaning status
+      cleaningStatus = 'cleaned',   // Default to 'cleaned' for backward compatibility
+      allowUncleaned = false,       // Allow saving without brand/project
+      
       // User info
       userEmail,
       userRole,
@@ -52,11 +56,14 @@ export default async function handler(req, res) {
     }
 
     // Validate scope-specific requirements
-    if (scope === 'category' && !category) {
-      return res.status(400).json({ error: 'Category required for category scope' });
-    }
-    if (scope === 'brand' && (!brand || !category)) {
-      return res.status(400).json({ error: 'Brand and category required for brand scope' });
+    // Skip validation if allowUncleaned is true
+    if (!allowUncleaned) {
+      if (scope === 'category' && !category) {
+        return res.status(400).json({ error: 'Category required for category scope' });
+      }
+      if (scope === 'brand' && (!brand || !category)) {
+        return res.status(400).json({ error: 'Brand and category required for brand scope' });
+      }
     }
 
     // Generate unique file ID
@@ -67,26 +74,32 @@ export default async function handler(req, res) {
     const baseVolumePath = '/Volumes/knowledge_base/cohive/files';
     const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
     
-    switch (scope) {
-      case 'general':
-        filePath = `${baseVolumePath}/general/${sanitizedFileName}`;
-        break;
-      case 'category':
-        const catFolder = category.toLowerCase().replace(/\s+/g, '-');
-        filePath = `${baseVolumePath}/category/${catFolder}/${sanitizedFileName}`;
-        break;
-      case 'brand':
-        const brandFolder = brand.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-        filePath = `${baseVolumePath}/brand/${brandFolder}/${sanitizedFileName}`;
-        break;
-      default:
-        return res.status(400).json({ error: 'Invalid scope' });
+    // For uncleaned data, use a special 'uncleaned' folder
+    if (cleaningStatus === 'uncleaned') {
+      filePath = `${baseVolumePath}/uncleaned/${sanitizedFileName}`;
+    } else {
+      switch (scope) {
+        case 'general':
+          filePath = `${baseVolumePath}/general/${sanitizedFileName}`;
+          break;
+        case 'category':
+          const catFolder = category ? category.toLowerCase().replace(/\s+/g, '-') : 'unknown';
+          filePath = `${baseVolumePath}/category/${catFolder}/${sanitizedFileName}`;
+          break;
+        case 'brand':
+          const brandFolder = brand ? brand.toLowerCase().replace(/[^a-z0-9-]/g, '-') : 'unknown';
+          filePath = `${baseVolumePath}/brand/${brandFolder}/${sanitizedFileName}`;
+          break;
+        default:
+          return res.status(400).json({ error: 'Invalid scope' });
+      }
     }
 
     // Log the upload action (audit trail)
     console.log(`[KB Upload] User: ${userEmail} (${userRole})`);
     console.log(`[KB Upload] File: ${fileName} (${fileSize} bytes)`);
-    console.log(`[KB Upload] Scope: ${scope}, Category: ${category || 'N/A'}, Brand: ${brand || 'N/A'}`);
+    console.log(`[KB Upload] Scope: ${scope}, Category: ${category || 'N/A'}, Brand: ${brand || 'N/A'}`);;
+    console.log(`[KB Upload] Cleaning Status: ${cleaningStatus}`);
     console.log(`[KB Upload] Path: ${filePath}`);
 
     // Step 1: Upload file to Unity Catalog Volume using Databricks Files API
@@ -115,6 +128,12 @@ export default async function handler(req, res) {
     
     // Prepare SQL insert statement
     const tagsArray = tags.length > 0 ? `ARRAY(${tags.map(t => `'${t.replace(/'/g, "''")}'`).join(', ')})` : 'ARRAY()';
+    
+    // Add 'Uncleaned' tag if cleaningStatus is 'uncleaned'
+    const finalTags = cleaningStatus === 'uncleaned' 
+      ? (tags.length > 0 ? [...tags, 'Uncleaned'] : ['Uncleaned'])
+      : tags;
+    const finalTagsArray = finalTags.length > 0 ? `ARRAY(${finalTags.map(t => `'${t.replace(/'/g, "''")}'`).join(', ')})` : 'ARRAY()';
     
     const insertSQL = `
       INSERT INTO knowledge_base.cohive.file_metadata (
@@ -150,7 +169,7 @@ export default async function handler(req, res) {
         FALSE,
         CURRENT_TIMESTAMP(),
         '${userEmail.replace(/'/g, "''")}',
-        ${tagsArray},
+        ${finalTagsArray},
         0,
         0,
         ${fileSize},

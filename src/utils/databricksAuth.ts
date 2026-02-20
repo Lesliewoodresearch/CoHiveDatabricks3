@@ -223,6 +223,7 @@ export function clearSession(): void {
   sessionStorage.removeItem('oauth_state');
   sessionStorage.removeItem('oauth_workspace_host');
   sessionStorage.removeItem('oauth_return_step');
+  sessionStorage.removeItem('oauth_return_path');
 }
 
 /**
@@ -250,6 +251,9 @@ export function initiateLogin(workspaceHost: string, returnToStep?: string): voi
   if (returnToStep) {
     sessionStorage.setItem('oauth_return_step', returnToStep);
   }
+  
+  // Store that we're on the app/hex page (not landing page)
+  sessionStorage.setItem('oauth_return_path', '/');
   
   const authUrl = getAuthorizationUrl(workspaceHost);
   window.location.href = authUrl;
