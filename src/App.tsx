@@ -9,11 +9,14 @@ import gemIcon from "figma:asset/53dc6cf554f69e479cfbd60a46741f158d11dd21.png";
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     // Check if user previously logged in (stored in localStorage)
-    return localStorage.getItem('cohive_logged_in') === 'true';
+    const loggedIn = localStorage.getItem('cohive_logged_in') === 'true';
+    console.log('🔍 App.tsx - isLoggedIn check:', loggedIn);
+    return loggedIn;
   });
 
   // Set favicon to the gem icon
   useEffect(() => {
+    console.log('🔍 App.tsx - AppContent mounted');
     const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
     link.type = 'image/png';
     link.rel = 'icon';
@@ -22,14 +25,19 @@ function AppContent() {
   }, []);
 
   const handleLogin = () => {
+    console.log('🔍 App.tsx - handleLogin called');
     setIsLoggedIn(true);
     localStorage.setItem('cohive_logged_in', 'true');
   };
 
+  console.log('🔍 App.tsx - Rendering, isLoggedIn:', isLoggedIn);
+
   if (!isLoggedIn) {
+    console.log('🔍 App.tsx - Rendering Login component');
     return <Login onLogin={handleLogin} />;
   }
 
+  console.log('🔍 App.tsx - Rendering ProcessWireframe');
   return (
     <div className="min-h-screen bg-white">
       <ProcessWireframe />
@@ -61,6 +69,8 @@ function OAuthCallbackWrapper() {
 }
 
 export default function App() {
+  console.log('🔍 App.tsx - App component rendering');
+  
   return (
     <BrowserRouter>
       <Routes>

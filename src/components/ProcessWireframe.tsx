@@ -216,6 +216,8 @@ const stepContent: StepContent[] = [
 ];
 
 export default function ProcessWireframe() {
+  console.log('🔍 ProcessWireframe - Component function called');
+  
   const [activeStepId, setActiveStepId] = useState<string>('Enter');
   const [responses, setResponses] = useState<StepResponses>({});
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
@@ -655,6 +657,7 @@ export default function ProcessWireframe() {
   // Check Databricks authentication on mount and handle OAuth callback
   useEffect(() => {
     const checkAuthAndHandleCallback = async () => {
+      console.log('🔍 ProcessWireframe - checkAuthAndHandleCallback starting');
       setIsCheckingAuth(true);
       
       try {
@@ -662,6 +665,8 @@ export default function ProcessWireframe() {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const state = urlParams.get('state');
+        
+        console.log('🔍 ProcessWireframe - OAuth params:', { code: !!code, state: !!state });
         
         if (code && state) {
           // OAuth callback is now handled by /oauth/callback route
@@ -686,6 +691,7 @@ export default function ProcessWireframe() {
         console.error('Error checking authentication:', error);
         setIsDatabricksAuthenticated(false);
       } finally {
+        console.log('🔍 ProcessWireframe - checkAuthAndHandleCallback finished, setting isCheckingAuth to false');
         setIsCheckingAuth(false);
       }
     };
@@ -1488,6 +1494,8 @@ export default function ProcessWireframe() {
     
     alert('Project has been restarted. All data has been cleared.');
   };
+
+  console.log('🔍 ProcessWireframe - About to return JSX, isCheckingAuth:', isCheckingAuth);
 
   return (
     <div className="p-8">
