@@ -3,12 +3,7 @@
  * Proxy for reading file content from Databricks workspace, DBFS, or volumes
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
+export default async function handler(req, res) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -27,7 +22,7 @@ export default async function handler(
     let content = '';
     let endpoint = '';
     let method = 'GET';
-    let body: any = undefined;
+    let body = undefined;
 
     // Determine the correct Databricks API endpoint based on path type
     if (path.startsWith('/Workspace')) {

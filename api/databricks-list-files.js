@@ -3,12 +3,7 @@
  * Proxy for listing files from Databricks workspace, DBFS, or volumes
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
+export default async function handler(req, res) {
   // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -24,8 +19,8 @@ export default async function handler(
       });
     }
 
-    const filePath = (path as string) || '/Workspace/Shared';
-    const fileTypeList = fileTypes ? (fileTypes as string).split(',') : [];
+    const filePath = path || '/Workspace/Shared';
+    const fileTypeList = fileTypes ? fileTypes.split(',') : [];
 
     let endpoint = '';
     
@@ -79,8 +74,8 @@ export default async function handler(
   }
 }
 
-function processFiles(data: any, path: string, fileTypes: string[]): any[] {
-  const files: any[] = [];
+function processFiles(data, path, fileTypes) {
+  const files = [];
 
   if (path.startsWith('/Workspace')) {
     // Process workspace files
