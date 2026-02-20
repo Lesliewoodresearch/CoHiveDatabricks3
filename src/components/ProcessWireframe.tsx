@@ -2992,13 +2992,6 @@ export default function ProcessWireframe() {
                                   {!hasResponse ? (
                                     <button
                                       onClick={() => {
-                                        // Check authentication
-                                        if (!isDatabricksAuthenticated) {
-                                          alert('⚠️ Please sign in to Databricks before starting an interview.\n\nClick the "Sign In" button in the header to authenticate.');
-                                          setShowLoginModal(true);
-                                          return;
-                                        }
-
                                         // Set interview context
                                         setInterviewContext({
                                           insightType: insightType as 'Brand' | 'Category' | 'General',
@@ -3006,7 +2999,7 @@ export default function ProcessWireframe() {
                                           projectType: projectType || undefined
                                         });
                                         
-                                        // Open interview dialog
+                                        // Open interview dialog (it will handle auth internally)
                                         setShowInterviewDialog(true);
                                       }}
                                       className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 flex items-center gap-2"
