@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
   # CoHiveToDatabricks3
 
@@ -9,3 +10,6 @@
 
   Run `npm run dev` to start the development server.
   
+=======
+# CoHiveDatabricks
+>>>>>>> 74d67aae2315ef7ec6face01f63c92f99f728133

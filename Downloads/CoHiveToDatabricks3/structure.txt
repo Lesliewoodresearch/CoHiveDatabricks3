@@ -1,0 +1,187 @@
+.
+├── src
+│   ├── api
+│   │   ├── databricks
+│   │   │   ├── ai
+│   │   │   │   ├── agent.js
+│   │   │   │   └── prompt.js
+│   │   │   ├── knowledge-base
+│   │   │   │   ├── approve.js
+│   │   │   │   ├── delete.js
+│   │   │   │   ├── list.js
+│   │   │   │   ├── update.js
+│   │   │   │   └── upload.js
+│   │   │   ├── auth.js
+│   │   │   ├── files.js
+│   │   │   └── upload-to-databricks.js
+│   │   ├── databricks_files.py
+│   │   ├── databricks-execute.ts
+│   │   ├── databricks-list-files.ts
+│   │   ├── databricks-read-file.ts
+│   │   └── health.ts
+│   ├── assets
+│   │   ├── 11e423d80e5ce28fde4173da3dcb80d9f7d0c8fe.png
+│   │   ├── 53dc6cf554f69e479cfbd60a46741f158d11dd21.png
+│   │   └── 88105c0c8621f3d41d65e5be3ae75558f9de1753.png
+│   ├── components
+│   │   ├── figma
+│   │   │   └── ImageWithFallback.tsx
+│   │   ├── ui
+│   │   │   ├── accordion.tsx
+│   │   │   ├── alert-dialog.tsx
+│   │   │   ├── alert.tsx
+│   │   │   ├── aspect-ratio.tsx
+│   │   │   ├── avatar.tsx
+│   │   │   ├── badge.tsx
+│   │   │   ├── breadcrumb.tsx
+│   │   │   ├── button.tsx
+│   │   │   ├── calendar.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── carousel.tsx
+│   │   │   ├── chart.tsx
+│   │   │   ├── checkbox.tsx
+│   │   │   ├── collapsible.tsx
+│   │   │   ├── command.tsx
+│   │   │   ├── context-menu.tsx
+│   │   │   ├── dialog.tsx
+│   │   │   ├── drawer.tsx
+│   │   │   ├── dropdown-menu.tsx
+│   │   │   ├── form.tsx
+│   │   │   ├── hover-card.tsx
+│   │   │   ├── input-otp.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── label.tsx
+│   │   │   ├── menubar.tsx
+│   │   │   ├── navigation-menu.tsx
+│   │   │   ├── pagination.tsx
+│   │   │   ├── popover.tsx
+│   │   │   ├── progress.tsx
+│   │   │   ├── radio-group.tsx
+│   │   │   ├── resizable.tsx
+│   │   │   ├── scroll-area.tsx
+│   │   │   ├── select.tsx
+│   │   │   ├── separator.tsx
+│   │   │   ├── sheet.tsx
+│   │   │   ├── sidebar.tsx
+│   │   │   ├── skeleton.tsx
+│   │   │   ├── slider.tsx
+│   │   │   ├── sonner.tsx
+│   │   │   ├── switch.tsx
+│   │   │   ├── table.tsx
+│   │   │   ├── tabs.tsx
+│   │   │   ├── textarea.tsx
+│   │   │   ├── toggle-group.tsx
+│   │   │   ├── toggle.tsx
+│   │   │   ├── tooltip.tsx
+│   │   │   ├── use-mobile.ts
+│   │   │   └── utils.ts
+│   │   ├── CentralHexView.tsx
+│   │   ├── ColorPaletteQuickRef.tsx
+│   │   ├── DatabricksAuthPrompt.tsx
+│   │   ├── DatabricksFileBrowser.tsx
+│   │   ├── DatabricksFileSaver.tsx
+│   │   ├── DatabricksOAuthLogin.tsx
+│   │   ├── DesignSystemGuide.tsx
+│   │   ├── HexagonBreadcrumb.tsx
+│   │   ├── Login.tsx
+│   │   ├── OAuthCallback.tsx
+│   │   ├── ProcessFlow.tsx
+│   │   ├── ProcessWireframe.tsx
+│   │   ├── ResearcherModes.tsx
+│   │   ├── ResearchView.tsx
+│   │   ├── ReviewView.tsx
+│   │   └── TemplateManager.tsx
+│   ├── data
+│   │   ├── agent-content
+│   │   │   ├── _TEMPLATE.json
+│   │   │   ├── analyst-competitive.json
+│   │   │   ├── README.md
+│   │   │   └── strategist-brand.json
+│   │   ├── persona-content
+│   │   │   ├── _TEMPLATE.json
+│   │   │   ├── consumers-b2c-impulse.json
+│   │   │   ├── luminaries-tech-cto.json
+│   │   │   ├── panelist-millennial-parent.json
+│   │   │   └── README.md
+│   │   ├── prompt-content
+│   │   │   ├── _TEMPLATE.json
+│   │   │   ├── element-brand-context.json
+│   │   │   ├── launch-discovery.json
+│   │   │   └── README.md
+│   │   ├── prompts
+│   │   │   ├── templates
+│   │   │   │   ├── action.ts
+│   │   │   │   ├── buyers.ts
+│   │   │   │   ├── colleagues.ts
+│   │   │   │   ├── competitors.ts
+│   │   │   │   ├── external-experts.ts
+│   │   │   │   ├── knowledge-base.ts
+│   │   │   │   ├── launch.ts
+│   │   │   │   ├── panel-homes.ts
+│   │   │   │   └── test-against-segments.ts
+│   │   │   ├── base-parts.ts
+│   │   │   ├── core.ts
+│   │   │   ├── examples.ts
+│   │   │   ├── index.ts
+│   │   │   ├── INTEGRATION_EXAMPLES.md
+│   │   │   ├── prompt-manager.ts
+│   │   │   ├── README.md
+│   │   │   ├── template-engine.ts
+│   │   │   └── types.ts
+│   │   └── personas.ts
+│   ├── docs
+│   │   ├── API_DOCUMENTATION.md
+│   │   ├── Attributions.md
+│   │   ├── DATABRICKS_API_MIGRATION_INSTRUCTIONS.md
+│   │   ├── DATABRICKS_KNOWLEDGE_BASE_INTEGRATION.md
+│   │   ├── DATABRICKS_SETUP.md
+│   │   ├── DATABRICKS_UPLOAD_STRUCTURE_UPDATE.md
+│   │   ├── Guidelines.md
+│   │   ├── IDEAS_FILE_DOCUMENTATION.md
+│   │   ├── IDEAS_FILE_FIX_SUMMARY.md
+│   │   ├── INSTALLATION.md
+│   │   ├── KNOWLEDGE_BASE_METADATA_TRACKING.md
+│   │   ├── KNOWLEDGE_BASE_READ_FILES_UPDATE.md
+│   │   ├── PROTECTED_FILES.md
+│   │   ├── README.md
+│   │   ├── UPLOAD_TO_DATABRICKS_FEATURE.md
+│   │   ├── VERCEL_DEPLOYMENT.md
+│   │   ├── WISDOM_FILE_UPLOAD_FEATURE.md
+│   │   ├── WISDOM_HEX_DOCUMENTATION.md
+│   │   ├── WISDOM_HEX_IMPLEMENTATION_SUMMARY.md
+│   │   ├── WISDOM_HEX_SSR_FIX.md
+│   │   └── WISDOM_NATIVE_CAPTURE_UPDATE.md
+│   ├── guidelines
+│   │   └── Guidelines.md
+│   ├── hooks
+│   │   └── use-mobile.ts
+│   ├── styles
+│   │   ├── cohive-theme.ts
+│   │   ├── globals.css
+│   │   └── index.css
+│   ├── utils
+│   │   ├── databricksAI.ts
+│   │   ├── databricksAPI.ts
+│   │   ├── databricksAuth.ts
+│   │   ├── databricksClient.ts
+│   │   └── safeFetch.ts
+│   ├── App.tsx
+│   ├── App.tsx.backup.tsx
+│   ├── index.css
+│   ├── index.html
+│   ├── main.tsx
+│   ├── main.tsx.backup.tsx
+│   ├── package.json
+│   └── vercel.json.backup.json
+├── fix-react-router-imports.js
+├── fix-react-router-imports.sh
+├── FIX-REACT-ROUTER-README.md
+├── index.html
+├── index.html.backup.html
+├── package.json
+├── package.json.backup.json
+├── README.md
+├── structure.txt
+└── vite.config.ts
+
+21 directories, 164 files
