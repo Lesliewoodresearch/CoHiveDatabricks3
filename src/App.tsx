@@ -51,7 +51,8 @@ function OAuthCallbackWrapper() {
       }}
       onError={(error) => {
         console.error('❌ OAuth error:', error);
-        alert(`Authentication failed: ${error.message}. Please try again.`);
+        const errorMsg = typeof error === 'string' ? error : (error instanceof Error ? error.message : 'Unknown error');
+        alert(`Authentication failed: ${errorMsg}. Please try again.`);
         // Return to app, not landing page
         navigate('/');
       }}

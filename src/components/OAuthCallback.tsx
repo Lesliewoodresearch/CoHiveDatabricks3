@@ -38,10 +38,15 @@ export function OAuthCallback({ onSuccess, onError }: OAuthCallbackProps) {
         throw new Error('Failed to create session');
       }
     } catch (error) {
+      console.error('Full OAuth error:', error);
       setStatus('error');
       const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
       setMessage(errorMessage);
-      onError(errorMessage);
+      
+      // Wait before calling onError to show the error message
+      setTimeout(() => {
+        onError(errorMessage);
+      }, 3000);
     }
   };
 

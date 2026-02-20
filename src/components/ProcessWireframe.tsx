@@ -664,42 +664,23 @@ export default function ProcessWireframe() {
         const state = urlParams.get('state');
         
         if (code && state) {
-          // Handle OAuth callback
-          console.log('Detected OAuth callback, processing...');
-          const { handleOAuthCallback } = await import('../utils/databricksAuth.ts');
-          
-          try {
-            const session = await handleOAuthCallback();
-            console.log('OAuth callback handled successfully, session created:', !!session);
-            
-            // Get the step we should return to
-            const returnStep = sessionStorage.getItem('oauth_return_step');
-            if (returnStep) {
-              setActiveStepId(returnStep);
-              sessionStorage.removeItem('oauth_return_step');
-            }
-            
-            // Clean up URL parameters
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, document.title, newUrl);
-            
-            // Verify the session was actually saved by checking isAuthenticated
-            const isAuth = isAuthenticated();
-            console.log('Verifying authentication after OAuth:', isAuth);
-            setIsDatabricksAuthenticated(isAuth);
-            
-            if (!isAuth) {
-              console.error('OAuth completed but authentication check failed');
-            }
-          } catch (error) {
-            console.error('OAuth callback failed:', error);
-            setIsDatabricksAuthenticated(false);
-          }
-        } else {
-          // Normal auth check (no OAuth callback)
-          const authenticated = isAuthenticated();
-          console.log('Standard auth check on mount:', authenticated);
-          setIsDatabricksAuthenticated(authenticated);
+          // OAuth callback is now handled by /oauth/callback route
+          // This should not happen here anymore, but just in case:
+          console.log('OAuth params detected in ProcessWireframe - redirecting to /oauth/callback');
+          window.location.href = '/oauth/callback' + window.location.search;
+          return;
+        }
+        
+        // Normal auth check (no OAuth callback)
+        const authenticated = isAuthenticated();
+        console.log('Standard auth check on mount:', authenticated);
+        setIsDatabricksAuthenticated(authenticated);
+        
+        // Restore the step we should be on if returning from OAuth
+        const returnStep = sessionStorage.getItem('oauth_return_step');
+        if (returnStep && authenticated) {
+          setActiveStepId(returnStep);
+          sessionStorage.removeItem('oauth_return_step');
         }
       } catch (error) {
         console.error('Error checking authentication:', error);
@@ -1510,6 +1491,16 @@ export default function ProcessWireframe() {
 
   return (
     <div className="p-8">
+      {/* Auth checking loading state */}
+      {isCheckingAuth && (
+        <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+          <div className="text-center">
+            <Cpu className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+            <p className="text-gray-700">Loading CoHive...</p>
+          </div>
+        </div>
+      )}
+
       {/* Top Section: Hex Box on Left, Content Area on Right */}
       <div className="flex gap-6 mb-6">
         {/* Left Side: Hexagonal Breadcrumb Navigation */}
