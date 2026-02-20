@@ -18,7 +18,8 @@ import {
   AlertCircle,
   LogIn,
   LogOut,
-  Settings
+  Settings,
+  BookOpen
 } from 'lucide-react@0.487.0';
 import { 
   listDatabricksFiles, 
@@ -29,6 +30,11 @@ import {
   RESEARCH_FILE_TYPES,
   type DatabricksFile 
 } from '../utils/databricksClient';
+import { 
+  listKnowledgeBaseFiles, 
+  downloadKnowledgeBaseFile,
+  type KnowledgeBaseFile 
+} from '../utils/databricksAPI';
 import { logout, getWorkspaceHost } from '../utils/databricksAuth';
 import { DatabricksOAuthLogin } from './DatabricksOAuthLogin';
 import { colors, spacing } from '../styles/cohive-theme';
@@ -42,6 +48,8 @@ interface DatabricksFileBrowserProps {
 export function DatabricksFileBrowser({ open, onClose, onFilesSelected }: DatabricksFileBrowserProps) {
   const [currentPath, setCurrentPath] = useState(DATABRICKS_PATHS.workspace);
   const [files, setFiles] = useState<DatabricksFile[]>([]);
+  const [knowledgeBaseFiles, setKnowledgeBaseFiles] = useState<KnowledgeBaseFile[]>([]);
+  const [viewMode, setViewMode] = useState<'filesystem' | 'knowledge-base'>('knowledge-base');
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,12 +77,16 @@ export function DatabricksFileBrowser({ open, onClose, onFilesSelected }: Databr
     }
   }, [open]);
 
-  // Load files when path changes
+  // Load files when view mode or path changes
   useEffect(() => {
     if (open && isHealthy) {
-      loadFiles();
+      if (viewMode === 'knowledge-base') {
+        loadKnowledgeBaseFiles();
+      } else {
+        loadFilesystemFiles();
+      }
     }
-  }, [currentPath, open, isHealthy]);
+  }, [currentPath, viewMode, open, isHealthy]);
 
   const checkHealth = async () => {
     try {
@@ -90,7 +102,7 @@ export function DatabricksFileBrowser({ open, onClose, onFilesSelected }: Databr
     }
   };
 
-  const loadFiles = async () => {
+  const loadFilesystemFiles = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -99,6 +111,27 @@ export function DatabricksFileBrowser({ open, onClose, onFilesSelected }: Databr
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load files');
       setFiles([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadKnowledgeBaseFiles = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log('Loading Knowledge Base files...');
+      const kbFiles = await listKnowledgeBaseFiles({
+        isApproved: true, // Only load approved files by default
+        sortBy: 'upload_date',
+        sortOrder: 'DESC',
+      });
+      console.log(`Loaded ${kbFiles.length} Knowledge Base files`);
+      setKnowledgeBaseFiles(kbFiles);
+    } catch (err) {
+      console.error('Failed to load Knowledge Base files:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load Knowledge Base files');
+      setKnowledgeBaseFiles([]);
     } finally {
       setLoading(false);
     }
@@ -123,17 +156,38 @@ export function DatabricksFileBrowser({ open, onClose, onFilesSelected }: Databr
     try {
       const importedFiles = [];
       
-      for (const filePath of selectedFiles) {
-        try {
-          const fileData = await readDatabricksFile(filePath, 'text');
-          importedFiles.push({
-            name: fileData.name,
-            content: fileData.content,
-            source: `Databricks: ${filePath}`
-          });
-        } catch (err) {
-          console.error(`Failed to read file ${filePath}:`, err);
-          // Continue with other files
+      if (viewMode === 'knowledge-base') {
+        // Import from Knowledge Base
+        for (const fileId of selectedFiles) {
+          try {
+            const kbFile = knowledgeBaseFiles.find(f => f.fileId === fileId);
+            if (kbFile) {
+              const result = await downloadKnowledgeBaseFile(kbFile.fileId, kbFile.fileName);
+              if (result.success) {
+                importedFiles.push({
+                  name: kbFile.fileName,
+                  content: '', // Content is downloaded directly by downloadKnowledgeBaseFile
+                  source: `Knowledge Base: ${kbFile.fileType} - ${kbFile.fileName}`
+                });
+              }
+            }
+          } catch (err) {
+            console.error(`Failed to download Knowledge Base file:`, err);
+          }
+        }
+      } else {
+        // Import from filesystem
+        for (const filePath of selectedFiles) {
+          try {
+            const fileData = await readDatabricksFile(filePath, 'text');
+            importedFiles.push({
+              name: fileData.name,
+              content: fileData.content,
+              source: `Databricks: ${filePath}`
+            });
+          } catch (err) {
+            console.error(`Failed to read file ${filePath}:`, err);
+          }
         }
       }
 
@@ -151,8 +205,14 @@ export function DatabricksFileBrowser({ open, onClose, onFilesSelected }: Databr
     }
   };
 
-  const filteredFiles = files.filter(file =>
+  const filteredFilesystemFiles = files.filter(file =>
     file.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredKnowledgeBaseFiles = knowledgeBaseFiles.filter(file =>
+    file.fileName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    file.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    file.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const formatFileSize = (bytes?: number) => {
@@ -182,6 +242,11 @@ export function DatabricksFileBrowser({ open, onClose, onFilesSelected }: Databr
     setIsHealthy(false);
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
   return (
     <>
       <DatabricksOAuthLogin
@@ -202,65 +267,120 @@ export function DatabricksFileBrowser({ open, onClose, onFilesSelected }: Databr
               Import from Databricks
             </DialogTitle>
             <DialogDescription style={{ color: colors.text.secondary }}>
-              Select research files from your Databricks workspace, volumes, or DBFS
+              {viewMode === 'knowledge-base' 
+                ? 'Select files from the Knowledge Base (Wisdom, Research, Synthesis, Findings)'
+                : 'Select research files from your Databricks workspace, volumes, or DBFS'
+              }
             </DialogDescription>
           </DialogHeader>
 
-          {/* Location Selector */}
-          <div className="flex gap-2 mb-4">
+          {/* View Mode Selector */}
+          <div className="flex gap-2 mb-4 pb-4 border-b" style={{ borderColor: colors.border.light }}>
             <Button
-              variant={currentPath.startsWith('/Workspace') ? 'default' : 'outline'}
+              variant={viewMode === 'knowledge-base' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setCurrentPath(DATABRICKS_PATHS.workspace)}
+              onClick={() => {
+                setViewMode('knowledge-base');
+                setSelectedFiles(new Set());
+              }}
               className="gap-2"
-              style={currentPath.startsWith('/Workspace') ? { backgroundColor: colors.hex.purple.light } : {}}
+              style={viewMode === 'knowledge-base' ? { backgroundColor: colors.hex.purple.light } : {}}
             >
-              <FolderOpen className="h-4 w-4" />
-              Workspace
+              <BookOpen className="h-4 w-4" />
+              Knowledge Base
             </Button>
             <Button
-              variant={currentPath.startsWith('/Volumes') ? 'default' : 'outline'}
+              variant={viewMode === 'filesystem' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setCurrentPath(DATABRICKS_PATHS.volumes)}
+              onClick={() => {
+                setViewMode('filesystem');
+                setSelectedFiles(new Set());
+              }}
               className="gap-2"
-              style={currentPath.startsWith('/Volumes') ? { backgroundColor: colors.hex.purple.light } : {}}
+              style={viewMode === 'filesystem' ? { backgroundColor: colors.hex.purple.light } : {}}
             >
               <Database className="h-4 w-4" />
-              Volumes
-            </Button>
-            <Button
-              variant={currentPath.startsWith('dbfs:') ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setCurrentPath(DATABRICKS_PATHS.dbfs)}
-              className="gap-2"
-              style={currentPath.startsWith('dbfs:') ? { backgroundColor: colors.hex.purple.light } : {}}
-            >
-              <HardDrive className="h-4 w-4" />
-              DBFS
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={loadFiles}
-              disabled={loading}
-              className="ml-auto gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+              File System
             </Button>
           </div>
 
+          {/* Location Selector (only for filesystem mode) */}
+          {viewMode === 'filesystem' && (
+            <div className="flex gap-2 mb-4">
+              <Button
+                variant={currentPath.startsWith('/Workspace') ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrentPath(DATABRICKS_PATHS.workspace)}
+                className="gap-2"
+                style={currentPath.startsWith('/Workspace') ? { backgroundColor: colors.hex.purple.light } : {}}
+              >
+                <FolderOpen className="h-4 w-4" />
+                Workspace
+              </Button>
+              <Button
+                variant={currentPath.startsWith('/Volumes') ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrentPath(DATABRICKS_PATHS.volumes)}
+                className="gap-2"
+                style={currentPath.startsWith('/Volumes') ? { backgroundColor: colors.hex.purple.light } : {}}
+              >
+                <Database className="h-4 w-4" />
+                Volumes
+              </Button>
+              <Button
+                variant={currentPath.startsWith('dbfs:') ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrentPath(DATABRICKS_PATHS.dbfs)}
+                className="gap-2"
+                style={currentPath.startsWith('dbfs:') ? { backgroundColor: colors.hex.purple.light } : {}}
+              >
+                <HardDrive className="h-4 w-4" />
+                DBFS
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadFilesystemFiles}
+                disabled={loading}
+                className="ml-auto gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
+          )}
+
+          {viewMode === 'knowledge-base' && (
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm" style={{ color: colors.text.secondary }}>
+                📚 Showing approved files from Knowledge Base
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadKnowledgeBaseFiles}
+                disabled={loading}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
+          )}
+
           {/* Current Path & Search */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
-              <FolderIcon className="h-4 w-4" />
-              <span className="font-mono">{currentPath}</span>
-            </div>
+            {viewMode === 'filesystem' && (
+              <div className="flex items-center gap-2 text-sm" style={{ color: colors.text.secondary }}>
+                <FolderIcon className="h-4 w-4" />
+                <span className="font-mono">{currentPath}</span>
+              </div>
+            )}
 
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: colors.text.secondary }} />
               <Input
-                placeholder="Search files..."
+                placeholder={viewMode === 'knowledge-base' ? "Search by filename, brand, or category..." : "Search files..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -295,60 +415,122 @@ export function DatabricksFileBrowser({ open, onClose, onFilesSelected }: Databr
               <div className="flex items-center justify-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin" style={{ color: colors.hex.purple.light }} />
               </div>
-            ) : filteredFiles.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 gap-3">
-                <FileIcon className="h-12 w-12" style={{ color: colors.text.tertiary }} />
-                <p className="text-sm" style={{ color: colors.text.secondary }}>
-                  {searchTerm ? 'No files match your search' : 'No files found in this location'}
-                </p>
-              </div>
-            ) : (
-              <div className="p-4 space-y-2">
-                {filteredFiles.map((file) => {
-                  const isSelected = selectedFiles.has(file.path);
-                  return (
-                    <div
-                      key={file.path}
-                      onClick={() => toggleFileSelection(file.path)}
-                      className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md"
-                      style={{
-                        borderColor: isSelected ? colors.hex.purple.light : colors.border.light,
-                        backgroundColor: isSelected ? colors.background.tertiary : colors.background.secondary
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleFileSelection(file.path)}
-                        className="h-4 w-4 rounded"
-                        style={{ accentColor: colors.hex.purple.light }}
-                      />
-                      
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <FileIcon className="h-5 w-5 flex-shrink-0" style={{ color: colors.hex.purple.light }} />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate" style={{ color: colors.text.primary }}>
-                            {file.name}
-                          </p>
-                          <p className="text-xs truncate" style={{ color: colors.text.secondary }}>
-                            {file.path}
-                          </p>
+            ) : viewMode === 'knowledge-base' ? (
+              // Knowledge Base Files
+              filteredKnowledgeBaseFiles.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 gap-3">
+                  <BookOpen className="h-12 w-12" style={{ color: colors.text.tertiary }} />
+                  <p className="text-sm" style={{ color: colors.text.secondary }}>
+                    {searchTerm ? 'No files match your search' : 'No files found in Knowledge Base'}
+                  </p>
+                </div>
+              ) : (
+                <div className="p-4 space-y-2">
+                  {filteredKnowledgeBaseFiles.map((file) => {
+                    const isSelected = selectedFiles.has(file.fileId);
+                    return (
+                      <div
+                        key={file.fileId}
+                        onClick={() => toggleFileSelection(file.fileId)}
+                        className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md"
+                        style={{
+                          borderColor: isSelected ? colors.hex.purple.light : colors.border.light,
+                          backgroundColor: isSelected ? colors.background.tertiary : colors.background.secondary
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleFileSelection(file.fileId)}
+                          className="h-4 w-4 rounded"
+                          style={{ accentColor: colors.hex.purple.light }}
+                        />
+                        
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <FileIcon className="h-5 w-5 flex-shrink-0" style={{ color: colors.hex.purple.light }} />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate" style={{ color: colors.text.primary }}>
+                              {file.fileName}
+                            </p>
+                            <div className="flex items-center gap-2 text-xs" style={{ color: colors.text.secondary }}>
+                              <span>{file.fileType}</span>
+                              {file.brand && <span>• {file.brand}</span>}
+                              {file.category && <span>• {file.category}</span>}
+                              <span>• {formatDate(file.uploadDate)}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <Badge variant="outline" className="gap-1">
+                            {file.fileType}
+                          </Badge>
+                          <span className="text-xs" style={{ color: colors.text.secondary }}>
+                            {formatFileSize(file.fileSizeBytes)}
+                          </span>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              )
+            ) : (
+              // Filesystem Files
+              filteredFilesystemFiles.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 gap-3">
+                  <FileIcon className="h-12 w-12" style={{ color: colors.text.tertiary }} />
+                  <p className="text-sm" style={{ color: colors.text.secondary }}>
+                    {searchTerm ? 'No files match your search' : 'No files found in this location'}
+                  </p>
+                </div>
+              ) : (
+                <div className="p-4 space-y-2">
+                  {filteredFilesystemFiles.map((file) => {
+                    const isSelected = selectedFiles.has(file.path);
+                    return (
+                      <div
+                        key={file.path}
+                        onClick={() => toggleFileSelection(file.path)}
+                        className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md"
+                        style={{
+                          borderColor: isSelected ? colors.hex.purple.light : colors.border.light,
+                          backgroundColor: isSelected ? colors.background.tertiary : colors.background.secondary
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleFileSelection(file.path)}
+                          className="h-4 w-4 rounded"
+                          style={{ accentColor: colors.hex.purple.light }}
+                        />
+                        
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <FileIcon className="h-5 w-5 flex-shrink-0" style={{ color: colors.hex.purple.light }} />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate" style={{ color: colors.text.primary }}>
+                              {file.name}
+                            </p>
+                            <p className="text-xs truncate" style={{ color: colors.text.secondary }}>
+                              {file.path}
+                            </p>
+                          </div>
+                        </div>
 
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        <Badge variant="outline" className="gap-1">
-                          {getLocationIcon(file.type)}
-                          {file.type}
-                        </Badge>
-                        <span className="text-xs" style={{ color: colors.text.secondary }}>
-                          {formatFileSize(file.size)}
-                        </span>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <Badge variant="outline" className="gap-1">
+                            {getLocationIcon(file.type)}
+                            {file.type}
+                          </Badge>
+                          <span className="text-xs" style={{ color: colors.text.secondary }}>
+                            {formatFileSize(file.size)}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )
             )}
           </ScrollArea>
 
@@ -381,15 +563,6 @@ export function DatabricksFileBrowser({ open, onClose, onFilesSelected }: Databr
             </div>
             
             <div className="flex gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowLoginDialog(true)}
-                className="gap-2"
-              >
-                <Settings className="h-4 w-4" />
-                Settings
-              </Button>
               <Button variant="outline" onClick={onClose} disabled={importing}>
                 Cancel
               </Button>

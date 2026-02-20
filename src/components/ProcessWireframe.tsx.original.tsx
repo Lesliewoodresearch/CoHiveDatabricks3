@@ -9,7 +9,6 @@ import { CentralHexView } from './CentralHexView';
 import { ReviewView } from './ReviewView';
 import { DatabricksOAuthLogin } from './DatabricksOAuthLogin';
 import { DatabricksFileSaver } from './DatabricksFileSaver';
-import { InterviewDialog } from './InterviewDialog';
 import cohiveLogo from 'figma:asset/88105c0c8621f3d41d65e5be3ae75558f9de1753.png';
 import { uploadToKnowledgeBase, downloadFile } from '../utils/databricksAPI';
 import { isAuthenticated } from '../utils/databricksAuth';
@@ -247,15 +246,6 @@ export default function ProcessWireframe() {
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const [captureMethod, setCaptureMethod] = useState<'upload' | 'capture' | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [isVoiceToText, setIsVoiceToText] = useState(false); // For voice-to-text in Text mode
-  
-  // Interview dialog state
-  const [showInterviewDialog, setShowInterviewDialog] = useState(false);
-  const [interviewContext, setInterviewContext] = useState<{
-    insightType: 'Brand' | 'Category' | 'General';
-    brand?: string;
-    projectType?: string;
-  }>({ insightType: 'General' });
   
   // Browser environment check (for SSR compatibility)
   const isBrowser = typeof window !== 'undefined';
@@ -669,8 +659,8 @@ export default function ProcessWireframe() {
           const { handleOAuthCallback } = await import('../utils/databricksAuth.ts');
           
           try {
-            const session = await handleOAuthCallback();
-            console.log('OAuth callback handled successfully, session created:', !!session);
+            await handleOAuthCallback();
+            console.log('OAuth callback handled successfully');
             
             // Get the step we should return to
             const returnStep = sessionStorage.getItem('oauth_return_step');
@@ -683,14 +673,7 @@ export default function ProcessWireframe() {
             const newUrl = window.location.pathname;
             window.history.replaceState({}, document.title, newUrl);
             
-            // Verify the session was actually saved by checking isAuthenticated
-            const isAuth = isAuthenticated();
-            console.log('Verifying authentication after OAuth:', isAuth);
-            setIsDatabricksAuthenticated(isAuth);
-            
-            if (!isAuth) {
-              console.error('OAuth completed but authentication check failed');
-            }
+            setIsDatabricksAuthenticated(true);
           } catch (error) {
             console.error('OAuth callback failed:', error);
             setIsDatabricksAuthenticated(false);
@@ -698,7 +681,6 @@ export default function ProcessWireframe() {
         } else {
           // Normal auth check (no OAuth callback)
           const authenticated = isAuthenticated();
-          console.log('Standard auth check on mount:', authenticated);
           setIsDatabricksAuthenticated(authenticated);
         }
       } catch (error) {
@@ -2082,7 +2064,7 @@ export default function ProcessWireframe() {
                                 onChange={(e) => handleResponseChange(idx, e.target.value)}
                                 className="w-4 h-4"
                               />
-                              <span className="text-gray-700">Text</span>
+                              <span className="text-gray-700">Type Text</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
                               <input
@@ -2093,7 +2075,7 @@ export default function ProcessWireframe() {
                                 onChange={(e) => handleResponseChange(idx, e.target.value)}
                                 className="w-4 h-4"
                               />
-                              <span className="text-gray-700">Voice</span>
+                              <span className="text-gray-700">Record Voice</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
                               <input
@@ -2104,7 +2086,7 @@ export default function ProcessWireframe() {
                                 onChange={(e) => handleResponseChange(idx, e.target.value)}
                                 className="w-4 h-4"
                               />
-                              <span className="text-gray-700">Photo</span>
+                              <span className="text-gray-700">Upload Photo</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
                               <input
@@ -2115,7 +2097,7 @@ export default function ProcessWireframe() {
                                 onChange={(e) => handleResponseChange(idx, e.target.value)}
                                 className="w-4 h-4"
                               />
-                              <span className="text-gray-700">Video</span>
+                              <span className="text-gray-700">Upload Video</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
                               <input
@@ -2126,18 +2108,7 @@ export default function ProcessWireframe() {
                                 onChange={(e) => handleResponseChange(idx, e.target.value)}
                                 className="w-4 h-4"
                               />
-                              <span className="text-gray-700">File</span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="inputMethod"
-                                value="Interview"
-                                checked={responses[activeStepId]?.[idx] === 'Interview'}
-                                onChange={(e) => handleResponseChange(idx, e.target.value)}
-                                className="w-4 h-4"
-                              />
-                              <span className="text-gray-700">Be Interviewed</span>
+                              <span className="text-gray-700">Upload File</span>
                             </label>
                           </div>
                           {showError && (
@@ -2163,104 +2134,13 @@ export default function ProcessWireframe() {
                                 <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
                               )}
                             </label>
-                            <div className="relative">
-                              <textarea
-                                className={`w-full border-2 ${showError ? 'border-red-300' : 'border-gray-300'} bg-white rounded p-2 pr-12 text-gray-700 focus:outline-none focus:border-blue-500`}
-                                placeholder={`Share your ${insightType.toLowerCase()} insight here...`}
-                                rows={6}
-                                value={responses[activeStepId]?.[idx] || ''}
-                                onChange={(e) => handleResponseChange(idx, e.target.value)}
-                              />
-                              {/* Microphone button for voice-to-text */}
-                              {hasMediaDevices && (
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    if (!isVoiceToText) {
-                                      try {
-                                        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                                        setStream(audioStream);
-                                        setIsVoiceToText(true);
-                                        
-                                        // Use Web Speech API for voice-to-text if available
-                                        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                                          const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-                                          const recognition = new SpeechRecognition();
-                                          recognition.continuous = true;
-                                          recognition.interimResults = true;
-                                          
-                                          recognition.onresult = (event: any) => {
-                                            let interimTranscript = '';
-                                            let finalTranscript = responses[activeStepId]?.[idx] || '';
-                                            
-                                            for (let i = event.resultIndex; i < event.results.length; i++) {
-                                              const transcript = event.results[i][0].transcript;
-                                              if (event.results[i].isFinal) {
-                                                finalTranscript += transcript + ' ';
-                                              } else {
-                                                interimTranscript += transcript;
-                                              }
-                                            }
-                                            
-                                            handleResponseChange(idx, finalTranscript + interimTranscript);
-                                          };
-                                          
-                                          recognition.onerror = (event: any) => {
-                                            console.error('Speech recognition error:', event.error);
-                                            setIsVoiceToText(false);
-                                            audioStream.getTracks().forEach(track => track.stop());
-                                            setStream(null);
-                                          };
-                                          
-                                          recognition.onend = () => {
-                                            setIsVoiceToText(false);
-                                            audioStream.getTracks().forEach(track => track.stop());
-                                            setStream(null);
-                                          };
-                                          
-                                          recognition.start();
-                                          (window as any).currentRecognition = recognition;
-                                        } else {
-                                          alert('Speech recognition is not supported in this browser. Please use Chrome or Edge.');
-                                          setIsVoiceToText(false);
-                                          audioStream.getTracks().forEach(track => track.stop());
-                                          setStream(null);
-                                        }
-                                      } catch (err) {
-                                        alert('Unable to access microphone. Please check your browser permissions.');
-                                        console.error('Microphone error:', err);
-                                        setIsVoiceToText(false);
-                                      }
-                                    } else {
-                                      // Stop recording
-                                      if ((window as any).currentRecognition) {
-                                        (window as any).currentRecognition.stop();
-                                        (window as any).currentRecognition = null;
-                                      }
-                                      if (stream) {
-                                        stream.getTracks().forEach(track => track.stop());
-                                        setStream(null);
-                                      }
-                                      setIsVoiceToText(false);
-                                    }
-                                  }}
-                                  className={`absolute right-2 top-2 p-2 rounded-full transition-colors ${
-                                    isVoiceToText 
-                                      ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse' 
-                                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                  }`}
-                                  title={isVoiceToText ? 'Stop voice input' : 'Start voice input'}
-                                >
-                                  <Mic className="w-5 h-5" />
-                                </button>
-                              )}
-                            </div>
-                            {isVoiceToText && (
-                              <p className="text-sm text-blue-600 mt-1 flex items-center gap-1">
-                                <span className="inline-block w-2 h-2 bg-red-600 rounded-full animate-pulse" />
-                                Listening... Speak now and your words will appear in the text box
-                              </p>
-                            )}
+                            <textarea
+                              className={`w-full border-2 ${showError ? 'border-red-300' : 'border-gray-300'} bg-white rounded p-2 text-gray-700 focus:outline-none focus:border-blue-500`}
+                              placeholder={`Share your ${insightType.toLowerCase()} insight here...`}
+                              rows={6}
+                              value={responses[activeStepId]?.[idx] || ''}
+                              onChange={(e) => handleResponseChange(idx, e.target.value)}
+                            />
                             {showError && (
                               <p className="text-red-600 text-sm mt-2">Please enter your wisdom</p>
                             )}
@@ -2966,83 +2846,6 @@ export default function ProcessWireframe() {
                         );
                       }
                       
-                      // Be Interviewed
-                      if (inputMethod === 'Interview') {
-                        return (
-                          <div key={idx} className="mb-2">
-                            <label className="block text-gray-900 mb-1 flex items-start justify-between">
-                              <span>{idx + 1}. Share Your Wisdom</span>
-                              {hasResponse && (
-                                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                              )}
-                            </label>
-                            
-                            <div className="space-y-4 border-2 border-purple-300 rounded-lg p-4 bg-purple-50">
-                              <div className="flex items-start gap-3">
-                                <div className="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0">
-                                  <span className="text-white text-xl">🎤</span>
-                                </div>
-                                <div className="flex-1">
-                                  <h3 className="font-medium text-gray-900 mb-2">AI Interview Session</h3>
-                                  <p className="text-sm text-gray-700 mb-3">
-                                    Our AI interviewer will ask you questions about your {insightType.toLowerCase()} insights. 
-                                    This conversational approach helps extract deeper wisdom through guided discussion.
-                                  </p>
-                                  
-                                  {!hasResponse ? (
-                                    <button
-                                      onClick={() => {
-                                        // Check authentication
-                                        if (!isDatabricksAuthenticated) {
-                                          alert('⚠️ Please sign in to Databricks before starting an interview.\n\nClick the "Sign In" button in the header to authenticate.');
-                                          setShowLoginModal(true);
-                                          return;
-                                        }
-
-                                        // Set interview context
-                                        setInterviewContext({
-                                          insightType: insightType as 'Brand' | 'Category' | 'General',
-                                          brand: brand || undefined,
-                                          projectType: projectType || undefined
-                                        });
-                                        
-                                        // Open interview dialog
-                                        setShowInterviewDialog(true);
-                                      }}
-                                      className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 flex items-center gap-2"
-                                    >
-                                      <Mic className="w-5 h-5" />
-                                      Start Interview
-                                    </button>
-                                  ) : (
-                                    <div className="bg-white border border-purple-200 rounded p-3">
-                                      <p className="text-sm text-purple-700">
-                                        {responses[activeStepId]?.[idx]}
-                                      </p>
-                                      <button
-                                        onClick={() => {
-                                          handleResponseChange(idx, '');
-                                        }}
-                                        className="mt-2 text-sm text-purple-600 hover:underline"
-                                      >
-                                        Start new interview
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              <div className="border-t border-purple-200 pt-3">
-                                <p className="text-xs text-gray-600">
-                                  <strong>How it works:</strong> The AI interviewer adapts questions based on your responses, 
-                                  helping you articulate insights you might not have considered. Sessions typically last 10-15 minutes.
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      }
-                      
                       // Fallback for unhandled input methods
                       return null;
                     }
@@ -3663,62 +3466,6 @@ export default function ProcessWireframe() {
           }}
         />
       )}
-
-      {/* Interview Dialog */}
-      <InterviewDialog
-        open={showInterviewDialog}
-        onClose={() => {
-          setShowInterviewDialog(false);
-        }}
-        onComplete={() => {
-          // Mark interview as completed in responses
-          if (activeStepId === 'Wisdom') {
-            handleResponseChange(2, 'Interview completed and saved to Knowledge Base');
-          }
-        }}
-        insightType={interviewContext.insightType}
-        brand={interviewContext.brand}
-        projectType={interviewContext.projectType}
-        userEmail={'user@company.com'}
-        userRole={userRole}
-        onSaveTranscript={async (transcript: string, fileName: string) => {
-          try {
-            // Create a File object from the transcript
-            const blob = new Blob([transcript], { type: 'text/plain' });
-            const file = createFileFromBlob(blob, fileName);
-            
-            // Determine scope based on insight type
-            let scope: 'general' | 'category' | 'brand';
-            if (interviewContext.insightType === 'General') {
-              scope = 'general';
-            } else if (interviewContext.insightType === 'Category') {
-              scope = 'category';
-            } else {
-              scope = 'brand';
-            }
-            
-            // Upload to Databricks Knowledge Base
-            const result = await uploadToKnowledgeBase({
-              file,
-              scope,
-              category: interviewContext.projectType,
-              brand: interviewContext.brand,
-              projectType: interviewContext.projectType,
-              fileType: 'Wisdom',
-              tags: [interviewContext.insightType, 'Interview'],
-              insightType: interviewContext.insightType,
-              inputMethod: 'Interview',
-              userEmail: 'user@company.com',
-              userRole,
-            });
-
-            return result.success;
-          } catch (err) {
-            console.error('Failed to save interview transcript:', err);
-            return false;
-          }
-        }}
-      />
     </div>
   );
 }

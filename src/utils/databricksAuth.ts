@@ -59,6 +59,8 @@ export async function exchangeCodeForToken(
   workspaceHost: string
 ): Promise<DatabricksSession> {
   try {
+    console.log('Exchanging authorization code for token...');
+    
     // Use server-side API route to securely exchange code for token
     const response = await fetch('/api/databricks/auth', {
       method: 'POST',
@@ -82,6 +84,7 @@ export async function exchangeCodeForToken(
     }
 
     const tokenData: DatabricksTokenResponse = await response.json();
+    console.log('Token received, expires in:', tokenData.expires_in, 'seconds');
 
     const session: DatabricksSession = {
       accessToken: tokenData.access_token,
@@ -92,6 +95,15 @@ export async function exchangeCodeForToken(
 
     // Store session
     saveSession(session);
+    console.log('Session saved to sessionStorage');
+    
+    // Verify session was saved
+    const savedSession = getSession();
+    if (!savedSession) {
+      console.error('Failed to verify saved session!');
+      throw new Error('Session was not saved correctly');
+    }
+    console.log('Session verified successfully');
 
     return session;
   } catch (error) {
