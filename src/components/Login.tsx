@@ -6,22 +6,23 @@ interface LoginProps {
 
 export function Login({ onLogin }: LoginProps) {
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 relative">
       {/* Login Button - Top Right */}
-      <button
-        onClick={onLogin}
-        className="fixed top-6 right-6 z-50 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors shadow-lg hover:shadow-xl text-base"
-      >
-        Login
-      </button>
+      <div className="absolute top-6 right-6 z-50">
+        <button
+          onClick={onLogin}
+          className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-lg hover:shadow-xl"
+        >
+          Login
+        </button>
+      </div>
 
       {/* Large Logo - Center */}
-      <div className="flex items-center justify-center max-w-7xl w-full">
+      <div className="flex items-center justify-center">
         <img 
           src={loginImage} 
           alt="CoHive - Insight into Inspiration" 
-          className="w-full h-auto object-contain"
-          style={{ maxWidth: '1200px' }}
+          className="max-w-4xl w-full h-auto"
         />
       </div>
     </div>
