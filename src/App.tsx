@@ -9,14 +9,11 @@ import gemIcon from "figma:asset/53dc6cf554f69e479cfbd60a46741f158d11dd21.png";
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     // Check if user previously logged in (stored in localStorage)
-    const loggedIn = localStorage.getItem('cohive_logged_in') === 'true';
-    console.log('🔍 App.tsx - isLoggedIn check:', loggedIn);
-    return loggedIn;
+    return localStorage.getItem('cohive_logged_in') === 'true';
   });
 
   // Set favicon to the gem icon
   useEffect(() => {
-    console.log('🔍 App.tsx - AppContent mounted');
     const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
     link.type = 'image/png';
     link.rel = 'icon';
@@ -25,19 +22,14 @@ function AppContent() {
   }, []);
 
   const handleLogin = () => {
-    console.log('🔍 App.tsx - handleLogin called');
     setIsLoggedIn(true);
     localStorage.setItem('cohive_logged_in', 'true');
   };
 
-  console.log('🔍 App.tsx - Rendering, isLoggedIn:', isLoggedIn);
-
   if (!isLoggedIn) {
-    console.log('🔍 App.tsx - Rendering Login component');
     return <Login onLogin={handleLogin} />;
   }
 
-  console.log('🔍 App.tsx - Rendering ProcessWireframe');
   return (
     <div className="min-h-screen bg-white">
       <ProcessWireframe />
@@ -52,25 +44,25 @@ function OAuthCallbackWrapper() {
     <OAuthCallback 
       onSuccess={() => {
         console.log('✅ OAuth successful, returning to app...');
-        // Get the path we should return to (defaults to /app if hex page)
-        const returnPath = sessionStorage.getItem('oauth_return_path') || '/';
-        sessionStorage.removeItem('oauth_return_path');
-        navigate(returnPath);
+        // Ensure user is marked as logged in (since they completed OAuth)
+        localStorage.setItem('cohive_logged_in', 'true');
+        // Use window.location to ensure a full page reload and state refresh
+        window.location.href = '/';
       }}
       onError={(error) => {
         console.error('❌ OAuth error:', error);
         const errorMsg = typeof error === 'string' ? error : (error instanceof Error ? error.message : 'Unknown error');
         alert(`Authentication failed: ${errorMsg}. Please try again.`);
-        // Return to app, not landing page
-        navigate('/');
+        // Ensure user is marked as logged in even on error (they already clicked Login button earlier)
+        localStorage.setItem('cohive_logged_in', 'true');
+        // Use window.location to ensure a full page reload
+        window.location.href = '/';
       }}
     />
   );
 }
 
 export default function App() {
-  console.log('🔍 App.tsx - App component rendering');
-  
   return (
     <BrowserRouter>
       <Routes>
