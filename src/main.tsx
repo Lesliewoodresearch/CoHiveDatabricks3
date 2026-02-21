@@ -1,14 +1,11 @@
-import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
-import "./index.css";
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+import './styles/index.css';
 import './styles/globals.css';
 
-console.log('🔍 main.tsx - Starting React app');
-
-createRoot(document.getElementById("root")!).render(
-  <BrowserRouter>
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
     <App />
-  </BrowserRouter>
+  </StrictMode>
 );
-
-console.log('🔍 main.tsx - React render called');
