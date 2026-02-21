@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router';
 import ProcessWireframe from "./components/ProcessWireframe";
 import { Login } from "./components/Login";
 import { OAuthCallback } from "./components/OAuthCallback";
@@ -9,7 +9,9 @@ import gemIcon from "figma:asset/53dc6cf554f69e479cfbd60a46741f158d11dd21.png";
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     // Check if user previously logged in (stored in localStorage)
-    return localStorage.getItem('cohive_logged_in') === 'true';
+    const loggedIn = localStorage.getItem('cohive_logged_in') === 'true';
+    console.log('🔍 AppContent - isLoggedIn from localStorage:', loggedIn);
+    return loggedIn;
   });
 
   // Set favicon to the gem icon
@@ -22,14 +24,19 @@ function AppContent() {
   }, []);
 
   const handleLogin = () => {
+    console.log('🔍 AppContent - handleLogin called');
     setIsLoggedIn(true);
     localStorage.setItem('cohive_logged_in', 'true');
   };
 
+  console.log('🔍 AppContent - Current isLoggedIn state:', isLoggedIn);
+
   if (!isLoggedIn) {
+    console.log('🔍 AppContent - Rendering Login component');
     return <Login onLogin={handleLogin} />;
   }
 
+  console.log('🔍 AppContent - Rendering ProcessWireframe');
   return (
     <div className="min-h-screen bg-white">
       <ProcessWireframe />
