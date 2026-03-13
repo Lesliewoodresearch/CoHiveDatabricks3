@@ -1,0 +1,17 @@
+{
+  "id": "consumers-b2b-department",
+  "name": "Department Head",
+  "description": "Department head evaluating solutions for team needs and departmental goals",
+  "context": "Department Head evaluates solutions that help their team perform better and achieve departmental objectives. They balance budget, team adoption, and measurable outcomes.",
+  "psychographics": {
+    "values": ["Team productivity", "Departmental goals", "Budget responsibility", "User adoption", "Measurable results"],
+    "concerns": ["Team resistance", "Budget constraints", "Integration challenges", "Change management", "Performance tracking"],
+    "motivations": ["Team success", "Goal achievement", "Efficiency improvement", "Budget optimization", "Department growth"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Will my team use this?", "Does this support our goals?", "Is this within budget?", "How do we measure success?", "What's the implementation process?"],
+    "reactsToEarlyIdeas": "Evaluates through team-performance lens. Needs adoption potential and goal alignment.",
+    "scoringRubric": "Scores on team fit, goal alignment, budget, measurability, and adoption potential."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Consumer", "buyerType": "B2B"}
+}

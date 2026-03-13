@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-single",
+  "name": "Single",
+  "description": "Single household - independent with personal priorities",
+  "context": "Single individuals value independence, personal freedom, and self-focused priorities.",
+  "psychographics": {"values": ["Independence", "Personal freedom", "Self-care", "Flexibility"], "motivations": ["Personal fulfillment", "Independence", "Self-development"]},
+  "evaluationCriteria": {"alwaysAsks": ["Does this fit my lifestyle?", "Is this flexible?"], "scoringRubric": "Scores on lifestyle fit and flexibility."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

@@ -1,0 +1,9 @@
+{
+  "id": "grade-psycho-pragmatic",
+  "name": "Pragmatic/Practical",
+  "description": "Pragmatic segment - practical and results-focused",
+  "context": "Pragmatic/Practical segment prioritizes functionality, efficiency, and practical results.",
+  "psychographics": {"values": ["Practicality", "Efficiency", "Results", "Functionality"], "motivations": ["Practical solutions", "Efficiency gains", "Results"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this practical?", "Does this work?"], "scoringRubric": "Scores on practicality and functionality."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Psychographic"}
+}

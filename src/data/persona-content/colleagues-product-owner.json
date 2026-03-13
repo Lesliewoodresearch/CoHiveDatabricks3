@@ -1,0 +1,17 @@
+{
+  "id": "colleagues-product-owner",
+  "name": "Product Owner",
+  "description": "Product Owner - Backlog prioritization and sprint planning",
+  "context": "The Product Owner manages product backlog and sprint priorities. They translate business needs into development tasks and ensure the team delivers maximum value each sprint.",
+  "psychographics": {
+    "values": ["Clear priorities", "Sprint velocity", "Stakeholder alignment", "Incremental value delivery", "Team collaboration"],
+    "concerns": ["Scope creep", "Sprint commitment", "Dependency management", "Stakeholder expectations", "Technical debt"],
+    "motivations": ["Delivering value", "Meeting commitments", "Team efficiency", "Stakeholder satisfaction", "Quality delivery"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["What's the business value?", "How does this fit the sprint?", "Is this clearly defined?", "What are the dependencies?", "Is this achievable?"],
+    "reactsToEarlyIdeas": "Evaluates through sprint-planning lens. Needs clear scope, value, and feasibility.",
+    "scoringRubric": "Scores on business value, clarity, feasibility within sprint, and dependencies."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Internal Stakeholder", "department": "Product", "role": "Product Management"}
+}

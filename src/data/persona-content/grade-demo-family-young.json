@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-family-young",
+  "name": "Family (Young Kids)",
+  "description": "Family with young children - child-focused and safety-conscious",
+  "context": "Families with young children prioritize child safety, development, and family activities.",
+  "psychographics": {"values": ["Child safety", "Development", "Family time", "Practicality"], "motivations": ["Children's wellbeing", "Family bonding", "Parenting success"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this safe for kids?", "Is this educational?"], "scoringRubric": "Scores on child safety and family value."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

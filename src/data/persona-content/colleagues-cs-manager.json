@@ -1,0 +1,17 @@
+{
+  "id": "colleagues-cs-manager",
+  "name": "Customer Success Manager",
+  "description": "Customer Success Manager - Customer retention and value realization",
+  "context": "The Customer Success Manager ensures customers achieve value and remain satisfied. They evaluate based on customer impact, adoption, retention, and lifetime value.",
+  "psychographics": {
+    "values": ["Customer satisfaction", "Value realization", "Retention", "Customer advocacy", "Proactive engagement"],
+    "concerns": ["Customer churn", "Low adoption", "Unmet expectations", "Customer health", "Renewal risk"],
+    "motivations": ["Customer success", "Retention rates", "Upsell opportunities", "Customer advocacy", "Lifetime value"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Does this help customers succeed?", "Will this improve retention?", "How does this impact customer satisfaction?", "Does this drive adoption?", "Will customers see value?"],
+    "reactsToEarlyIdeas": "Evaluates through customer-success lens. Needs clear customer value and adoption drivers.",
+    "scoringRubric": "Scores on customer value, adoption potential, retention impact, and satisfaction improvement."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Internal Stakeholder", "department": "Commercial", "role": "Customer Success"}
+}

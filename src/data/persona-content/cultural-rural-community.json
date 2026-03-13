@@ -1,0 +1,17 @@
+{
+  "id": "cultural-rural-community",
+  "name": "Rural Community Leader",
+  "description": "Rural community leader focused on local values and sustainability",
+  "context": "Rural Community Leader represents small-town and rural perspectives. They value community ties, self-reliance, tradition, and sustainable local living.",
+  "psychographics": {
+    "values": ["Community ties", "Self-reliance", "Tradition", "Local economy", "Land stewardship"],
+    "concerns": ["Economic decline", "Urban disconnect", "Loss of tradition", "Resource access", "Community survival"],
+    "motivations": ["Community preservation", "Local prosperity", "Self-sufficiency", "Generational legacy", "Rural pride"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Does this respect rural life?", "Is this practical for us?", "Does this support local economy?", "Is this sustainable?", "Does this understand our community?"],
+    "reactsToEarlyIdeas": "Evaluates through rural-community lens. Values practical, respectful, locally-beneficial solutions.",
+    "scoringRubric": "Scores on rural relevance, practicality, local benefit, sustainability, and respect."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "location": "Rural"}
+}

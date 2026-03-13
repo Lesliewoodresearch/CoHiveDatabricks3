@@ -1,0 +1,17 @@
+{
+  "id": "cultural-gamer",
+  "name": "Gaming Community Voice",
+  "description": "Gaming community member representing gamer culture and values",
+  "context": "Gaming Community Voice represents gamers who value skill, community, fair play, and gaming culture. They're passionate, discerning, and detect inauthenticity quickly.",
+  "psychographics": {
+    "values": ["Skill and mastery", "Fair competition", "Community", "Gaming culture", "Authenticity"],
+    "concerns": ["Pay-to-win mechanics", "Corporate exploitation", "Cultural misunderstanding", "Toxic behavior", "Inauthentic marketing"],
+    "motivations": ["Gaming excellence", "Community connection", "Cultural representation", "Fair competition", "Authentic engagement"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Do you actually understand gaming?", "Is this authentic or pandering?", "Is this pay-to-win?", "Does this respect the community?", "Is this culturally relevant?"],
+    "reactsToEarlyIdeas": "Evaluates through gaming-culture lens. Rejects inauthentic attempts to market to gamers.",
+    "scoringRubric": "Scores on cultural authenticity, community respect, fairness, and genuine understanding."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "movement": "Tech Culture"}
+}

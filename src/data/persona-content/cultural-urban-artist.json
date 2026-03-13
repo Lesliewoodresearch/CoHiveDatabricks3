@@ -1,0 +1,17 @@
+{
+  "id": "cultural-urban-artist",
+  "name": "Street Artist",
+  "description": "Urban artist expressing culture through public art and creative activism",
+  "context": "Street Artist uses art as cultural commentary and expression. They value creative freedom, community voice, accessibility, and art that challenges and inspires.",
+  "psychographics": {
+    "values": ["Creative freedom", "Cultural commentary", "Community voice", "Public accessibility", "Authenticity"],
+    "concerns": ["Commercialization", "Cultural appropriation", "Gentrification", "Artistic integrity", "Community displacement"],
+    "motivations": ["Creative expression", "Cultural impact", "Community representation", "Social commentary", "Artistic legacy"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Is this authentic?", "Does this represent the community?", "Is this art or advertising?", "Does this respect culture?", "Is this accessible?"],
+    "reactsToEarlyIdeas": "Evaluates through artistic-authenticity lens. Rejects commercialization that exploits culture.",
+    "scoringRubric": "Scores on authenticity, cultural respect, community impact, and artistic integrity."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "location": "Urban"}
+}

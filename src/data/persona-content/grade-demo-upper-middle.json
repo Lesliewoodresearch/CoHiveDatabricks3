@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-upper-middle",
+  "name": "Upper Middle ($100K-$200K)",
+  "description": "Upper middle income - quality-focused with discretionary spending",
+  "context": "Upper Middle ($100K-$200K) has discretionary income, prioritizes quality and convenience.",
+  "psychographics": {"values": ["Quality", "Convenience", "Status", "Experiences"], "motivations": ["Quality lifestyle", "Status", "Convenience"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this quality?", "Is this convenient?"], "scoringRubric": "Scores on quality and convenience."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

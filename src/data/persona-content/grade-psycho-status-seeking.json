@@ -1,0 +1,9 @@
+{
+  "id": "grade-psycho-status-seeking",
+  "name": "Status-Seeking",
+  "description": "Status-seeking segment - prestige and recognition focused",
+  "context": "Status-Seeking segment values prestige, recognition, status symbols, and social standing.",
+  "psychographics": {"values": ["Status", "Prestige", "Recognition", "Luxury", "Social standing"], "motivations": ["Status achievement", "Social recognition", "Prestige"]},
+  "evaluationCriteria": {"alwaysAsks": ["Does this elevate my status?", "Is this prestigious?"], "scoringRubric": "Scores on status value and prestige."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Psychographic"}
+}

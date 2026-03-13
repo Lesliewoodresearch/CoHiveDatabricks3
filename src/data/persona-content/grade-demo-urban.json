@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-urban",
+  "name": "Urban",
+  "description": "Urban demographic - city dwellers with fast-paced lifestyles",
+  "context": "Urban residents live in cities, value convenience, diversity, and cultural access.",
+  "psychographics": {"values": ["Convenience", "Diversity", "Culture", "Innovation"], "motivations": ["Urban lifestyle", "Cultural access", "Convenience"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this convenient?", "Is this culturally relevant?"], "scoringRubric": "Scores on convenience and cultural fit."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

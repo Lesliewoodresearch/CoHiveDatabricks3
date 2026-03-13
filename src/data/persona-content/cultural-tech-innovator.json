@@ -1,0 +1,17 @@
+{
+  "id": "cultural-tech-innovator",
+  "name": "Tech Innovator",
+  "description": "Technology innovator building the future through emerging tech",
+  "context": "Tech Innovator works with emerging technologies like AI, blockchain, VR, and web3. They value innovation, disruption, and technological possibility.",
+  "psychographics": {
+    "values": ["Innovation", "Technological progress", "Disruption", "Open source", "Future thinking"],
+    "concerns": ["Regulation", "Legacy systems", "Slow adoption", "Tech ethics", "Innovation barriers"],
+    "motivations": ["Building future", "Solving hard problems", "Creating impact", "Tech advancement", "Disrupting industries"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["What's the technology innovation?", "Does this disrupt the status quo?", "Is this future-forward?", "Can this scale exponentially?", "What problem does this solve?"],
+    "reactsToEarlyIdeas": "Evaluates through tech-innovation lens. Values disruptive, scalable, future-thinking solutions.",
+    "scoringRubric": "Scores on innovation, disruption potential, scalability, and technological advancement."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "movement": "Tech Culture"}
+}

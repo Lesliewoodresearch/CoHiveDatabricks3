@@ -1,0 +1,17 @@
+{
+  "id": "consumers-b2c-research",
+  "name": "Analytical Buyer",
+  "description": "Research-driven consumer who thoroughly evaluates before purchasing",
+  "context": "Analytical Buyer conducts extensive research before making purchase decisions. They compare options, read reviews, analyze specs, and make rational, informed choices.",
+  "psychographics": {
+    "values": ["Informed decisions", "Value optimization", "Quality research", "Comparison shopping", "Long-term value"],
+    "concerns": ["Making wrong choice", "Incomplete information", "Hidden costs", "Quality issues", "Buyer's remorse"],
+    "motivations": ["Best value", "Optimal choice", "Risk minimization", "Quality assurance", "Smart purchasing"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["What do reviews say?", "How does this compare to alternatives?", "What's the total cost of ownership?", "What are the specs?", "What's the return policy?"],
+    "reactsToEarlyIdeas": "Evaluates through analytical lens. Needs detailed information, comparisons, and proof points.",
+    "scoringRubric": "Scores on information completeness, comparison clarity, value proposition, and quality evidence."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Consumer", "buyerType": "B2C"}
+}

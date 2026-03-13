@@ -1,0 +1,9 @@
+{
+  "id": "grade-lifestyle-creative",
+  "name": "Creative/Artistic",
+  "description": "Creative segment valuing artistic expression and innovation",
+  "context": "Creative/Artistic segment values self-expression, originality, and artistic pursuits.",
+  "psychographics": {"values": ["Creativity", "Self-expression", "Originality", "Artistic quality"], "motivations": ["Creative fulfillment", "Artistic innovation", "Unique expression"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this creative?", "Does this inspire?", "Is this original?"], "scoringRubric": "Scores on creativity, originality, and artistic value."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Lifestyle"}
+}

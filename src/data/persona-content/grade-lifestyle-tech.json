@@ -1,0 +1,9 @@
+{
+  "id": "grade-lifestyle-tech",
+  "name": "Tech Enthusiast",
+  "description": "Tech-savvy segment embracing technology and innovation",
+  "context": "Tech Enthusiast segment values technological innovation, digital solutions, and cutting-edge products.",
+  "psychographics": {"values": ["Technology", "Innovation", "Digital solutions", "Early adoption"], "motivations": ["Tech advancement", "Digital convenience", "Innovation"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this innovative?", "Is this tech-forward?"], "scoringRubric": "Scores on innovation and tech integration."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Lifestyle"}
+}

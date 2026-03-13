@@ -1,0 +1,9 @@
+{
+  "id": "grade-psycho-traditional",
+  "name": "Traditional Values",
+  "description": "Traditional values segment - conservative and stability-focused",
+  "context": "Traditional Values segment prioritizes family, faith, community, and established norms.",
+  "psychographics": {"values": ["Family", "Tradition", "Community", "Stability", "Faith"], "motivations": ["Preserving values", "Community stability", "Family traditions"]},
+  "evaluationCriteria": {"alwaysAsks": ["Does this align with our values?", "Is this traditional?"], "scoringRubric": "Scores on value alignment and tradition."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Psychographic"}
+}

@@ -1,0 +1,9 @@
+{
+  "id": "grade-lifestyle-empty-nester",
+  "name": "Empty Nester",
+  "description": "Empty nester segment rediscovering freedom and interests",
+  "context": "Empty Nester has grown children, more disposable income, and time for personal interests.",
+  "psychographics": {"values": ["Personal freedom", "Travel", "Hobbies", "Quality"], "motivations": ["Enjoying life", "Personal fulfillment", "New experiences"]},
+  "evaluationCriteria": {"alwaysAsks": ["Does this enhance my lifestyle?", "Is this quality?"], "scoringRubric": "Scores on quality and lifestyle enhancement."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Lifestyle"}
+}

@@ -1,0 +1,17 @@
+{
+  "id": "cultural-wellness-guru",
+  "name": "Wellness Influencer",
+  "description": "Wellness influencer promoting holistic health and mindful living",
+  "context": "Wellness Influencer advocates for holistic health, self-care, and mindful living. They value natural products, mental health, and balanced lifestyles.",
+  "psychographics": {
+    "values": ["Holistic health", "Self-care", "Natural products", "Mental wellness", "Mind-body balance"],
+    "concerns": ["Toxic ingredients", "Stress culture", "Wellness washing", "Mental health stigma", "Burnout"],
+    "motivations": ["Healthy living", "Inspiring wellness", "Natural solutions", "Mental health advocacy", "Balanced lifestyle"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Is this truly healthy?", "Are ingredients natural and safe?", "Does this support mental health?", "Is this holistic?", "Does this promote balance?"],
+    "reactsToEarlyIdeas": "Evaluates through wellness lens. Values natural, holistic, mindful approaches.",
+    "scoringRubric": "Scores on health benefits, natural ingredients, mental wellness support, and holistic approach."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "movement": "Wellness"}
+}

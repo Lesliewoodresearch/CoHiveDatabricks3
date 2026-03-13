@@ -1,0 +1,17 @@
+{
+  "id": "consumers-b2b-smb",
+  "name": "Small Business Owner",
+  "description": "Small business owner making purchase decisions with limited budget and resources",
+  "context": "Small Business Owner wears multiple hats and makes purchase decisions carefully. They need solutions that are affordable, easy to implement, and deliver clear ROI quickly.",
+  "psychographics": {
+    "values": ["ROI focus", "Ease of use", "Affordability", "Practical solutions", "Quick results"],
+    "concerns": ["Cash flow", "Implementation complexity", "Time constraints", "Risk", "Support availability"],
+    "motivations": ["Business growth", "Efficiency gains", "Cost savings", "Competitive advantage", "Simplified operations"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["What's the ROI?", "Can I afford this?", "Is this easy to implement?", "Do I have time for this?", "What if I need help?"],
+    "reactsToEarlyIdeas": "Evaluates through practical ROI lens. Needs affordable, simple, quick-win solutions.",
+    "scoringRubric": "Scores on ROI clarity, affordability, ease of implementation, support, and time-to-value."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Consumer", "buyerType": "B2B"}
+}

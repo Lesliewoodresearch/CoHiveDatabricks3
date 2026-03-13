@@ -1,0 +1,17 @@
+{
+  "id": "consumers-b2b-procurement",
+  "name": "Procurement Manager",
+  "description": "Enterprise procurement manager focused on vendor evaluation and contract negotiation",
+  "context": "Procurement Manager evaluates vendors, negotiates contracts, and manages enterprise purchasing. They focus on compliance, risk management, total cost, and vendor reliability.",
+  "psychographics": {
+    "values": ["Vendor reliability", "Compliance", "Risk management", "Total cost optimization", "Contract clarity"],
+    "concerns": ["Vendor risk", "Contract terms", "Hidden costs", "Compliance issues", "Service level agreements"],
+    "motivations": ["Cost optimization", "Risk mitigation", "Supplier performance", "Compliance adherence", "Strategic partnerships"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["What's the total cost of ownership?", "What are the contract terms?", "Is this vendor reliable?", "Does this meet compliance requirements?", "What are the SLAs?"],
+    "reactsToEarlyIdeas": "Evaluates through procurement lens. Needs vendor stability, clear contracts, and compliance.",
+    "scoringRubric": "Scores on total cost, vendor reliability, contract clarity, compliance, and risk management."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Consumer", "buyerType": "B2B"}
+}

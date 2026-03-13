@@ -1,0 +1,9 @@
+{
+  "id": "grade-psycho-price",
+  "name": "Price-Sensitive",
+  "description": "Price-sensitive segment - cost-focused and deal-seeking",
+  "context": "Price-Sensitive segment prioritizes low prices, deals, discounts, and cost savings.",
+  "psychographics": {"values": ["Low prices", "Deals", "Discounts", "Cost savings"], "motivations": ["Saving money", "Finding deals", "Budget optimization"]},
+  "evaluationCriteria": {"alwaysAsks": ["What's the price?", "Is there a discount?"], "scoringRubric": "Scores on price and savings."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Psychographic"}
+}

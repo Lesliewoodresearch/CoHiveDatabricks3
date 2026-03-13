@@ -1,0 +1,9 @@
+{
+  "id": "grade-lifestyle-luxury",
+  "name": "Luxury Consumer",
+  "description": "Luxury-oriented segment valuing premium quality and exclusivity",
+  "context": "Luxury Consumer values premium quality, exclusivity, status, and exceptional experiences.",
+  "psychographics": {"values": ["Quality", "Exclusivity", "Status", "Premium experiences"], "motivations": ["Status", "Quality", "Exclusivity"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this premium?", "Is this exclusive?"], "scoringRubric": "Scores on quality, exclusivity, and status."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Lifestyle"}
+}

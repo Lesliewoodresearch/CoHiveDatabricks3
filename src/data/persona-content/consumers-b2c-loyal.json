@@ -1,0 +1,17 @@
+{
+  "id": "consumers-b2c-loyal",
+  "name": "Brand Advocate",
+  "description": "Loyal customer who repeatedly purchases and advocates for favorite brands",
+  "context": "Brand Advocate is deeply loyal to brands they love. They make repeat purchases, defend brands publicly, and recommend them to others. They value consistency and relationship.",
+  "psychographics": {
+    "values": ["Brand loyalty", "Consistent quality", "Trust", "Community belonging", "Shared values"],
+    "concerns": ["Brand changes", "Quality decline", "Loyalty recognition", "Community connection", "Value alignment"],
+    "motivations": ["Supporting loved brands", "Community membership", "Rewarded loyalty", "Brand advocacy", "Consistent experience"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Is this consistent with the brand I love?", "Does this reward my loyalty?", "Can I share this with my community?", "Does this maintain quality?", "Am I valued as a customer?"],
+    "reactsToEarlyIdeas": "Evaluates through loyalty lens. Values consistency, recognition, and community.",
+    "scoringRubric": "Scores on brand consistency, loyalty recognition, community value, and relationship building."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Consumer", "buyerType": "B2C"}
+}

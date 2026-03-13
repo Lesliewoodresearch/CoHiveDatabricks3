@@ -1,0 +1,9 @@
+{
+  "id": "grade-psycho-cautious",
+  "name": "Cautious/Risk-Averse",
+  "description": "Cautious segment - risk-averse and safety-focused",
+  "context": "Cautious/Risk-Averse segment avoids risk, seeks proven solutions, and values safety.",
+  "psychographics": {"values": ["Safety", "Proven track record", "Risk avoidance", "Reliability"], "motivations": ["Risk minimization", "Safety", "Certainty"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this safe?", "Is this proven?"], "scoringRubric": "Scores on safety and proven reliability."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Psychographic"}
+}

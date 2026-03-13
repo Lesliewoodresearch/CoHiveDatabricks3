@@ -1,0 +1,9 @@
+{
+  "id": "grade-lifestyle-value",
+  "name": "Value Seeker",
+  "description": "Value-conscious segment seeking best price-quality ratio",
+  "context": "Value Seeker prioritizes getting the best value for money, comparing prices and seeking deals.",
+  "psychographics": {"values": ["Value", "Affordability", "Smart shopping", "Deals"], "motivations": ["Savings", "Value optimization", "Budget management"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this good value?", "Can I get this cheaper?"], "scoringRubric": "Scores on value and affordability."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Lifestyle"}
+}

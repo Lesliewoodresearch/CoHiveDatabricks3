@@ -1,0 +1,9 @@
+{
+  "id": "grade-lifestyle-student",
+  "name": "Student",
+  "description": "Student segment focused on education and budget constraints",
+  "context": "Student segment is budget-conscious, values education, seeks affordable solutions.",
+  "psychographics": {"values": ["Education", "Affordability", "Learning", "Social connection"], "motivations": ["Academic success", "Budget management", "Social life"]},
+  "evaluationCriteria": {"alwaysAsks": ["Can I afford this?", "Is this useful for school?"], "scoringRubric": "Scores on affordability and educational value."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Lifestyle"}
+}

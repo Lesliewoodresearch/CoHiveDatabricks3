@@ -1,0 +1,9 @@
+{
+  "id": "grade-psycho-health-conscious",
+  "name": "Health-Conscious",
+  "description": "Health-conscious segment - wellness and longevity focused",
+  "context": "Health-Conscious segment prioritizes health, wellness, nutrition, and longevity.",
+  "psychographics": {"values": ["Health", "Wellness", "Nutrition", "Longevity", "Prevention"], "motivations": ["Healthy living", "Disease prevention", "Optimal wellness"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this healthy?", "What are the ingredients?"], "scoringRubric": "Scores on health benefits and wellness."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Psychographic"}
+}

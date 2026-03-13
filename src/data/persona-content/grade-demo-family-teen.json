@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-family-teen",
+  "name": "Family (Teens)",
+  "description": "Family with teenagers - balancing independence and family",
+  "context": "Families with teenagers balance teen independence, family dynamics, and future planning.",
+  "psychographics": {"values": ["Teen independence", "Family connection", "Education", "Future planning"], "motivations": ["Teen development", "Family balance", "College preparation"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this appropriate for teens?", "Does this support their development?"], "scoringRubric": "Scores on teen appropriateness and developmental value."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

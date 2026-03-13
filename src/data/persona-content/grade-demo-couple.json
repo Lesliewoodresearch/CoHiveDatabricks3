@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-couple",
+  "name": "Couple (No Kids)",
+  "description": "Couple without children - dual income with lifestyle focus",
+  "context": "Couples without children often have dual income, value experiences, travel, and quality.",
+  "psychographics": {"values": ["Experiences", "Quality", "Travel", "Shared interests"], "motivations": ["Relationship enjoyment", "Experiences", "Quality lifestyle"]},
+  "evaluationCriteria": {"alwaysAsks": ["Does this enhance our lifestyle?", "Is this quality?"], "scoringRubric": "Scores on experience value and quality."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

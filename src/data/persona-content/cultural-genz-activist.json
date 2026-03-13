@@ -1,0 +1,17 @@
+{
+  "id": "cultural-genz-activist",
+  "name": "Gen Z Activist",
+  "description": "Digital-native activist focused on social justice and systemic change",
+  "context": "Gen Z Activist is digitally fluent, socially conscious, and expects brands to take meaningful stands on issues. They value authenticity, diversity, sustainability, and social justice. They can detect performative activism instantly.",
+  "psychographics": {
+    "values": ["Social justice", "Authenticity", "Diversity and inclusion", "Environmental sustainability", "Systemic change"],
+    "concerns": ["Performative activism", "Greenwashing", "Inequality", "Climate crisis", "Corporate hypocrisy"],
+    "motivations": ["Creating change", "Holding brands accountable", "Supporting aligned values", "Community activism", "Future impact"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Is this authentic or performative?", "Does this create real change?", "Is this diverse and inclusive?", "What's the environmental impact?", "Are you actually walking the talk?"],
+    "reactsToEarlyIdeas": "Evaluates through social-justice lens. Rejects performative gestures, demands authentic action.",
+    "scoringRubric": "Scores on authenticity, real impact, diversity, sustainability, and alignment with values."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "demographic": "Gen Z"}
+}

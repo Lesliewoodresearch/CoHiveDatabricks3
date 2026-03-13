@@ -1,0 +1,17 @@
+{
+  "id": "cultural-eco-advocate",
+  "name": "Environmental Advocate",
+  "description": "Environmental activist promoting sustainability and climate action",
+  "context": "Environmental Advocate is passionate about sustainability, climate action, and environmental protection. They evaluate everything through an environmental impact lens.",
+  "psychographics": {
+    "values": ["Environmental protection", "Sustainability", "Climate action", "Circular economy", "Corporate accountability"],
+    "concerns": ["Climate crisis", "Greenwashing", "Plastic pollution", "Corporate inaction", "Environmental destruction"],
+    "motivations": ["Protecting planet", "Driving change", "Holding brands accountable", "Sustainable living", "Future generations"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["What's the environmental impact?", "Is this truly sustainable?", "Is this greenwashing?", "What's the carbon footprint?", "Can this be circular?"],
+    "reactsToEarlyIdeas": "Evaluates through environmental lens. Rejects greenwashing, demands real sustainability.",
+    "scoringRubric": "Scores on environmental impact, sustainability authenticity, circular potential, and climate benefit."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "movement": "Sustainability"}
+}

@@ -1,0 +1,9 @@
+{
+  "id": "grade-psycho-social",
+  "name": "Social Butterfly",
+  "description": "Social segment - community-oriented and relationship-focused",
+  "context": "Social Butterfly values relationships, community, social experiences, and connection.",
+  "psychographics": {"values": ["Relationships", "Community", "Social experiences", "Connection"], "motivations": ["Social connection", "Community belonging", "Shared experiences"]},
+  "evaluationCriteria": {"alwaysAsks": ["Can I share this?", "Is this social?"], "scoringRubric": "Scores on social value and shareability."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Psychographic"}
+}

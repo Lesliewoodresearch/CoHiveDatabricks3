@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-suburban",
+  "name": "Suburban",
+  "description": "Suburban demographic - family-focused with community values",
+  "context": "Suburban residents value family, community, space, and quality of life.",
+  "psychographics": {"values": ["Family", "Community", "Space", "Safety"], "motivations": ["Family wellbeing", "Community", "Quality of life"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this family-friendly?", "Does this fit suburban life?"], "scoringRubric": "Scores on family-friendliness and suburban fit."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

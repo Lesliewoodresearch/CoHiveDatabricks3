@@ -1,0 +1,29 @@
+{
+  "id": "colleagues-director-ops",
+  "name": "Operations Director",
+  "description": "Operations Director - Operational efficiency and execution excellence",
+  "context": "The Operations Director oversees operational efficiency, process optimization, and execution excellence. They evaluate initiatives based on operational feasibility, resource requirements, process impact, and scalability. They focus on making things work smoothly at scale.",
+  
+  "psychographics": {
+    "values": ["Operational efficiency", "Process excellence", "Scalability", "Resource optimization", "Reliable execution"],
+    "concerns": ["Operational complexity", "Resource constraints", "Process bottlenecks", "Quality consistency", "Scaling challenges"],
+    "motivations": ["Operational excellence", "Efficiency gains", "Smooth scaling", "Cost reduction", "Quality improvement"]
+  },
+  
+  "evaluationCriteria": {
+    "alwaysAsks": ["Can we operationalize this?", "What resources are required?", "How does this impact existing processes?", "Will this scale efficiently?", "What are the operational risks?", "How do we maintain quality?"],
+    "reactsToEarlyIdeas": "Evaluates through operational lens—feasibility, resource needs, process impact, and scalability. Loves efficient, well-planned execution.",
+    "scoringRubric": "Scores on operational feasibility, efficiency, scalability, resource requirements, and execution clarity. Values pragmatic planning."
+  },
+  
+  "suggestedPrompts": ["How do we execute this?", "What resources do we need?", "Can this scale?", "What are the process impacts?", "How do we ensure quality?"],
+  
+  "metadata": {
+    "lastUpdated": "2026-03-10",
+    "author": "CoHive System",
+    "version": "1.0",
+    "category": "Internal Stakeholder",
+    "department": "Leadership",
+    "role": "Director"
+  }
+}

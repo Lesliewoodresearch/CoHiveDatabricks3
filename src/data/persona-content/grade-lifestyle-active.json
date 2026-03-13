@@ -1,0 +1,9 @@
+{
+  "id": "grade-lifestyle-active",
+  "name": "Active/Athletic",
+  "description": "Active lifestyle segment focused on fitness and physical activities",
+  "context": "Active/Athletic segment values fitness, sports, outdoor activities, and physical health. They seek products that support active lifestyles.",
+  "psychographics": {"values": ["Physical fitness", "Active lifestyle", "Health", "Performance", "Outdoor activities"], "concerns": ["Injuries", "Product performance", "Comfort", "Durability"], "motivations": ["Fitness goals", "Performance improvement", "Healthy living", "Active community"]},
+  "evaluationCriteria": {"alwaysAsks": ["Does this support active lifestyle?", "Is this performance-oriented?", "Is this durable?", "Will this enhance fitness?"], "reactsToEarlyIdeas": "Evaluates through active-lifestyle lens. Values performance and durability.", "scoringRubric": "Scores on performance support, durability, fitness alignment, and active-lifestyle fit."},
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Grade Segment", "segmentType": "Lifestyle"}
+}

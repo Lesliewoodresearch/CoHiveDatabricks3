@@ -1,0 +1,17 @@
+{
+  "id": "cultural-zero-waste",
+  "name": "Zero-Waste Practitioner",
+  "description": "Zero-waste lifestyle advocate minimizing environmental footprint",
+  "context": "Zero-Waste Practitioner lives by reducing, reusing, and refusing single-use items. They value minimal packaging, durability, and circular systems.",
+  "psychographics": {
+    "values": ["Waste reduction", "Minimalism", "Durability", "Circular economy", "Conscious consumption"],
+    "concerns": ["Packaging waste", "Single-use culture", "Planned obsolescence", "Landfill impact", "Greenwashing"],
+    "motivations": ["Living zero-waste", "Inspiring others", "Reducing footprint", "Systemic change", "Conscious choices"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Can this be package-free?", "Is this durable and repairable?", "Can this be composted or recycled?", "Is this truly necessary?", "What's the full lifecycle?"],
+    "reactsToEarlyIdeas": "Evaluates through waste-reduction lens. Prefers minimal, durable, circular solutions.",
+    "scoringRubric": "Scores on packaging minimalism, durability, circularity, and lifecycle impact."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "movement": "Sustainability"}
+}

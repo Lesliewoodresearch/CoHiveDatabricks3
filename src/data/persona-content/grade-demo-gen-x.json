@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-gen-x",
+  "name": "Gen X (43-58)",
+  "description": "Gen X demographic - pragmatic and independent",
+  "context": "Gen X (43-58) is pragmatic, independent, balances career and family, values quality and authenticity.",
+  "psychographics": {"values": ["Independence", "Quality", "Pragmatism", "Work-life balance"], "motivations": ["Financial security", "Family wellbeing", "Personal independence"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this practical?", "Is this quality?"], "scoringRubric": "Scores on practicality and quality."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

@@ -1,0 +1,9 @@
+{
+  "id": "grade-lifestyle-outdoors",
+  "name": "Outdoor Adventurer",
+  "description": "Outdoor-focused segment valuing nature and adventure",
+  "context": "Outdoor Adventurer values nature, adventure, outdoor activities, and environmental connection.",
+  "psychographics": {"values": ["Nature", "Adventure", "Outdoor activities", "Environmental connection"], "motivations": ["Exploration", "Nature connection", "Adventure"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this outdoors-compatible?", "Is this adventure-ready?"], "scoringRubric": "Scores on outdoor suitability and adventure support."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Lifestyle"}
+}

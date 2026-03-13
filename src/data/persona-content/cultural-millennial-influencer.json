@@ -1,0 +1,17 @@
+{
+  "id": "cultural-millennial-influencer",
+  "name": "Lifestyle Influencer",
+  "description": "Millennial influencer curating aspirational lifestyle content",
+  "context": "Lifestyle Influencer is a Millennial who shares curated content about fashion, travel, wellness, and lifestyle. They value aesthetics, experiences, and authentic brand partnerships.",
+  "psychographics": {
+    "values": ["Aesthetic quality", "Authentic partnerships", "Experience over things", "Personal brand", "Community trust"],
+    "concerns": ["Brand fit", "Audience authenticity", "Content saturation", "Partnership transparency", "Platform changes"],
+    "motivations": ["Inspiring others", "Brand partnerships", "Community building", "Creative expression", "Income stability"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Does this fit my aesthetic?", "Is this authentic to my brand?", "Will my community love this?", "Is this partnership transparent?", "Does this inspire?"],
+    "reactsToEarlyIdeas": "Evaluates through lifestyle-curation lens. Needs aesthetic alignment and authentic fit.",
+    "scoringRubric": "Scores on aesthetic quality, brand alignment, community fit, and authenticity."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "demographic": "Millennial"}
+}

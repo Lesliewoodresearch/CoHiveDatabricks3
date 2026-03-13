@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-middle-income",
+  "name": "Middle Income ($35K-$100K)",
+  "description": "Middle income demographic - balancing value and quality",
+  "context": "Middle Income ($35K-$100K) balances value and quality, seeks good deals on quality products.",
+  "psychographics": {"values": ["Value", "Quality", "Practicality", "Stability"], "motivations": ["Financial stability", "Quality life", "Value optimization"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this good value?", "Is this worth it?"], "scoringRubric": "Scores on value-quality balance."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

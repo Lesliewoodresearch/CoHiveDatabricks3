@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-multi-gen",
+  "name": "Multi-Generational",
+  "description": "Multi-generational household - diverse needs and values",
+  "context": "Multi-generational households balance diverse age needs, traditions, and modern values.",
+  "psychographics": {"values": ["Family unity", "Respect for elders", "Practicality", "Shared resources"], "motivations": ["Family harmony", "Multi-age appeal", "Practical solutions"]},
+  "evaluationCriteria": {"alwaysAsks": ["Does this work for all ages?", "Is this practical for everyone?"], "scoringRubric": "Scores on multi-age appeal and practicality."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

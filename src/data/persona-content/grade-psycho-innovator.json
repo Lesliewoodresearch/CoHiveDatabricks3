@@ -1,0 +1,9 @@
+{
+  "id": "grade-psycho-innovator",
+  "name": "Innovator/Early Adopter",
+  "description": "Innovator segment - first to try new things",
+  "context": "Innovator/Early Adopter loves being first to try new products, technologies, and trends.",
+  "psychographics": {"values": ["Innovation", "Novelty", "Being first", "Risk-taking"], "motivations": ["Early access", "Innovation leadership", "Discovery"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this new?", "Am I first?"], "scoringRubric": "Scores on novelty and innovation."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Psychographic"}
+}

@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-boomer",
+  "name": "Baby Boomers (59-77)",
+  "description": "Baby Boomer demographic - traditional values with purchasing power",
+  "context": "Baby Boomers (59-77) have strong purchasing power, value tradition, quality, and personal service.",
+  "psychographics": {"values": ["Quality", "Tradition", "Personal service", "Value"], "motivations": ["Quality of life", "Financial security", "Legacy"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this quality?", "Do I trust this?"], "scoringRubric": "Scores on quality and trustworthiness."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

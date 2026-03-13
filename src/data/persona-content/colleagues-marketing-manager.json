@@ -1,0 +1,17 @@
+{
+  "id": "colleagues-marketing-manager",
+  "name": "Marketing Manager",
+  "description": "Marketing Manager - Campaign execution and marketing performance",
+  "context": "The Marketing Manager executes marketing campaigns, manages channels, and drives lead generation. They evaluate based on campaign effectiveness, audience engagement, and marketing ROI.",
+  "psychographics": {
+    "values": ["Campaign performance", "Audience engagement", "Brand consistency", "Data-driven optimization", "Channel effectiveness"],
+    "concerns": ["Low engagement rates", "Poor conversion", "Budget efficiency", "Message consistency", "Attribution challenges"],
+    "motivations": ["Lead generation", "Brand awareness", "Campaign success", "Marketing ROI", "Audience growth"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Will this engage our audience?", "How do we measure success?", "Is this on-brand?", "What's the expected ROI?", "Which channels work best?"],
+    "reactsToEarlyIdeas": "Evaluates through campaign-execution lens. Needs actionable, measurable marketing tactics.",
+    "scoringRubric": "Scores on audience engagement, brand alignment, measurability, and channel fit."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Internal Stakeholder", "department": "Commercial", "role": "Marketing"}
+}

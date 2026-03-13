@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-gen-z",
+  "name": "Gen Z (18-26)",
+  "description": "Gen Z demographic segment - digital natives with social consciousness",
+  "context": "Gen Z (18-26) is digitally native, socially conscious, values authenticity and diversity.",
+  "psychographics": {"values": ["Authenticity", "Diversity", "Social justice", "Digital fluency"], "motivations": ["Social impact", "Authentic expression", "Community"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this authentic?", "Is this inclusive?"], "scoringRubric": "Scores on authenticity and inclusivity."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

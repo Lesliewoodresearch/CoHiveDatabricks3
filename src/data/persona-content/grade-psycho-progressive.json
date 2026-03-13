@@ -1,0 +1,9 @@
+{
+  "id": "grade-psycho-progressive",
+  "name": "Progressive Values",
+  "description": "Progressive values segment - change-oriented and socially conscious",
+  "context": "Progressive Values segment prioritizes social justice, equality, innovation, and change.",
+  "psychographics": {"values": ["Social justice", "Equality", "Innovation", "Change", "Inclusion"], "motivations": ["Social progress", "Equality advancement", "Systemic change"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this progressive?", "Does this advance equality?"], "scoringRubric": "Scores on social progress and inclusivity."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Psychographic"}
+}

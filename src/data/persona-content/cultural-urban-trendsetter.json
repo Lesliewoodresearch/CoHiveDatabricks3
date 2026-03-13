@@ -1,0 +1,17 @@
+{
+  "id": "cultural-urban-trendsetter",
+  "name": "Urban Trendsetter",
+  "description": "City-based trendsetter influencing culture through style and innovation",
+  "context": "Urban Trendsetter lives in major cities, stays ahead of trends, and influences what's cool. They value innovation, style, cultural relevance, and being first to discover new things.",
+  "psychographics": {
+    "values": ["Cultural innovation", "Style leadership", "Early adoption", "Urban culture", "Authenticity"],
+    "concerns": ["Mainstream adoption", "Cultural appropriation", "Gentrification", "Losing edge", "Commercialization"],
+    "motivations": ["Setting trends", "Cultural influence", "Discovery", "Community leadership", "Creative expression"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Is this actually new?", "Is this culturally authentic?", "Will this stay underground?", "Does this have edge?", "Is this cool or trying too hard?"],
+    "reactsToEarlyIdeas": "Evaluates through trend-leadership lens. Needs fresh, authentic, culturally relevant innovation.",
+    "scoringRubric": "Scores on novelty, cultural authenticity, edge, and trend potential."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "location": "Urban"}
+}

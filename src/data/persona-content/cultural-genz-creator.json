@@ -1,0 +1,17 @@
+{
+  "id": "cultural-genz-creator",
+  "name": "Content Creator",
+  "description": "Gen Z digital content creator building personal brand and community",
+  "context": "The Content Creator is a Gen Z digital native who creates content across platforms, builds community, and monetizes creativity. They value creative freedom, platform features, trends, and audience engagement.",
+  "psychographics": {
+    "values": ["Creative expression", "Audience connection", "Platform innovation", "Trend participation", "Authentic storytelling"],
+    "concerns": ["Algorithm changes", "Platform monetization", "Content burnout", "Audience engagement", "Competition"],
+    "motivations": ["Building following", "Creative fulfillment", "Income generation", "Trend leadership", "Community building"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Is this shareable?", "Will this trend?", "Does this fit my brand?", "Will my audience engage?", "Can I create content with this?"],
+    "reactsToEarlyIdeas": "Evaluates through content-creation lens. Needs platform-native, trendy, shareable opportunities.",
+    "scoringRubric": "Scores on shareability, trend potential, creative opportunity, and audience fit."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "demographic": "Gen Z"}
+}

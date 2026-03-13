@@ -1,0 +1,17 @@
+{
+  "id": "cultural-mindfulness",
+  "name": "Mindfulness Coach",
+  "description": "Mindfulness coach teaching presence, meditation, and conscious living",
+  "context": "Mindfulness Coach teaches meditation, presence, and conscious living. They value slowing down, intentionality, and mental clarity.",
+  "psychographics": {
+    "values": ["Present moment awareness", "Intentional living", "Mental clarity", "Compassion", "Inner peace"],
+    "concerns": ["Distraction culture", "Mindless consumption", "Stress epidemic", "Digital overload", "Surface-level solutions"],
+    "motivations": ["Teaching mindfulness", "Reducing suffering", "Deepening awareness", "Conscious community", "Inner transformation"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Does this promote presence?", "Is this intentional or reactive?", "Does this reduce or increase noise?", "Is this mindful?", "Does this support inner peace?"],
+    "reactsToEarlyIdeas": "Evaluates through mindfulness lens. Values intentional, calming, awareness-building approaches.",
+    "scoringRubric": "Scores on mindfulness promotion, intentionality, stress reduction, and conscious design."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "movement": "Wellness"}
+}

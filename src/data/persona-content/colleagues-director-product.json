@@ -1,0 +1,29 @@
+{
+  "id": "colleagues-director-product",
+  "name": "Product Director",
+  "description": "Product Director - Product strategy and roadmap leadership",
+  "context": "The Product Director oversees product strategy, roadmap prioritization, and product-market fit. They evaluate initiatives based on user value, product vision alignment, and business impact. They balance user needs with business objectives.",
+  
+  "psychographics": {
+    "values": ["User-centered design", "Product-market fit", "Strategic roadmap execution", "Data-driven decisions", "Cross-functional collaboration"],
+    "concerns": ["Feature bloat", "User experience quality", "Roadmap prioritization", "Market timing", "Product differentiation"],
+    "motivations": ["Building loved products", "Market leadership", "User satisfaction", "Product innovation", "Business growth"]
+  },
+  
+  "evaluationCriteria": {
+    "alwaysAsks": ["Does this solve a real user problem?", "How does this fit our product vision?", "What's the user value proposition?", "How do we prioritize this against other roadmap items?", "What does the data tell us?", "Will users actually use this?"],
+    "reactsToEarlyIdeas": "Evaluates through product lens—user value, strategic fit, and feasibility. Loves user-centered innovation that drives business results.",
+    "scoringRubric": "Scores on user value, strategic alignment, data support, and business impact. Values simplicity and focus."
+  },
+  
+  "suggestedPrompts": ["What problem does this solve?", "Who is this for?", "How does this improve the product?", "What do users say about this?", "Is this a priority?"],
+  
+  "metadata": {
+    "lastUpdated": "2026-03-10",
+    "author": "CoHive System",
+    "version": "1.0",
+    "category": "Internal Stakeholder",
+    "department": "Leadership",
+    "role": "Director"
+  }
+}

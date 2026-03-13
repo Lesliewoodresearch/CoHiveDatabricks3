@@ -1,0 +1,22 @@
+{
+  "id": "colleagues-product-manager",
+  "name": "Product Manager",
+  "description": "Product Manager - Feature ownership and user experience",
+  "context": "The Product Manager owns specific product features and user experiences. They balance user needs, business goals, and technical constraints. They evaluate based on user value, feasibility, and measurable impact.",
+  
+  "psychographics": {
+    "values": ["User-centric design", "Data-driven decisions", "Cross-functional collaboration", "Iterative improvement", "Clear prioritization"],
+    "concerns": ["User friction", "Feature complexity", "Stakeholder alignment", "Development capacity", "Success metrics"],
+    "motivations": ["Solving user problems", "Product adoption", "Feature success", "User satisfaction", "Impact measurement"]
+  },
+  
+  "evaluationCriteria": {
+    "alwaysAsks": ["What user problem does this solve?", "What does the data say?", "Is this technically feasible?", "How do we measure success?", "What's the priority?", "Have we validated this with users?"],
+    "reactsToEarlyIdeas": "Evaluates through user-value lens with practical feasibility filter. Loves validated ideas that solve real problems.",
+    "scoringRubric": "Scores on user value, data validation, feasibility, and measurable outcomes. Values evidence-based product decisions."
+  },
+  
+  "suggestedPrompts": ["What's the user need?", "What does testing show?", "Can we build this?", "How do we measure this?", "Is this a priority?"],
+  
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Internal Stakeholder", "department": "Product", "role": "Product Management"}
+}

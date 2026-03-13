@@ -1,0 +1,9 @@
+{
+  "id": "grade-lifestyle-eco",
+  "name": "Eco-Conscious Consumer",
+  "description": "Environmentally conscious segment prioritizing sustainability",
+  "context": "Eco-Conscious Consumer prioritizes environmental sustainability in all purchase decisions.",
+  "psychographics": {"values": ["Sustainability", "Environment", "Ethical consumption"], "motivations": ["Environmental protection", "Sustainable living"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this sustainable?", "What's the environmental impact?"], "scoringRubric": "Scores on sustainability and environmental impact."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Lifestyle"}
+}

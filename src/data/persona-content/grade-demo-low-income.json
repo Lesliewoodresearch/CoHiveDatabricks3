@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-low-income",
+  "name": "Low Income (<$35K)",
+  "description": "Low income demographic - price-sensitive and budget-conscious",
+  "context": "Low Income (<$35K) is highly price-sensitive, seeks value and affordability, manages tight budgets.",
+  "psychographics": {"values": ["Affordability", "Value", "Necessity", "Budget management"], "motivations": ["Making ends meet", "Value maximization", "Financial survival"]},
+  "evaluationCriteria": {"alwaysAsks": ["Can I afford this?", "Is this necessary?"], "scoringRubric": "Scores on affordability and necessity."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

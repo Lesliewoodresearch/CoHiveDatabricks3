@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-rural",
+  "name": "Rural",
+  "description": "Rural demographic - traditional values with self-reliance",
+  "context": "Rural residents value tradition, self-reliance, community ties, and practical solutions.",
+  "psychographics": {"values": ["Tradition", "Self-reliance", "Community", "Practicality"], "motivations": ["Community preservation", "Self-sufficiency", "Traditional values"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this practical?", "Does this work for rural life?"], "scoringRubric": "Scores on practicality and rural relevance."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

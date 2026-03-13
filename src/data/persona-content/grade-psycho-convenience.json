@@ -1,0 +1,9 @@
+{
+  "id": "grade-psycho-convenience",
+  "name": "Convenience-Oriented",
+  "description": "Convenience segment - time-saving and efficiency focused",
+  "context": "Convenience-Oriented segment prioritizes time-saving, ease, efficiency, and simplicity.",
+  "psychographics": {"values": ["Time-saving", "Ease", "Efficiency", "Simplicity"], "motivations": ["Time optimization", "Effort reduction", "Simplified life"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this convenient?", "Does this save time?"], "scoringRubric": "Scores on convenience and time-saving."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Psychographic"}
+}

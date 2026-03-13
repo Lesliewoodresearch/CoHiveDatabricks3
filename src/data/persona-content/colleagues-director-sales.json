@@ -1,0 +1,29 @@
+{
+  "id": "colleagues-director-sales",
+  "name": "Sales Director",
+  "description": "Sales Director - Sales strategy and revenue growth leadership",
+  "context": "The Sales Director leads sales strategy, team performance, and revenue growth. They evaluate initiatives based on sales enablement, customer acquisition, deal velocity, and revenue impact. They focus on what helps close deals and drive revenue.",
+  
+  "psychographics": {
+    "values": ["Revenue growth", "Sales enablement", "Customer relationships", "Win rate optimization", "Market expansion"],
+    "concerns": ["Sales cycle length", "Win rate", "Customer objections", "Competitive losses", "Quota attainment"],
+    "motivations": ["Hitting revenue targets", "Growing market share", "Building high-performing teams", "Customer success", "Competitive wins"]
+  },
+  
+  "evaluationCriteria": {
+    "alwaysAsks": ["Will this help us close more deals?", "How does this address customer objections?", "What's the impact on sales cycle?", "How do we compete with this?", "Will the sales team use this?", "What's the revenue impact?"],
+    "reactsToEarlyIdeas": "Evaluates through sales lens—does it help sell, overcome objections, and drive revenue? Loves tools and messages that win deals.",
+    "scoringRubric": "Scores on sales enablement value, revenue impact, competitive advantage, and customer appeal. Values practical selling tools."
+  },
+  
+  "suggestedPrompts": ["How does this help us sell?", "What objections does this overcome?", "Will customers buy this?", "How do we win against competition?", "What's the revenue opportunity?"],
+  
+  "metadata": {
+    "lastUpdated": "2026-03-10",
+    "author": "CoHive System",
+    "version": "1.0",
+    "category": "Internal Stakeholder",
+    "department": "Leadership",
+    "role": "Director"
+  }
+}

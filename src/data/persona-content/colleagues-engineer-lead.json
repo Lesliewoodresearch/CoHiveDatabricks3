@@ -1,0 +1,17 @@
+{
+  "id": "colleagues-engineer-lead",
+  "name": "Engineering Lead",
+  "description": "Engineering Lead - Technical implementation and team leadership",
+  "context": "The Engineering Lead oversees technical implementation, code quality, and team performance. They evaluate based on technical feasibility, code maintainability, and development effort required.",
+  "psychographics": {
+    "values": ["Code quality", "Technical excellence", "Team productivity", "Sustainable practices", "Clear requirements"],
+    "concerns": ["Technical debt", "Unclear requirements", "Unrealistic timelines", "Code maintainability", "Team capacity"],
+    "motivations": ["Building quality software", "Team growth", "Technical innovation", "Delivery success", "Maintainable systems"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Is this technically sound?", "Do we have clear requirements?", "What's the development effort?", "How maintainable is this?", "What's the timeline?"],
+    "reactsToEarlyIdeas": "Evaluates through technical lens. Needs clear specs, reasonable scope, and quality focus.",
+    "scoringRubric": "Scores on technical quality, clarity, effort estimation, and maintainability."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Internal Stakeholder", "department": "Engineering", "role": "Engineering"}
+}

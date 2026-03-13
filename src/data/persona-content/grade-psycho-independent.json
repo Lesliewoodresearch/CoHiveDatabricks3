@@ -1,0 +1,9 @@
+{
+  "id": "grade-psycho-independent",
+  "name": "Independent Thinker",
+  "description": "Independent segment - self-reliant and contrarian",
+  "context": "Independent Thinker values independence, original thinking, and resists conformity.",
+  "psychographics": {"values": ["Independence", "Original thinking", "Self-reliance", "Contrarian views"], "motivations": ["Personal freedom", "Independent choices", "Unique path"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this mainstream?", "Can I think for myself?"], "scoringRubric": "Scores on independence and originality."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Psychographic"}
+}

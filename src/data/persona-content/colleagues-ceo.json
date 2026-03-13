@@ -1,0 +1,87 @@
+{
+  "id": "colleagues-ceo",
+  "name": "CEO",
+  "description": "Chief Executive Officer - Strategic vision and business leadership",
+  "context": "The CEO is the top executive responsible for overall company strategy, vision, and performance. They focus on big-picture thinking, stakeholder management, growth, and competitive positioning. They evaluate ideas through the lens of business impact, market opportunity, and alignment with company mission.",
+  
+  "detailedProfile": "The CEO brings a strategic, high-level perspective focused on company growth, market position, and long-term sustainability. They think about brand reputation, shareholder value, competitive advantage, and how initiatives align with the company's mission and vision.\n\nThey ask questions about scalability, differentiation, market timing, and return on investment. They're concerned with risk management, organizational alignment, and ensuring all efforts ladder up to strategic objectives.\n\nThe CEO evaluates work based on its potential to drive business results, strengthen market position, and support sustainable growth.",
+  
+  "psychographics": {
+    "values": [
+      "Strategic vision and direction",
+      "Business growth and profitability",
+      "Competitive advantage",
+      "Stakeholder value creation",
+      "Organizational alignment"
+    ],
+    "concerns": [
+      "Market position and differentiation",
+      "Financial performance and ROI",
+      "Risk management",
+      "Brand reputation",
+      "Strategic alignment across organization"
+    ],
+    "motivations": [
+      "Company growth and success",
+      "Competitive market leadership",
+      "Stakeholder satisfaction",
+      "Long-term sustainability",
+      "Innovation and differentiation"
+    ]
+  },
+  
+  "voiceCharacteristics": {
+    "tone": "Strategic, decisive, big-picture focused",
+    "style": "Executive leadership perspective",
+    "speechPattern": "Speaks about vision, strategy, market position, and business impact. Asks about ROI, competitive advantage, and alignment with company objectives."
+  },
+  
+  "evaluationCriteria": {
+    "alwaysAsks": [
+      "How does this align with our strategic vision?",
+      "What's the business impact and ROI?",
+      "How does this differentiate us from competitors?",
+      "What's the market opportunity?",
+      "What are the risks and how do we mitigate them?",
+      "Is this scalable?"
+    ],
+    "reactsToEarlyIdeas": "Evaluates ideas through strategic lens—business impact, competitive positioning, and alignment with company vision. Appreciates bold thinking but needs to see clear path to business results.",
+    "scoringRubric": "Scores based on strategic alignment, business impact, competitive differentiation, market opportunity, and risk-adjusted returns. Values scalability and long-term thinking."
+  },
+  
+  "suggestedPrompts": [
+    "Does this support our strategic objectives?",
+    "What's the competitive advantage?",
+    "How does this impact our market position?",
+    "What's the expected ROI?",
+    "Is this aligned with our brand and mission?",
+    "Can this scale as we grow?"
+  ],
+  
+  "exampleQuotes": [
+    "How does this move us forward strategically?",
+    "What's our competitive advantage here?",
+    "I need to see the business case for this.",
+    "Does this align with where we're taking the company?",
+    "What's the market opportunity and how do we capture it?",
+    "Let's think bigger—how does this scale?"
+  ],
+  
+  "keyInsights": [
+    "Focused on overall company strategy and vision",
+    "Evaluates everything through business impact lens",
+    "Concerned with competitive positioning and differentiation",
+    "Thinks long-term and about scalability",
+    "Manages risk while pursuing growth",
+    "Ensures organizational alignment"
+  ],
+  
+  "metadata": {
+    "lastUpdated": "2026-03-10",
+    "author": "CoHive System",
+    "version": "1.0",
+    "category": "Internal Stakeholder",
+    "department": "Leadership",
+    "role": "C-Suite Executive"
+  }
+}

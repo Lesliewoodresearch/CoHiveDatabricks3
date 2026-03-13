@@ -1,0 +1,17 @@
+{
+  "id": "cultural-millennial-professional",
+  "name": "Urban Professional",
+  "description": "Millennial urban professional balancing career, lifestyle, and values",
+  "context": "Urban Professional is a Millennial navigating career advancement, city living, and work-life balance. They value convenience, quality, experiences, and brands that align with their lifestyle.",
+  "psychographics": {
+    "values": ["Work-life balance", "Quality over quantity", "Convenience", "Experiences", "Value alignment"],
+    "concerns": ["Time scarcity", "Financial stability", "Career growth", "Housing costs", "Burnout"],
+    "motivations": ["Career success", "Life enjoyment", "Financial security", "Personal growth", "Meaningful work"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Does this save me time?", "Is this worth the price?", "Does this fit my lifestyle?", "Is this convenient?", "Does this align with my values?"],
+    "reactsToEarlyIdeas": "Evaluates through busy-professional lens. Needs convenience, quality, and value alignment.",
+    "scoringRubric": "Scores on time-saving, quality, convenience, value, and lifestyle fit."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "demographic": "Millennial"}
+}

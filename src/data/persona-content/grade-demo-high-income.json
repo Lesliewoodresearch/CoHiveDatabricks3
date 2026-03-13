@@ -1,0 +1,9 @@
+{
+  "id": "grade-demo-high-income",
+  "name": "High Income ($200K+)",
+  "description": "High income demographic - premium-focused and status-conscious",
+  "context": "High Income ($200K+) seeks premium quality, exclusivity, and exceptional experiences.",
+  "psychographics": {"values": ["Premium quality", "Exclusivity", "Status", "Excellence"], "motivations": ["Status", "Best quality", "Exclusive experiences"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this premium?", "Is this exclusive?"], "scoringRubric": "Scores on premium quality and exclusivity."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Demographic"}
+}

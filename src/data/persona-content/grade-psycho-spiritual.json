@@ -1,0 +1,9 @@
+{
+  "id": "grade-psycho-spiritual",
+  "name": "Spiritual/Religious",
+  "description": "Spiritual/religious segment - faith-driven and purpose-seeking",
+  "context": "Spiritual/Religious segment prioritizes faith, meaning, purpose, and moral values.",
+  "psychographics": {"values": ["Faith", "Purpose", "Morality", "Community", "Meaning"], "motivations": ["Spiritual growth", "Living values", "Faith community"]},
+  "evaluationCriteria": {"alwaysAsks": ["Does this align with my faith?", "Is this meaningful?"], "scoringRubric": "Scores on faith alignment and purpose."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Psychographic"}
+}

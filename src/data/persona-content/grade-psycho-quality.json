@@ -1,0 +1,9 @@
+{
+  "id": "grade-psycho-quality",
+  "name": "Quality-Focused",
+  "description": "Quality segment - craftsmanship and excellence focused",
+  "context": "Quality-Focused segment prioritizes craftsmanship, durability, excellence, and lasting value.",
+  "psychographics": {"values": ["Quality", "Craftsmanship", "Durability", "Excellence"], "motivations": ["Long-term value", "Quality ownership", "Excellence"]},
+  "evaluationCriteria": {"alwaysAsks": ["Is this quality?", "Will this last?"], "scoringRubric": "Scores on quality and durability."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Psychographic"}
+}

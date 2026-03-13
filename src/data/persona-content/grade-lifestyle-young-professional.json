@@ -1,0 +1,9 @@
+{
+  "id": "grade-lifestyle-young-professional",
+  "name": "Young Professional",
+  "description": "Young professional balancing career growth and lifestyle",
+  "context": "Young Professional values career advancement, convenience, and quality experiences.",
+  "psychographics": {"values": ["Career growth", "Convenience", "Quality", "Work-life balance"], "motivations": ["Professional success", "Lifestyle enjoyment", "Personal development"]},
+  "evaluationCriteria": {"alwaysAsks": ["Does this fit my lifestyle?", "Is this convenient?"], "scoringRubric": "Scores on convenience and lifestyle fit."},
+  "metadata": {"lastUpdated": "2026-03-10", "category": "Grade Segment", "segmentType": "Lifestyle"}
+}

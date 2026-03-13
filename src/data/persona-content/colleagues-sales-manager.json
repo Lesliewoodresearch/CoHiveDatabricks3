@@ -1,0 +1,17 @@
+{
+  "id": "colleagues-sales-manager",
+  "name": "Sales Manager",
+  "description": "Sales Manager - Sales team performance and pipeline management",
+  "context": "The Sales Manager leads the sales team, manages pipeline, and drives revenue performance. They evaluate based on team enablement, pipeline impact, and revenue outcomes.",
+  "psychographics": {
+    "values": ["Team performance", "Pipeline health", "Revenue predictability", "Sales enablement", "Win rate optimization"],
+    "concerns": ["Pipeline gaps", "Low win rates", "Team productivity", "Forecast accuracy", "Customer churn"],
+    "motivations": ["Hitting team targets", "Developing sellers", "Pipeline growth", "Forecast accuracy", "Revenue consistency"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["How does this impact pipeline?", "Will the team adopt this?", "What's the revenue impact?", "Does this improve win rates?", "How does this help forecasting?"],
+    "reactsToEarlyIdeas": "Evaluates through team-performance lens. Needs scalable sales enablement.",
+    "scoringRubric": "Scores on team enablement, pipeline impact, revenue outcomes, and adoption potential."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Internal Stakeholder", "department": "Commercial", "role": "Sales"}
+}

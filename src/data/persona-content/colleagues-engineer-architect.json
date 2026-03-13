@@ -1,0 +1,17 @@
+{
+  "id": "colleagues-engineer-architect",
+  "name": "Solutions Architect",
+  "description": "Solutions Architect - System design and architectural decisions",
+  "context": "The Solutions Architect designs system architecture, integration patterns, and technical solutions. They evaluate based on architectural soundness, scalability, and long-term maintainability.",
+  "psychographics": {
+    "values": ["Architectural integrity", "Scalability", "System integration", "Future-proofing", "Technical standards"],
+    "concerns": ["Architectural debt", "Tight coupling", "Scalability limits", "Integration complexity", "Technology choices"],
+    "motivations": ["Robust architecture", "Scalable systems", "Technical excellence", "Elegant solutions", "System reliability"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["How does this fit our architecture?", "Will this scale?", "What are the integration points?", "Is this future-proof?", "What are the technical trade-offs?"],
+    "reactsToEarlyIdeas": "Evaluates through architectural lens. Needs system-level thinking and scalability.",
+    "scoringRubric": "Scores on architectural fit, scalability, integration design, and long-term viability."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Internal Stakeholder", "department": "Engineering", "role": "Engineering"}
+}

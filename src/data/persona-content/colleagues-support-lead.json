@@ -1,0 +1,17 @@
+{
+  "id": "colleagues-support-lead",
+  "name": "Support Team Lead",
+  "description": "Support Team Lead - Customer support operations and issue resolution",
+  "context": "The Support Team Lead manages customer support operations, ensuring quick resolution and customer satisfaction. They evaluate based on supportability, issue prevention, and customer experience.",
+  "psychographics": {
+    "values": ["Quick resolution", "Customer satisfaction", "Issue prevention", "Team efficiency", "Clear documentation"],
+    "concerns": ["Complex issues", "High ticket volume", "Poor documentation", "Customer frustration", "Resolution time"],
+    "motivations": ["Customer happiness", "Efficient support", "Issue prevention", "Team performance", "Knowledge sharing"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Is this easy to support?", "Will this reduce tickets?", "Can customers self-serve?", "Is this well documented?", "What new issues might this create?"],
+    "reactsToEarlyIdeas": "Evaluates through supportability lens. Needs clear, documented, easy-to-support solutions.",
+    "scoringRubric": "Scores on ease of support, issue prevention, documentation quality, and customer experience."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Internal Stakeholder", "department": "Commercial", "role": "Customer Success"}
+}

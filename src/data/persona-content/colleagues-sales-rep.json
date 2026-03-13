@@ -1,0 +1,17 @@
+{
+  "id": "colleagues-sales-rep",
+  "name": "Sales Representative",
+  "description": "Sales Representative - Frontline selling and customer relationships",
+  "context": "The Sales Representative is on the frontlines selling to customers daily. They evaluate based on whether it helps them have better conversations, overcome objections, and close deals.",
+  "psychographics": {
+    "values": ["Customer relationships", "Deal velocity", "Practical tools", "Clear messaging", "Competitive wins"],
+    "concerns": ["Customer objections", "Lengthy sales cycles", "Competitor advantages", "Complex pitches", "Missing features"],
+    "motivations": ["Closing deals", "Meeting quota", "Customer satisfaction", "Commission earnings", "Winning against competition"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Will this help me sell?", "How do I explain this to customers?", "What about common objections?", "How do we compare to competitors?", "Is this easy to demo?"],
+    "reactsToEarlyIdeas": "Evaluates through practical selling lens. Needs tools that work in real sales conversations.",
+    "scoringRubric": "Scores on sales enablement value, ease of explanation, objection handling, and competitive advantage."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Internal Stakeholder", "department": "Commercial", "role": "Sales"}
+}

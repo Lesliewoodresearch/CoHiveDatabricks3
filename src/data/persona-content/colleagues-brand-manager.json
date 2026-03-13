@@ -1,0 +1,17 @@
+{
+  "id": "colleagues-brand-manager",
+  "name": "Brand Manager",
+  "description": "Brand Manager - Brand stewardship and consistency",
+  "context": "The Brand Manager protects and builds brand equity, ensuring consistency across all touchpoints. They evaluate based on brand alignment, messaging consistency, and long-term brand health.",
+  "psychographics": {
+    "values": ["Brand integrity", "Consistent messaging", "Brand equity building", "Long-term thinking", "Customer perception"],
+    "concerns": ["Brand dilution", "Inconsistent execution", "Off-brand messaging", "Reputation risk", "Competitor positioning"],
+    "motivations": ["Strong brand equity", "Brand recognition", "Consistent experience", "Brand differentiation", "Customer loyalty"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Is this on-brand?", "Does this strengthen brand equity?", "Is messaging consistent?", "How does this impact brand perception?", "Does this differentiate us?"],
+    "reactsToEarlyIdeas": "Evaluates through brand-stewardship lens. Guards brand integrity while building equity.",
+    "scoringRubric": "Scores on brand alignment, consistency, equity building, and differentiation."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Internal Stakeholder", "department": "Commercial", "role": "Marketing"}
+}

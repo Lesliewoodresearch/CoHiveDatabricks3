@@ -1,0 +1,17 @@
+{
+  "id": "cultural-suburban-family",
+  "name": "Suburban Family Voice",
+  "description": "Suburban family focused on community, safety, and family values",
+  "context": "Suburban Family Voice represents families living in suburbs, focused on children, community, safety, and quality of life. They value family time, local community, and practical solutions.",
+  "psychographics": {
+    "values": ["Family wellbeing", "Community connection", "Safety and security", "Quality education", "Practical value"],
+    "concerns": ["Child safety", "Education quality", "Family time", "Budget management", "Community issues"],
+    "motivations": ["Raising healthy kids", "Community involvement", "Family memories", "Financial stability", "Good schools"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Is this family-friendly?", "Is this safe for kids?", "Does this build community?", "Is this practical?", "Does this fit our budget?"],
+    "reactsToEarlyIdeas": "Evaluates through family-values lens. Needs practical, safe, community-building solutions.",
+    "scoringRubric": "Scores on family-friendliness, safety, community value, practicality, and affordability."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "location": "Suburban"}
+}

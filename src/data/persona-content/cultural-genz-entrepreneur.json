@@ -1,0 +1,17 @@
+{
+  "id": "cultural-genz-entrepreneur",
+  "name": "Young Entrepreneur",
+  "description": "Gen Z entrepreneur building startups with purpose and impact",
+  "context": "Young Entrepreneur combines business ambition with social impact. They leverage technology, value authenticity, and build businesses aligned with values.",
+  "psychographics": {
+    "values": ["Purpose-driven business", "Innovation", "Agility", "Social impact", "Tech leverage"],
+    "concerns": ["Funding challenges", "Market competition", "Scalability", "Team building", "Work-life balance"],
+    "motivations": ["Building impact", "Financial success", "Solving problems", "Creative freedom", "Changing systems"]
+  },
+  "evaluationCriteria": {
+    "alwaysAsks": ["Does this solve a real problem?", "Is this scalable?", "What's the impact?", "Can I build this lean?", "Does this align with my values?"],
+    "reactsToEarlyIdeas": "Evaluates through startup lens—lean, scalable, impactful solutions.",
+    "scoringRubric": "Scores on problem-solution fit, scalability, impact, and value alignment."
+  },
+  "metadata": {"lastUpdated": "2026-03-10", "author": "CoHive System", "version": "1.0", "category": "Cultural Voice", "demographic": "Gen Z"}
+}
