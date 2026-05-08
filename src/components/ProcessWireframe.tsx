@@ -1,4 +1,4 @@
-import { Database, Cpu, GitBranch, BarChart3, Rocket, CirclePlay, Settings, FileText, Users, Globe, MessageSquare, TestTube2, CircleCheck, Save, CircleAlert, User, Download, Upload, RotateCcw, Mic, Camera, Video, CircleStop } from 'lucide-react';
+import { Database, Cpu, GitBranch, BarChart3, Rocket, CirclePlay, Settings, FileText, Users, Globe, MessageSquare, TestTube2, CircleCheck, Save, CircleAlert, User, Download, Upload, RotateCcw, Mic, Camera } from 'lucide-react';
 import { ProcessFlow, processSteps } from './ProcessFlow';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
@@ -210,7 +210,6 @@ export default function ProcessWireframe() {
   const [isDatabricksLoading, setIsDatabricksLoading] = useState(false);
   const [databricksLoadingMessage, setDatabricksLoadingMessage] = useState('Communicating with Databricks...');
   const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null);
-  const [recordedVideoBlob, setRecordedVideoBlob] = useState<Blob | null>(null);
 
   const [hexWidgetContext, setHexWidgetContext] = useState<{
     files: string[];
@@ -223,7 +222,6 @@ export default function ProcessWireframe() {
   const [wisdomInputMethod, setWisdomInputMethod] = useState<string | null>(null);
   const [wisdomCameraMode, setWisdomCameraMode] = useState<'photo' | 'video' | null>(null);
   const wisdomVideoRef = useRef<HTMLVideoElement>(null);
-  const cancelVideoRecordingRef = useRef(false);
   const { devices: micDevices, selectedDeviceId: selectedMicDeviceId, setSelectedDeviceId: setSelectedMicDeviceId } = useMicDevices();
   
   const isBrowser = typeof window !== 'undefined';
@@ -1801,7 +1799,7 @@ export default function ProcessWireframe() {
                                 {hasResponse && <CircleCheck className="w-5 h-5 text-green-600 flex-shrink-0" />}
                               </label>
                               <div className="space-y-1">
-                                {['Text', 'Voice', 'Photo', 'Video', 'File', 'Interview'].map(method => (
+                                {['Text', 'Voice', 'Photo', 'File', 'Interview'].map(method => (
                                   <label key={method} className="flex items-center gap-2 cursor-pointer">
                                     <input type="radio" name="inputMethod" value={method} checked={responses[activeStepId]?.[idx] === method} onChange={(e) => handleResponseChange(idx, e.target.value)} className="w-4 h-4" />
                                     <span className="text-gray-700">{method === 'Interview' ? 'Be Interviewed' : method}</span>
@@ -2037,121 +2035,6 @@ export default function ProcessWireframe() {
                                           {isWisdomSaving ? <><SpinHex className="w-4 h-4" />Saving...</> : <><Camera className="w-4 h-4" />Capture</>}
                                         </button>
                                         <button type="button" className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300" onClick={stopWisdomCamera}>Cancel</button>
-                                      </div>
-                                    </div>
-                                  )}
-                                  {responses[activeStepId]?.[idx] && <div className="bg-green-50 border border-green-200 rounded p-2"><p className="text-sm text-green-700">✓ {responses[activeStepId][idx]}</p></div>}
-                                </div>
-                              </div>
-                            );
-                          }
-
-                          // VIDEO — upload or use camera
-                          if (inputMethod === 'Video') {
-                            const videoScope: 'general' | 'category' | 'brand' = insightType === 'General' ? 'general' : insightType === 'Category' ? 'category' : 'brand';
-                            const MAX_VIDEO_BYTES = 3.4 * 1024 * 1024;
-                            const uploadVideo = async (file: File, label: string, e: React.ChangeEvent<HTMLInputElement>) => {
-                              if (!isDatabricksAuthenticated) { setWisdomErrorMessage('⚠️ Please sign in to Databricks before saving. Click the Sign In button in the header.'); setShowLoginModal(true); e.target.value = ''; return; }
-                              if (file.size > MAX_VIDEO_BYTES) { setWisdomErrorMessage(`Video is too large (${Math.round(file.size / 1024 / 1024 * 10) / 10}MB). Maximum is 3.4MB — please trim or compress the clip first.`); e.target.value = ''; return; }
-                              const ext = file.name.split('.').pop() || 'mp4';
-                              const renamed = new File([file], wisdomFileName(ext), { type: file.type });
-                              setIsWisdomSaving(true);
-                              setIsDatabricksLoading(true);
-                              setDatabricksLoadingMessage('Saving video…');
-                              setWisdomErrorMessage(null);
-                              try {
-                                const result = await uploadToKnowledgeBase({ file: renamed, scope: videoScope, brand: videoScope === 'brand' ? (brand || undefined) : undefined, projectType: projectType || undefined, fileType: 'Wisdom', tags: [insightType, 'Video'], insightType: insightType as 'Brand' | 'Category' | 'General', inputMethod: 'Video', userEmail, userRole });
-                                if (result.success) { handleResponseChange(idx, label); setWisdomSuccessMessage(`✅ "${renamed.name}" saved to Knowledge Base.\n\nThis file will be made available after it has been processed, read and approved by a research manager.`); }
-                                else { setWisdomErrorMessage(`Failed to save video: ${result.error || 'Unknown error'}`); }
-                              } catch (err) { setWisdomErrorMessage(`Failed to save video: ${err instanceof Error ? err.message : 'Unknown error'}`); }
-                              finally { setIsWisdomSaving(false); setIsDatabricksLoading(false); e.target.value = ''; }
-                            };
-                            return (
-                              <div key={idx} className="mb-2">
-                                <label className="block text-gray-900 mb-1 flex items-start justify-between">
-                                  <span>Share a Video</span>
-                                  {hasResponse && <CircleCheck className="w-5 h-5 text-green-600 flex-shrink-0" />}
-                                </label>
-                                <div className="space-y-2">
-                                  <p className="text-xs text-gray-500">Maximum file size: 3.4MB. Keep clips short — trim or compress longer videos first.</p>
-                                  <label className={`flex items-center justify-center gap-2 w-full px-4 py-3 rounded cursor-pointer ${isWisdomSaving ? 'bg-blue-400 text-white pointer-events-none' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
-                                    {isWisdomSaving ? <SpinHex className="w-5 h-5" /> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>}
-                                    {isWisdomSaving ? 'Saving...' : 'Upload Video'}
-                                    <input type="file" accept="video/*" className="hidden" disabled={isWisdomSaving} onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; await uploadVideo(file, `Video: ${file.name}`, e); }} />
-                                  </label>
-                                  {/* TODO: Camera video recording — hidden until lower-fidelity option is implemented */}
-                                  {false && <button
-                                    type="button"
-                                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-700 text-white rounded hover:bg-gray-900"
-                                    onClick={async () => {
-                                      let s: MediaStream | null = null;
-                                      try {
-                                        s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                                        const chunks: Blob[] = [];
-                                        const preferredMime = MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')
-                                          ? 'video/webm;codecs=vp8,opus'
-                                          : MediaRecorder.isTypeSupported('video/webm')
-                                          ? 'video/webm'
-                                          : '';
-                                        const rec = preferredMime ? new MediaRecorder(s, { mimeType: preferredMime }) : new MediaRecorder(s);
-                                        rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-                                        rec.onstop = async () => {
-                                          s!.getTracks().forEach(t => t.stop());
-                                          setStream(null);
-                                          setWisdomCameraMode(null);
-                                          setIsRecording(false);
-                                          setMediaRecorder(null);
-                                          setRecordedChunks([]);
-                                          if (cancelVideoRecordingRef.current) { cancelVideoRecordingRef.current = false; return; }
-                                          const finalMime = rec.mimeType || 'video/webm';
-                                          const blob = new Blob(chunks, { type: finalMime });
-                                          if (blob.size === 0) { setWisdomErrorMessage('Recording appears to be empty. Please try again.'); return; }
-                                          if (blob.size > MAX_VIDEO_BYTES) { setWisdomErrorMessage(`Recording is too large (${Math.round(blob.size / 1024 / 1024 * 10) / 10}MB). Keep under 3.4MB — try a shorter clip.`); return; }
-                                          const ext = finalMime.includes('mp4') ? 'mp4' : 'webm';
-                                          const recorded = new File([blob], wisdomFileName(ext), { type: finalMime });
-                                          if (!isDatabricksAuthenticated) { setWisdomErrorMessage('⚠️ Please sign in to Databricks before saving. Click the Sign In button in the header.'); setShowLoginModal(true); return; }
-                                          setIsWisdomSaving(true);
-                                          setIsDatabricksLoading(true);
-                                          setDatabricksLoadingMessage('Saving video…');
-                                          setWisdomErrorMessage(null);
-                                          try {
-                                            const result = await uploadToKnowledgeBase({ file: recorded, scope: videoScope, brand: videoScope === 'brand' ? (brand || undefined) : undefined, projectType: projectType || undefined, fileType: 'Wisdom', tags: [insightType, 'Video'], insightType: insightType as 'Brand' | 'Category' | 'General', inputMethod: 'Video', userEmail, userRole });
-                                            if (result.success) { handleResponseChange(idx, 'Camera video saved'); setWisdomSuccessMessage(`✅ "${recorded.name}" saved to Knowledge Base.\n\nThis file will be made available after it has been processed, read and approved by a research manager.`); }
-                                            else { setWisdomErrorMessage(`Failed to save video: ${result.error || 'Unknown error'}`); }
-                                          } catch (err) { setWisdomErrorMessage(`Failed to save video: ${err instanceof Error ? err.message : 'Unknown error'}`); }
-                                          finally { setIsWisdomSaving(false); setIsDatabricksLoading(false); }
-                                        };
-                                        rec.start(250);
-                                        setStream(s);
-                                        setMediaRecorder(rec);
-                                        setWisdomCameraMode('video');
-                                        setIsRecording(true);
-                                      } catch (err) {
-                                        if (s) s.getTracks().forEach(t => t.stop());
-                                        setWisdomErrorMessage(`Camera error: ${err instanceof Error ? err.message : 'Unable to access camera or microphone'}`);
-                                      }
-                                    }}
-                                  >
-                                    <Video className="w-5 h-5" />
-                                    Record Video with Camera
-                                  </button>}
-                                  {false && wisdomCameraMode === 'video' && (
-                                    <div className="border-2 border-red-400 rounded overflow-hidden">
-                                      <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50">
-                                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                                        <span className="text-sm text-red-700 font-medium">Recording…</span>
-                                      </div>
-                                      <video ref={wisdomVideoRef} autoPlay muted playsInline className="w-full" />
-                                      <div className="flex gap-2 p-2 bg-gray-50">
-                                        <button
-                                          type="button"
-                                          disabled={isWisdomSaving}
-                                          className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-red-400 flex items-center justify-center gap-2"
-                                          onClick={() => mediaRecorder?.stop()}
-                                        >
-                                          {isWisdomSaving ? <><SpinHex className="w-4 h-4" />Saving...</> : <><CircleStop className="w-4 h-4" />Stop &amp; Save</>}
-                                        </button>
-                                        <button type="button" className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300" onClick={() => { cancelVideoRecordingRef.current = true; mediaRecorder?.stop(); }}>Cancel</button>
                                       </div>
                                     </div>
                                   )}
