@@ -5,9 +5,6 @@
   "functions": {
     "api/**/*.js": {
       "includeFiles": "src/**"
-    },
-    "api/**/*.ts": {
-      "includeFiles": "src/**"
     }
   },
   "buildCommand": "vite build",
