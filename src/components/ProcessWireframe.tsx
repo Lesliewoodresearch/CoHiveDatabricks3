@@ -1893,8 +1893,9 @@ export default function ProcessWireframe() {
                             );
                           }
 
-                          // VOICE — microphone recording → save as audio file
+                          // VOICE — microphone recording → save as .webm audio file for later transcription
                           if (inputMethod === 'Voice') {
+                            const voiceScope: 'general' | 'category' | 'brand' = insightType === 'General' ? 'general' : insightType === 'Category' ? 'category' : 'brand';
                             return (
                               <div key={idx} className="mb-2">
                                 <label className="block text-gray-900 mb-1 flex items-start justify-between">
@@ -1906,6 +1907,7 @@ export default function ProcessWireframe() {
                                   <button
                                     className="w-full px-4 py-3 bg-red-600 text-white rounded hover:bg-red-700 flex items-center justify-center gap-2"
                                     onClick={async () => {
+                                      if (!isDatabricksAuthenticated) { setWisdomErrorMessage('⚠️ Please sign in to Databricks before saving. Click the Sign In button in the header.'); setShowLoginModal(true); return; }
                                       try {
                                         const audioConstraints: MediaStreamConstraints['audio'] =
                                           selectedMicDeviceId && selectedMicDeviceId !== 'default'
@@ -1918,13 +1920,37 @@ export default function ProcessWireframe() {
                                         recorder.onstop = async () => {
                                           stream.getTracks().forEach(t => t.stop());
                                           const blob = new Blob(chunks, { type: 'audio/webm' });
-                                          const reader = new FileReader();
-                                          reader.onload = async (ev) => {
-                                            const b64 = ev.target?.result as string;
-                                            await handleSaveWisdomToDatabricks(wisdomFileName('webm'), b64, insightType, 'Voice', brand, projectType);
-                                            handleResponseChange(idx, 'Voice recording saved');
-                                          };
-                                          reader.readAsDataURL(blob);
+                                          const audioFileName = wisdomFileName('webm');
+                                          const audioFile = new File([blob], audioFileName, { type: 'audio/webm' });
+                                          setIsWisdomSaving(true);
+                                          setIsDatabricksLoading(true);
+                                          setDatabricksLoadingMessage('Saving recording…');
+                                          setWisdomErrorMessage(null);
+                                          try {
+                                            const result = await uploadToKnowledgeBase({
+                                              file: audioFile,
+                                              scope: voiceScope,
+                                              brand: voiceScope === 'brand' ? (brand || undefined) : undefined,
+                                              projectType: projectType || undefined,
+                                              fileType: 'Wisdom',
+                                              tags: [insightType, 'Voice'],
+                                              insightType: insightType as 'Brand' | 'Category' | 'General',
+                                              inputMethod: 'Voice',
+                                              userEmail,
+                                              userRole,
+                                            });
+                                            if (result.success) {
+                                              handleResponseChange(idx, 'Voice recording saved');
+                                              setWisdomSuccessMessage(`✅ "${audioFileName}" saved to Knowledge Base.\n\nThis recording will be transcribed when processed by a research manager.`);
+                                            } else {
+                                              setWisdomErrorMessage(`Failed to save recording: ${result.error || 'Unknown error'}`);
+                                            }
+                                          } catch (err) {
+                                            setWisdomErrorMessage(`Failed to save recording: ${err instanceof Error ? err.message : 'Unknown error'}`);
+                                          } finally {
+                                            setIsWisdomSaving(false);
+                                            setIsDatabricksLoading(false);
+                                          }
                                         };
                                         recorder.start();
                                         setWisdomInputMethod('recording');

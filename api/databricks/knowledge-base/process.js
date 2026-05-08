@@ -18,6 +18,7 @@ const MAX_CONTENT_CHARS = 200_000;
 
 const TEXT_EXTENSIONS = new Set(['txt', 'md', 'csv', 'json']);
 const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']);
+const AUDIO_EXTENSIONS = new Set(['webm', 'mp3', 'wav', 'ogg', 'm4a']);
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -142,6 +143,9 @@ export default async function handler(req, res) {
     } else if (ext === 'pptx' || ext === 'ppt') {
       extractedText = await extractTextFromPptx(fileBuffer, fileName, workspaceHost, accessToken, processingModelEndpoint);
       extractionMethod = 'pptx-extraction';
+    } else if (AUDIO_EXTENSIONS.has(ext)) {
+      extractedText = await extractTextFromAudio(fileBuffer, fileName, ext, workspaceHost, accessToken, uploadDate);
+      extractionMethod = 'audio-transcription';
     } else {
       try {
         extractedText = fileBuffer.toString('utf-8');
@@ -501,6 +505,53 @@ async function extractTextFromPptxViaVision(zip, fileName, workspaceHost, access
   } catch (e) {
     console.warn('[KB Process] PPTX vision fallback failed: ' + e.message);
     return '[PPTX extraction failed for ' + fileName + ': ' + e.message + ']';
+  }
+}
+
+async function extractTextFromAudio(buffer, fileName, ext, workspaceHost, accessToken, uploadDate) {
+  const recordedLabel = uploadDate
+    ? new Date(uploadDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    : 'Unknown date';
+
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) {
+    console.warn('[KB Process] OPENAI_API_KEY not set — cannot transcribe audio');
+    return '[AUDIO RECORDING: ' + fileName + ']\n[Recorded: ' + recordedLabel + ']\n[Transcription unavailable — OPENAI_API_KEY not configured]';
+  }
+
+  try {
+    const mimeType = ext === 'mp3' ? 'audio/mpeg'
+      : ext === 'wav' ? 'audio/wav'
+      : ext === 'm4a' ? 'audio/mp4'
+      : ext === 'ogg' ? 'audio/ogg'
+      : 'audio/webm';
+
+    const formData = new FormData();
+    const audioBlob = new Blob([buffer], { type: mimeType });
+    formData.append('file', audioBlob, fileName);
+    formData.append('model', 'whisper-1');
+
+    const resp = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + openaiKey },
+      body: formData,
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      throw new Error('OpenAI transcription returned ' + resp.status + ': ' + errText.substring(0, 200));
+    }
+
+    const result = await resp.json();
+    const transcript = result.text || '';
+
+    if (!transcript) throw new Error('No transcript in response: ' + JSON.stringify(result).substring(0, 200));
+
+    console.log('[KB Process] Audio transcribed via OpenAI Whisper: ' + transcript.length + ' chars');
+    return '[Recorded: ' + recordedLabel + ']\n\n' + transcript;
+  } catch (e) {
+    console.warn('[KB Process] Audio transcription failed: ' + e.message);
+    return '[AUDIO RECORDING: ' + fileName + ']\n[Recorded: ' + recordedLabel + ']\n[Transcription failed — please transcribe manually: ' + e.message + ']';
   }
 }
 
