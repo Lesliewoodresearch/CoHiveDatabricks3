@@ -157,6 +157,7 @@ const HELP_MANUAL: Record<string, { guess: string; steps: string[] }> = {
     steps: [
       "Choose a mode from the tabs: Synthesis, Personas, Read/Edit/Approve, Workspace, or Custom Prompt.",
       "Synthesis: Upload files from your computer or import from Databricks.",
+      "Personas: Researchers can create custom personas that appear in any hex's persona picker for all workspace users. Click 'New Persona', fill in the name and any optional fields (background, tone, what they champion, what they reject, questions they always ask, scoring lens), choose which hexes they appear in, and save. Custom personas show with a [Custom] badge in the hex picker and work exactly like built-in personas in assessments.",
       "Read/Edit/Approve: Select any file to preview it. Research Leaders can edit metadata, rename, approve, unapprove, or delete files. The list refreshes automatically after every action.",
       "Files must be processed (click 'Process') then approved before they appear in hex file selectors for non-researcher users.",
       "Example Files: Researchers (research-analyst, research-leader, data-scientist, administrator) can upload Example files directly via 'Upload as Example' — these are auto-processed and auto-approved immediately. Example files are cross-brand quality and format references available to all brands.",

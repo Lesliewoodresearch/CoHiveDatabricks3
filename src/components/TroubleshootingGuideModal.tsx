@@ -2696,7 +2696,77 @@ const isDataScientist = currentTemplate?.role === 'data-scientist';
     relatedFiles: ['/components/ResearcherModes.tsx', '/components/TemplateManager.tsx', '/docs/PROJECT_TYPE_PROMPTS.md']
   },
 
+  'kb-custom-personas-api': {
+    title: 'Custom Personas API Not Responding',
+    symptom: 'Custom personas not loading in KB Personas mode or hex pickers',
+    whatThisMeans: [
+      'Databricks not authenticated',
+      'custom_personas table does not exist yet (created on first save)',
+      'API route /api/databricks/personas/list returning error'
+    ],
+    commonCauses: [
+      'Not Authenticated — Databricks session expired or not signed in',
+      'First Use — table is auto-created on first save, returns empty list until then',
+      'SQL Warehouse Offline — warehouse may be paused/stopped',
+      'Schema Mismatch — DATABRICKS_CLIENT_SCHEMA env var points to wrong schema'
+    ],
+    howToFix: '1. Sign in to Databricks (click Sign In in the header)\n2. Navigate to Knowledge Base hex → Personas mode\n3. Try creating a persona — this auto-creates the custom_personas table\n4. If error persists, check Vercel function logs for the /api/databricks/personas/list route\n5. Verify DATABRICKS_HOST, DATABRICKS_TOKEN, DATABRICKS_WAREHOUSE_ID are set in Vercel env vars\n6. Confirm the Databricks SQL warehouse is running (check your Databricks workspace)',
+    codeExample: `// api/databricks/personas/list.js
+// Table auto-created on first call:
+// CREATE TABLE IF NOT EXISTS knowledge_base.{schema}.custom_personas (
+//   persona_id STRING, name STRING, hex_ids STRING,
+//   content_json STRING, created_by STRING,
+//   created_at TIMESTAMP, updated_at TIMESTAMP, is_active BOOLEAN
+// )
+// Custom persona IDs use prefix: custom-{uuid}`,
+  },
+
+  'kb-custom-personas-ui': {
+    title: 'Custom Personas Not Appearing in Hex Pickers',
+    symptom: 'Personas created in KB hex do not show up in Luminaries, Colleagues, Consumers, or Cultural Voices hex pickers',
+    whatThisMeans: [
+      'Custom personas not fetched on auth',
+      'hex_ids field set to a specific hex but user is in a different hex',
+      'Persona created but Databricks not authenticated when page loaded'
+    ],
+    commonCauses: [
+      'Auth Timing — customPersonas fetched during loadSharedConfig which runs on auth; page refresh after sign-in may be needed',
+      'Wrong Hex Assignment — persona hex_ids set to specific hex(es) not including current hex',
+      'All Hexes — set hex_ids to "any" to appear in all persona hexes'
+    ],
+    howToFix: '1. Sign out and sign back in to Databricks to trigger a fresh fetch\n2. Navigate to KB hex → Personas mode → check the persona\'s "Available in" setting\n3. Change to "All hexes" to make it appear everywhere\n4. Navigate to the target hex and check the Custom Personas section below built-in categories\n5. Custom personas show with a [Custom] badge and work like built-in personas',
+    codeExample: `// CentralHexView.tsx — custom persona filter
+const matchingCustom = customPersonas.filter(p =>
+  p.hexIds === 'any' ||
+  p.hexIds.split(',').map(s => s.trim()).includes(hexId)
+);
+// hexId values: 'Luminaries', 'Colleagues', 'cultural', 'Consumers'`,
+  },
+
   // ── SHARE YOUR WISDOM HEX TESTS ────────────────────────────────────────────
+  'wisdom-voice-transcription': {
+    title: 'Voice Recording Not Transcribing',
+    symptom: 'Voice recording saves to KB but no transcript is generated when processed',
+    whatThisMeans: [
+      'OPENAI_API_KEY env var is missing or incorrect',
+      'Audio file uploaded correctly but transcription step fails silently',
+      'The _txt file will contain a placeholder instead of transcript text'
+    ],
+    commonCauses: [
+      'Missing OPENAI_API_KEY - Not set in Vercel environment variables',
+      'Missing OPENAI_API_KEY - Not set in local .env file for dev',
+      'Key not redeployed - Added to Vercel but project not redeployed after adding',
+      'Audio format issue - Browser recorded in unsupported format'
+    ],
+    howToFix: '1. Verify OPENAI_API_KEY is set in Vercel → Project → Settings → Environment Variables\n2. Verify OPENAI_API_KEY is set in local .env file\n3. Redeploy after adding the key (git push triggers auto-deploy)\n4. Process the audio file in KB → check _txt file content\n5. If _txt says "Transcription unavailable" → key is missing\n6. If _txt says "Transcription failed" → check server logs for OpenAI error detail\n7. Confirm key has access to Whisper-1 model (platform.openai.com → API keys)',
+    codeExample: `// api/databricks/knowledge-base/process.js
+// Audio files (.webm, .mp3, .wav, .ogg, .m4a) are transcribed via OpenAI Whisper-1
+// Output format: "[Recorded: Monday, May 6, 2026]\\n\\n<transcript text>"
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+// FormData sent to: https://api.openai.com/v1/audio/transcriptions
+// model: 'whisper-1'`,
+  },
+
   'wisdom-interview-mode': {
     title: 'Interview Mode Not Available in Wisdom Hex',
     symptom: 'Cannot see "Be Interviewed" option as 6th input method',
