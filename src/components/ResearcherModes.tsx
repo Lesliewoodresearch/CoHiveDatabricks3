@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { DatabricksFileBrowser } from './DatabricksFileBrowser';
-import { uploadToKnowledgeBase, approveKnowledgeBaseFile, deleteKnowledgeBaseFile, updateKnowledgeBaseMetadata, listKnowledgeBaseFiles, readKnowledgeBaseFile, processKnowledgeBaseFile, type KnowledgeBaseFile } from '../utils/databricksAPI';
+import { uploadToKnowledgeBase, approveKnowledgeBaseFile, deleteKnowledgeBaseFile, updateKnowledgeBaseMetadata, listKnowledgeBaseFiles, readKnowledgeBaseFile, processKnowledgeBaseFile, fetchCustomPersonas, saveCustomPersona, deleteCustomPersona, type KnowledgeBaseFile, type CustomPersona } from '../utils/databricksAPI';
 import { executeAIPrompt, runAIAgent } from '../utils/databricksAI';
 import { isAuthenticated, getCurrentUserEmail, getValidSession } from '../utils/databricksAuth';
 import { Upload, CircleCheck, Trash2, Edit, Bot, Sparkles, X, Loader, FileText, Download, Save, RefreshCw, ChevronDown, ChevronRight, Eye } from 'lucide-react';
@@ -229,6 +229,25 @@ export function ResearcherModes({
   const [selectedHexagon, setSelectedHexagon] = useState<string | null>(null);
   const [personaFileForm, setPersonaFileForm] = useState({ brandScope: 'single' as 'single' | 'category' | 'all', brandName: brand, categoryName: '', fileName: '', fileType: '' });
 
+  // Custom personas state
+  const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
+  const [customPersonasLoading, setCustomPersonasLoading] = useState(false);
+  const [showPersonaModal, setShowPersonaModal] = useState(false);
+  const [editingPersona, setEditingPersona] = useState<CustomPersona | null>(null);
+  const [isSavingPersona, setIsSavingPersona] = useState(false);
+  const [personaForm, setPersonaForm] = useState({
+    name: '',
+    background: '',
+    tone: '',
+    style: '',
+    praises: '',
+    dislikes: '',
+    alwaysAsks: '',
+    reactsToIdeas: '',
+    scoringLens: '',
+    hexIds: 'any',
+  });
+
   const [selectedFile, setSelectedFile] = useState<ResearchFile | null>(null);
   const [editContent, setEditContent] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'synthesis' | 'personas'>('all');
@@ -301,6 +320,13 @@ export function ResearcherModes({
 
   useEffect(() => { if (userEmail && userEmail !== 'unknown@databricks.com') setSavedPrompts(loadSavedPrompts()); }, [userEmail]);
   useEffect(() => { if (mode) localStorage.setItem('cohive_research_mode', mode); else localStorage.removeItem('cohive_research_mode'); }, [mode]);
+
+  useEffect(() => {
+    if (mode === 'personas') {
+      setCustomPersonasLoading(true);
+      fetchCustomPersonas().then(p => { setCustomPersonas(p); setCustomPersonasLoading(false); });
+    }
+  }, [mode]);
   useEffect(() => { if (selectedFile) { const u = researchFiles.find(f => f.id === selectedFile.id); if (u) setSelectedFile(u); } }, [researchFiles]);
 
   const updatePendingQueues = (allUnapproved: KnowledgeBaseFile[]) => {
@@ -805,6 +831,64 @@ export function ResearcherModes({
     const bv = personaFileForm.brandScope === 'single' ? personaFileForm.brandName : personaFileForm.brandScope === 'category' ? `Category: ${personaFileForm.categoryName}` : 'All Brands';
     onCreateResearchFile({ brand: bv, projectType: selectedHexagon, fileName: personaFileForm.fileName, isApproved: false, fileType: selectedHexagon });
     setPersonaFileForm({ brandScope: 'single', brandName: brand, categoryName: '', fileName: '', fileType: '' });
+  };
+
+  const resetPersonaForm = () => setPersonaForm({ name: '', background: '', tone: '', style: '', praises: '', dislikes: '', alwaysAsks: '', reactsToIdeas: '', scoringLens: '', hexIds: 'any' });
+
+  const openPersonaCreate = () => { resetPersonaForm(); setEditingPersona(null); setShowPersonaModal(true); };
+
+  const openPersonaEdit = (p: CustomPersona) => {
+    const c = p.contentJson as any;
+    setPersonaForm({
+      name: p.name,
+      background: c.context || '',
+      tone: c.voiceCharacteristics?.tone || '',
+      style: c.voiceCharacteristics?.style || '',
+      praises: (c.psychographics?.praises || []).join('\n'),
+      dislikes: (c.psychographics?.dislikes || []).join('\n'),
+      alwaysAsks: (c.evaluationCriteria?.alwaysAsks || []).join('\n'),
+      reactsToIdeas: c.evaluationCriteria?.reactsToEarlyIdeas || '',
+      scoringLens: c.evaluationCriteria?.scoringRubric || '',
+      hexIds: p.hexIds || 'any',
+    });
+    setEditingPersona(p);
+    setShowPersonaModal(true);
+  };
+
+  const handleSavePersona = async () => {
+    if (!personaForm.name.trim()) return;
+    setIsSavingPersona(true);
+    const contentJson = {
+      context: personaForm.background || undefined,
+      voiceCharacteristics: (personaForm.tone || personaForm.style) ? { tone: personaForm.tone || undefined, style: personaForm.style || undefined } : undefined,
+      psychographics: {
+        praises: personaForm.praises ? personaForm.praises.split('\n').map(s => s.trim()).filter(Boolean) : undefined,
+        dislikes: personaForm.dislikes ? personaForm.dislikes.split('\n').map(s => s.trim()).filter(Boolean) : undefined,
+      },
+      evaluationCriteria: {
+        alwaysAsks: personaForm.alwaysAsks ? personaForm.alwaysAsks.split('\n').map(s => s.trim()).filter(Boolean) : undefined,
+        reactsToEarlyIdeas: personaForm.reactsToIdeas || undefined,
+        scoringRubric: personaForm.scoringLens || undefined,
+      },
+    };
+    const result = await saveCustomPersona({ personaId: editingPersona?.personaId, name: personaForm.name.trim(), hexIds: personaForm.hexIds, contentJson, createdBy: userEmail });
+    if (result.success) {
+      const updated = await fetchCustomPersonas();
+      setCustomPersonas(updated);
+      setShowPersonaModal(false);
+      resetPersonaForm();
+      setEditingPersona(null);
+    } else {
+      alert('Failed to save persona: ' + (result.error || 'Unknown error'));
+    }
+    setIsSavingPersona(false);
+  };
+
+  const handleDeletePersona = async (personaId: string, name: string) => {
+    if (!confirm(`Delete persona "${name}"? This cannot be undone.`)) return;
+    const result = await deleteCustomPersona(personaId);
+    if (result.success) setCustomPersonas(prev => prev.filter(p => p.personaId !== personaId));
+    else alert('Failed to delete persona: ' + (result.error || 'Unknown error'));
   };
 
   const persistPrompts = (prompts: ReturnType<typeof loadSavedPrompts>) => { localStorage.setItem(`cohive_custom_prompts_${userEmail}`, JSON.stringify(prompts)); setSavedPrompts(prompts); };
@@ -1485,47 +1569,134 @@ export function ResearcherModes({
   }
 
   if (mode === 'personas') {
+    const PERSONA_HEX_OPTIONS = [
+      { id: 'any', label: 'All hexes' },
+      { id: 'Luminaries', label: 'Luminaries' },
+      { id: 'Colleagues', label: 'Colleagues' },
+      { id: 'cultural', label: 'Cultural Voices' },
+      { id: 'Consumers', label: 'Consumers' },
+    ];
+
     return (
       <div className="space-y-4">
         <AIResponseModal {...aiModal} onClose={closeAiModal} />
         <ModeSwitcher current="personas" />
-        <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4"><h3 className="text-blue-900 leading-tight">Personas Mode</h3><p className="text-blue-700 text-sm">Create persona files for each Hexagon</p></div>
-        <div className="bg-white border-2 border-gray-300 rounded-lg p-4">
-          <h4 className="text-gray-900 mb-4">Select Hexagon</h4>
-          {!selectedHexagon ? (
-            <div className="grid grid-cols-2 gap-3">{centralHexagons.map(h => <button key={h.id} onClick={() => setSelectedHexagon(h.id)} className="p-4 border-2 rounded-lg text-left border-gray-300 bg-white hover:border-gray-400"><div className="text-gray-900 mb-1">{h.label}</div><div className="text-xs text-gray-600">{getPersonaFiles(h.id).length} file(s)</div></button>)}</div>
-          ) : (() => {
-            const h = centralHexagons.find(x => x.id === selectedHexagon);
-            return <div className={`flex items-center gap-2 p-4 border-2 rounded-lg ${h?.borderColor} ${h?.color}`}><div className="flex-1"><div className="text-gray-900">{h?.label}</div><div className="text-xs text-gray-600">{getPersonaFiles(selectedHexagon).length} file(s)</div></div><button onClick={() => setSelectedHexagon(null)} className="px-3 py-1 text-sm bg-white border-2 border-gray-300 text-gray-700 rounded">Change</button></div>;
-          })()}
+        <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 flex items-center justify-between">
+          <div><h3 className="text-blue-900 leading-tight">Custom Personas</h3><p className="text-blue-700 text-sm">Create personas that appear in hex assessments for all workspace users</p></div>
+          <button onClick={openPersonaCreate} className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium whitespace-nowrap">+ New Persona</button>
         </div>
-        {selectedHexagon && (
-          <div className="bg-white border-2 border-gray-300 rounded-lg p-4">
-            <h4 className="text-gray-900 mb-4">Create File for {centralHexagons.find(h => h.id === selectedHexagon)?.label}</h4>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-gray-700 mb-2 text-sm">Brand Scope</label>
-                {(['single', 'category', 'all'] as const).map(scope => <label key={scope} className="flex items-center gap-2 cursor-pointer mb-1"><input type="radio" name="brandScope" value={scope} checked={personaFileForm.brandScope === scope} onChange={e => setPersonaFileForm({ ...personaFileForm, brandScope: e.target.value as any, fileName: '' })} className="w-4 h-4" /><span className="text-gray-700 text-sm capitalize">{scope === 'single' ? 'Single Brand' : scope === 'category' ? 'Category of Brands' : 'All Brands'}</span></label>)}
-              </div>
-              {personaFileForm.brandScope === 'single' && <input type="text" className="w-full border-2 border-gray-300 bg-white rounded p-2 text-gray-700" placeholder="Brand name" value={personaFileForm.brandName} onChange={e => setPersonaFileForm({ ...personaFileForm, brandName: e.target.value, fileName: generateDefaultFileName(e.target.value, selectedHexagon) })} />}
-              {personaFileForm.brandScope === 'category' && <input type="text" className="w-full border-2 border-gray-300 bg-white rounded p-2 text-gray-700" placeholder="Category name" value={personaFileForm.categoryName} onChange={e => setPersonaFileForm({ ...personaFileForm, categoryName: e.target.value, fileName: generateDefaultFileName(e.target.value, selectedHexagon) })} />}
-              <input type="text" className="w-full border-2 border-gray-300 bg-white rounded p-2 text-gray-700" placeholder="Filename" value={personaFileForm.fileName} onChange={e => setPersonaFileForm({ ...personaFileForm, fileName: e.target.value })} />
-              <button onClick={handleCreatePersonaFile} disabled={!personaFileForm.fileName.trim()} className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400">Create File</button>
-            </div>
+
+        {customPersonasLoading && <div className="text-center text-gray-500 py-6"><SpinHex className="w-6 h-6 mx-auto mb-2" />Loading personas…</div>}
+
+        {!customPersonasLoading && customPersonas.length === 0 && (
+          <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+            <p className="text-gray-500 mb-3">No custom personas yet.</p>
+            <button onClick={openPersonaCreate} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">Create your first persona</button>
           </div>
         )}
-        {selectedHexagon && getPersonaFiles(selectedHexagon).length > 0 && (
-          <div className="bg-white border-2 border-gray-300 rounded-lg p-4">
-            <h4 className="text-gray-900 mb-4">Files for {centralHexagons.find(h => h.id === selectedHexagon)?.label}</h4>
-            {getPersonaFiles(selectedHexagon).map(file => (
-              <div key={file.id} className="border-2 border-gray-300 rounded p-3 mb-2 flex items-start justify-between">
-                <div><h5 className="text-gray-900 text-sm">{file.fileName}</h5><div className="text-xs text-gray-600">{file.brand} • {new Date(file.uploadDate).toLocaleDateString()}</div></div>
-                <div className="flex items-center gap-2">
-                  {file.isApproved ? <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs">Approved</span> : <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs">Pending</span>}
-                  {canApproveResearch && <button onClick={() => onToggleApproval(file.id)} className={`px-3 py-1 rounded text-xs ${file.isApproved ? 'bg-yellow-500 text-white' : 'bg-green-600 text-white'}`}>{file.isApproved ? 'Unapprove' : 'Approve'}</button>}
+
+        {!customPersonasLoading && customPersonas.map(p => (
+          <div key={p.personaId} className="bg-white border-2 border-gray-200 rounded-lg p-4 flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-gray-900 font-semibold">{p.name}</span>
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">
+                  {p.hexIds === 'any' ? 'All hexes' : p.hexIds.split(',').map(id => PERSONA_HEX_OPTIONS.find(o => o.id === id.trim())?.label || id.trim()).join(', ')}
+                </span>
+              </div>
+              {(p.contentJson as any).context && <p className="text-gray-600 text-sm mt-1 line-clamp-2">{(p.contentJson as any).context}</p>}
+              <p className="text-gray-400 text-xs mt-1">Created by {p.createdBy} · {new Date(p.createdAt).toLocaleDateString()}</p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button onClick={() => openPersonaEdit(p)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Edit"><Edit className="w-4 h-4" /></button>
+              <button onClick={() => handleDeletePersona(p.personaId, p.name)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Delete"><Trash2 className="w-4 h-4" /></button>
+            </div>
+          </div>
+        ))}
+
+        {/* Persona create/edit modal */}
+        {showPersonaModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" style={{ right: 'var(--modal-r)' }}>
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <h2 className="text-gray-900 font-semibold modal-heading">{editingPersona ? 'Edit Persona' : 'New Persona'}</h2>
+                <button onClick={() => { setShowPersonaModal(false); setEditingPersona(null); resetPersonaForm(); }} className="p-1 rounded hover:bg-gray-100"><X className="w-5 h-5 text-gray-500" /></button>
+              </div>
+              <div className="px-6 py-4 space-y-4">
+                <p className="text-xs text-gray-500 bg-gray-50 rounded p-2">All fields except Name are optional — leave blank if not needed. Blanks are fine.</p>
+
+                <div>
+                  <label className="block text-gray-900 font-semibold text-sm mb-1">Name <span className="text-red-500">*</span></label>
+                  <input type="text" value={personaForm.name} onChange={e => setPersonaForm(f => ({ ...f, name: e.target.value }))} className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-400" placeholder="e.g. The Skeptical Consumer" />
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 font-semibold text-sm mb-1">Role / Background <span className="text-gray-400 font-normal">(optional)</span></label>
+                  <textarea value={personaForm.background} onChange={e => setPersonaForm(f => ({ ...f, background: e.target.value }))} rows={2} className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-gray-900 text-sm resize-y focus:outline-none focus:border-blue-400" placeholder="Who are they? What is their professional background or life context?" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-gray-900 font-semibold text-sm mb-1">Tone <span className="text-gray-400 font-normal">(optional)</span></label>
+                    <input type="text" value={personaForm.tone} onChange={e => setPersonaForm(f => ({ ...f, tone: e.target.value }))} className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-400" placeholder="e.g. Direct, warm, cynical" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-900 font-semibold text-sm mb-1">Communication Style <span className="text-gray-400 font-normal">(optional)</span></label>
+                    <input type="text" value={personaForm.style} onChange={e => setPersonaForm(f => ({ ...f, style: e.target.value }))} className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-400" placeholder="e.g. Data-driven, storytelling" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 font-semibold text-sm mb-1">What they champion <span className="text-gray-400 font-normal">(optional — one per line)</span></label>
+                  <textarea value={personaForm.praises} onChange={e => setPersonaForm(f => ({ ...f, praises: e.target.value }))} rows={3} className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-gray-900 text-sm resize-y focus:outline-none focus:border-blue-400" placeholder="Ideas, values or qualities they praise and support" />
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 font-semibold text-sm mb-1">What they reject <span className="text-gray-400 font-normal">(optional — one per line)</span></label>
+                  <textarea value={personaForm.dislikes} onChange={e => setPersonaForm(f => ({ ...f, dislikes: e.target.value }))} rows={3} className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-gray-900 text-sm resize-y focus:outline-none focus:border-blue-400" placeholder="Things they criticise, push back on, or won't accept" />
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 font-semibold text-sm mb-1">Questions they always ask <span className="text-gray-400 font-normal">(optional — one per line)</span></label>
+                  <textarea value={personaForm.alwaysAsks} onChange={e => setPersonaForm(f => ({ ...f, alwaysAsks: e.target.value }))} rows={3} className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-gray-900 text-sm resize-y focus:outline-none focus:border-blue-400" placeholder="Recurring challenges or questions they raise in every review" />
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 font-semibold text-sm mb-1">How they evaluate ideas <span className="text-gray-400 font-normal">(optional)</span></label>
+                  <textarea value={personaForm.reactsToIdeas} onChange={e => setPersonaForm(f => ({ ...f, reactsToIdeas: e.target.value }))} rows={2} className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-gray-900 text-sm resize-y focus:outline-none focus:border-blue-400" placeholder="How do they approach new ideas? What lens do they use?" />
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 font-semibold text-sm mb-1">Scoring lens <span className="text-gray-400 font-normal">(optional)</span></label>
+                  <textarea value={personaForm.scoringLens} onChange={e => setPersonaForm(f => ({ ...f, scoringLens: e.target.value }))} rows={2} className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-gray-900 text-sm resize-y focus:outline-none focus:border-blue-400" placeholder="What criteria do they use to rate or score work?" />
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 font-semibold text-sm mb-1">Available in</label>
+                  <div className="flex flex-wrap gap-2">
+                    {PERSONA_HEX_OPTIONS.map(opt => (
+                      <label key={opt.id} className="flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="hexIds"
+                          value={opt.id}
+                          checked={personaForm.hexIds === opt.id}
+                          onChange={() => setPersonaForm(f => ({ ...f, hexIds: opt.id }))}
+                          className="w-3.5 h-3.5"
+                        />
+                        <span className="text-sm text-gray-700">{opt.label}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
-            ))}
+              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3">
+                <button onClick={() => { setShowPersonaModal(false); setEditingPersona(null); resetPersonaForm(); }} className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50">Cancel</button>
+                <button onClick={handleSavePersona} disabled={!personaForm.name.trim() || isSavingPersona} className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 text-sm font-semibold">
+                  {isSavingPersona ? <><SpinHex className="w-4 h-4" />Saving…</> : <><Save className="w-4 h-4" />{editingPersona ? 'Update' : 'Save Persona'}</>}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

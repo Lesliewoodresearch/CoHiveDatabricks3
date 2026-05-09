@@ -197,6 +197,8 @@ interface AssessmentModalProps {
   onReviewConfirmed?: (items: ReviewItem[]) => void;
   /** Whether the current user can manage Example files */
   canManageExamples?: boolean;
+  /** Custom persona data map — id → contentJson — for custom- prefixed persona IDs */
+  customPersonaData?: Record<string, unknown>;
 }
 
 // ─── KB Mode config ────────────────────────────────────────────────────────────
@@ -293,6 +295,7 @@ export function AssessmentModal({
   onGemSaved,
   onReviewConfirmed,
   canManageExamples = false,
+  customPersonaData = {},
 }: AssessmentModalProps) {
 
   // ── Format as Example state ──────────────────────────────────────────────
@@ -428,6 +431,7 @@ export function AssessmentModal({
           ideasFile,
           ideaElements,
           selectedPersonas,
+          customPersonaData,
           kbFiles,
           userEmail,
           modelEndpoint,

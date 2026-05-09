@@ -23,7 +23,7 @@ import type { ReviewItem } from './GemCheckCoalReviewPanel';
 import { MarkdownViewer } from './MarkdownViewer';
 import { LoadingGem, SpinHex } from './LoadingGem';
 import cohiveLogo from 'figma:asset/88105c0c8621f3d41d65e5be3ae75558f9de1753.png';
-import { uploadToKnowledgeBase, downloadFile, listKnowledgeBaseFiles, type KnowledgeBaseFile, generateSummary, fetchSharedConfig, addSharedConfigItem, fetchProjectTypeConfigs, type ProjectTypeConfig } from '../utils/databricksAPI';
+import { uploadToKnowledgeBase, downloadFile, listKnowledgeBaseFiles, type KnowledgeBaseFile, generateSummary, fetchSharedConfig, addSharedConfigItem, fetchProjectTypeConfigs, fetchCustomPersonas, type ProjectTypeConfig, type CustomPersona } from '../utils/databricksAPI';
 import { isAuthenticated, getCurrentUserEmail, getValidSession } from '../utils/databricksAuth';
 import { generateIterationFileName, loadSessionVersions, saveSessionVersions, startNewVersionRun, type SessionVersion } from '../utils/sessionVersioning';
 import { systemProjectTypes, isSystemProjectType } from '../data/systemProjectTypes';
@@ -111,6 +111,7 @@ interface AssessmentModalPropsState {
   /** All hex executions for this iteration — passed to AssessmentModal for context injection */
   hexExecutions: Record<string, HexExecution[]>;
   canManageExamples?: boolean;
+  customPersonaData?: Record<string, unknown>;
 }
 
 // iterationGems lives at ProcessWireframe level — see useState below
@@ -126,6 +127,7 @@ export default function ProcessWireframe() {
   const [projectFiles, setProjectFiles] = useState<ProjectFile[]>([]);
   const [ideasFiles, setIdeasFiles] = useState<IdeasFile[]>([]);
   const [researchFiles, setResearchFiles] = useState<ResearchFile[]>([]);
+  const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [editSuggestions, setEditSuggestions] = useState<EditSuggestion[]>([]);
   const [hexExecutions, setHexExecutions] = useState<{ [hexId: string]: HexExecution[] }>({});
   const [showValidation, setShowValidation] = useState(false);
@@ -343,6 +345,8 @@ export default function ProcessWireframe() {
         if (savedConfigs) { try { userConfigs = JSON.parse(savedConfigs); } catch { userConfigs = []; } }
         setProjectTypeConfigs([...systemProjectTypes, ...userConfigs]);
       }
+      // Fetch custom personas (non-blocking — failure is silent)
+      fetchCustomPersonas().then(personas => setCustomPersonas(personas)).catch(() => {});
     } catch (error) {
       console.warn('Failed to fetch shared config from Databricks, using localStorage:', error);
       const savedBrands = localStorage.getItem('cohive_available_brands');
@@ -1012,6 +1016,8 @@ export default function ProcessWireframe() {
       // Pass full hexExecutions so AssessmentModal can include prior results as context
       hexExecutions,
       canManageExamples,
+      // Custom personas — pass full data so run.js can build prompts without extra DB call
+      customPersonaData: Object.fromEntries(customPersonas.map(p => [p.personaId, p.contentJson])),
     });
     setAssessmentModalOpen(true);
   };
@@ -1541,7 +1547,7 @@ export default function ProcessWireframe() {
                   />
                          ) : isCentralHex ? (
                   <>
-                  <CentralHexView key={activeStepId} hexId={activeStepId} hexLabel={currentContent.title} researchFiles={researchFiles} onExecute={handleCentralHexExecute} databricksInstructions={currentTemplate?.databricksInstructions?.[activeStepId] || ''} previousExecutions={hexExecutions[activeStepId] || []} crossHexExecutions={[...['Consumers', 'Luminaries', 'Colleagues', 'cultural', 'Grade'].filter(h => h !== activeStepId).flatMap(h => hexExecutions[h] || []), ...(hexExecutions['stories'] || [])]} anyPriorPersonaRun={['Consumers', 'Luminaries', 'Colleagues', 'cultural', 'Grade'].some(h => hexExecutions[h]?.length > 0) || (hexExecutions['stories']?.length ?? 0) > 0} onSaveRecommendation={handleSaveRecommendation} projectType={responses['Enter']?.[1] || ''} userBrand={responses['Enter']?.[0] || ''} lastResults={lastAssessmentResults} conversationMode={currentTemplate?.conversationSettings?.conversationMode || 'multi-round'} modelEndpoint={currentTemplate?.conversationSettings?.modelEndpoint || 'databricks-claude-haiku-4-5'} requestMode={deriveRequestMode()} userEmail={userEmail} userRole={userRole} onContextChange={(files, step) => setHexWidgetContext({ files, step })} onAddIterationDirection={handleAddIterationDirection} iterationDirections={iterationDirections} extractedIdeas={gradeExtractedIdeas} ideasLoading={gradeIdeasLoading} />
+                  <CentralHexView key={activeStepId} hexId={activeStepId} hexLabel={currentContent.title} researchFiles={researchFiles} customPersonas={customPersonas} onExecute={handleCentralHexExecute} databricksInstructions={currentTemplate?.databricksInstructions?.[activeStepId] || ''} previousExecutions={hexExecutions[activeStepId] || []} crossHexExecutions={[...['Consumers', 'Luminaries', 'Colleagues', 'cultural', 'Grade'].filter(h => h !== activeStepId).flatMap(h => hexExecutions[h] || []), ...(hexExecutions['stories'] || [])]} anyPriorPersonaRun={['Consumers', 'Luminaries', 'Colleagues', 'cultural', 'Grade'].some(h => hexExecutions[h]?.length > 0) || (hexExecutions['stories']?.length ?? 0) > 0} onSaveRecommendation={handleSaveRecommendation} projectType={responses['Enter']?.[1] || ''} userBrand={responses['Enter']?.[0] || ''} lastResults={lastAssessmentResults} conversationMode={currentTemplate?.conversationSettings?.conversationMode || 'multi-round'} modelEndpoint={currentTemplate?.conversationSettings?.modelEndpoint || 'databricks-claude-haiku-4-5'} requestMode={deriveRequestMode()} userEmail={userEmail} userRole={userRole} onContextChange={(files, step) => setHexWidgetContext({ files, step })} onAddIterationDirection={handleAddIterationDirection} iterationDirections={iterationDirections} extractedIdeas={gradeExtractedIdeas} ideasLoading={gradeIdeasLoading} />
                   {/* Grade hex: scoring results displayed inline */}
                   {activeStepId === 'Grade' && (
                     <div className="mt-4 px-3">
@@ -2569,6 +2575,7 @@ export default function ProcessWireframe() {
           onGemSaved={handleGemSaved}
           onReviewConfirmed={handleReviewConfirmed}
           canManageExamples={assessmentModalProps.canManageExamples}
+          customPersonaData={assessmentModalProps.customPersonaData}
         />
       )}
 

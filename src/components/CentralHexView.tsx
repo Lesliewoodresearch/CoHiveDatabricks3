@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import gemIcon from "figma:asset/53dc6cf554f69e479cfbd60a46741f158d11dd21.png";
 import { getPersonasForHex, type PersonaLevel1, type PersonaLevel2, type PersonaLevel3 } from "../data/personas";
+import type { CustomPersona } from "../utils/databricksAPI";
 import { isBrandInCategory } from "../data/brandCategoryMapping";
 import { availableModels } from "./ModelTemplateManager";
 import { CoalIcon } from "./GemCheckCoalReviewPanel";
@@ -57,6 +58,7 @@ interface CentralHexViewProps {
   // ── Grade hex idea extraction ───────────────────────────────────────────────
   extractedIdeas?: string[];
   ideasLoading?: boolean;
+  customPersonas?: CustomPersona[];
 }
 
 export function CentralHexView({
@@ -80,6 +82,7 @@ export function CentralHexView({
   iterationDirections = [],
   extractedIdeas = [],
   ideasLoading = false,
+  customPersonas = [],
 }: CentralHexViewProps) {
   const isPersonaHex = ['Consumers', 'Luminaries', 'Colleagues', 'cultural', 'Grade'].includes(hexId);
   
@@ -961,6 +964,44 @@ export function CentralHexView({
                   </div>
                 </div>
               </div>
+
+              {/* Custom personas from Databricks — shown if any match this hex */}
+              {(() => {
+                const matchingCustom = customPersonas.filter(p =>
+                  p.hexIds === 'any' || p.hexIds.split(',').map(s => s.trim()).includes(hexId)
+                );
+                if (matchingCustom.length === 0) return null;
+                return (
+                  <div className="mt-3 border-t border-gray-200 pt-3">
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Custom Personas</div>
+                    <div className="space-y-1">
+                      {matchingCustom.map(p => (
+                        <label key={p.personaId} className="flex items-start gap-2 p-1.5 cursor-pointer hover:bg-blue-50 rounded transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={selectedPersonas.includes(p.personaId)}
+                            onChange={() => {
+                              if (selectedPersonas.includes(p.personaId)) {
+                                setSelectedPersonas(selectedPersonas.filter(id => id !== p.personaId));
+                              } else {
+                                setSelectedPersonas([...selectedPersonas, p.personaId]);
+                              }
+                            }}
+                            className="w-4 h-4 mt-0.5"
+                          />
+                          <div>
+                            <span className="text-gray-900 font-medium text-sm">{p.name}</span>
+                            <span className="ml-1.5 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">Custom</span>
+                            {(p.contentJson as any).context && (
+                              <p className="text-gray-500 text-xs mt-0.5 line-clamp-1">{(p.contentJson as any).context}</p>
+                            )}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {selectedPersonas.length > 0 && (
                 <div className="mt-2 p-2 border-2 border-green-500 rounded">

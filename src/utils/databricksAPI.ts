@@ -687,3 +687,62 @@ export async function deleteProjectTypeConfig(
     return { success: false, error: error instanceof Error ? error.message : 'Failed to delete project type configuration' };
   }
 }
+
+// ── Custom Personas ────────────────────────────────────────────────────────────
+
+export interface CustomPersona {
+  personaId: string;
+  name: string;
+  hexIds: string; // 'any' or comma-separated hex IDs e.g. 'Luminaries,Consumers'
+  contentJson: Record<string, unknown>;
+  createdBy: string;
+  createdAt: string;
+}
+
+export async function fetchCustomPersonas(): Promise<CustomPersona[]> {
+  try {
+    const response = await fetch('/api/databricks/personas/list');
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.personas || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function saveCustomPersona(params: {
+  personaId?: string;
+  name: string;
+  hexIds: string;
+  contentJson: Record<string, unknown>;
+  createdBy: string;
+}): Promise<{ success: boolean; personaId?: string; error?: string }> {
+  try {
+    const response = await fetch('/api/databricks/personas/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || 'Save failed');
+    }
+    return await response.json();
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to save persona' };
+  }
+}
+
+export async function deleteCustomPersona(personaId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch('/api/databricks/personas/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ personaId }),
+    });
+    if (!response.ok) throw new Error('Delete failed');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to delete persona' };
+  }
+}

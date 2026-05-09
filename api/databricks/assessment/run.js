@@ -1368,6 +1368,7 @@ export default async function handler(req, res) {
       ideasFile,
       ideaElements = [],            // Array<{ id, label, content }> — multiple ideas to compare
       selectedPersonas,
+      customPersonaData = {},   // Record<id, contentJson> for custom- prefixed personas
       kbFiles,
       userEmail = '',
       accessToken,
@@ -1599,7 +1600,12 @@ ${iterationDirections.map((d, i) => `${i + 1}. ${d}`).join('\n')}
 
     // Shuffle personas, load full persona data
     const basePersonas = selectedPersonas?.length > 0 ? [...selectedPersonas] : ['General Expert'];
-    const personaData = basePersonas.map(id => getPersonaContent(id));
+    const personaData = basePersonas.map(id => {
+      if (id.startsWith('custom-') && customPersonaData[id]) {
+        return { ...customPersonaData[id], id };
+      }
+      return getPersonaContent(id);
+    });
     const shuffledPersonaData = shuffleArray(personaData);
     const allPersonaNames = shuffledPersonaData.map(p => p.name || p.identity?.name || p.id);
     const personaList = [...allPersonaNames, 'Fact-Checker'].join(', ');
