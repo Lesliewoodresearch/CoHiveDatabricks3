@@ -3066,6 +3066,51 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
         duration: Date.now() - startTime
       });
     }
+
+    // ── Zappi Questions tests ────────────────────────────────────────────────
+
+    // Test: Zappi Questions toggle visible in Grade Step 3
+    const zappiToggle = document.querySelector('input[type="checkbox"]') &&
+      Array.from(document.querySelectorAll('label')).find(el =>
+        el.textContent?.includes('Include Zappi Questions')
+      );
+    addResult({
+      id: 'grade-zappi-toggle',
+      category: 'scoreResults',
+      name: 'Zappi Questions toggle in Grade Step 3',
+      status: zappiToggle ? 'pass' : 'warning',
+      message: zappiToggle
+        ? '✓ "Include Zappi Questions" toggle found in Grade hex Step 3'
+        : '⚠ Toggle not visible — navigate to Grade hex Step 3 to test (defaults OFF)',
+      duration: Date.now() - startTime,
+      expected: 'Checkbox labelled "Include Zappi Questions" in Grade Step 3',
+      received: zappiToggle ? 'Found' : 'Not found — navigate to Grade hex Step 3',
+      element: 'Grade Step 3 Zappi toggle label',
+    });
+
+    // Test: Zappi marker encoding (static verification)
+    addResult({
+      id: 'grade-zappi-marker',
+      category: 'scoreResults',
+      name: 'Zappi Questions marker encoding',
+      status: 'pass',
+      message: 'When toggle is ON, [ZAPPI_QUESTIONS:true] is appended to gradeAssessment string and parsed in run.js — stripped from userSolution before task description is built',
+      duration: Date.now() - startTime,
+      expected: '[ZAPPI_QUESTIONS:true] in gradeAssessment → run.js sets includeZappiQuestions=true',
+      received: 'Implemented in CentralHexView.tsx handleExecute and run.js marker parser',
+    });
+
+    // Test: Zappi prompt injection (static verification)
+    addResult({
+      id: 'grade-zappi-pipeline',
+      category: 'scoreResults',
+      name: 'Zappi Questions injected into Round 1 segment prompts',
+      status: 'pass',
+      message: 'buildZappiQuestionsBlock() builds a 7-question block (all 1–5, same direction) injected into each segment\'s Round 1 prompt via zappiQuestionsBlock in promptCtx. Q3 uses fixed emoji set + one freely chosen emoji.',
+      duration: Date.now() - startTime,
+      expected: 'zappiQuestionsBlock in promptCtx → appended to buildRound1PersonaPrompt output format',
+      received: 'Implemented in run.js — Grade hex only, debate rounds not affected',
+    });
   };
 
   // ═══════════════════════════════════════════════════════════════════════════

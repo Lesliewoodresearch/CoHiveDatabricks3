@@ -119,6 +119,7 @@ export function CentralHexView({
   const [manualIdeas, setManualIdeas] = useState<string[]>([]);
   const [manualIdea, setManualIdea] = useState<string>('');
   const [gradeSubmitted, setGradeSubmitted] = useState(false);
+  const [includeZappiQuestions, setIncludeZappiQuestions] = useState(false);
   const effectiveSelectedIdeas = [
     ...extractedIdeas.filter(idea => !excludedIdeas.has(idea)),
     ...manualIdeas,
@@ -316,7 +317,7 @@ export function CentralHexView({
         alert("Please choose a scoring scale.");
         return;
       }
-      const gradeAssessment = `[GRADE_SCALE:${testingScale}]\n[GRADE_IDEAS:${effectiveSelectedIdeas.join('||')}]`;
+      const gradeAssessment = `[GRADE_SCALE:${testingScale}]\n[GRADE_IDEAS:${effectiveSelectedIdeas.join('||')}]${includeZappiQuestions ? '\n[ZAPPI_QUESTIONS:true]' : ''}`;
       onExecute(selectedFiles, ['grade'], gradeAssessment);
       setGradeSubmitted(true);
       return;
@@ -1320,6 +1321,7 @@ export function CentralHexView({
                       setExcludedIdeas(new Set());
                       setManualIdeas([]);
                       setTestingScale('');
+                      setIncludeZappiQuestions(false);
                     }}
                   >
                     Score Again
@@ -1333,6 +1335,21 @@ export function CentralHexView({
                   <p className="text-gray-600 mb-3 text-sm">
                     Select how the AI should score each idea against each segment.
                   </p>
+
+                  {/* Zappi Questions toggle */}
+                  <label className="flex items-start gap-2 p-2 mb-3 border-2 border-gray-200 rounded cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={includeZappiQuestions}
+                      onChange={(e) => setIncludeZappiQuestions(e.target.checked)}
+                      className="w-4 h-4 mt-0.5 flex-shrink-0"
+                    />
+                    <div>
+                      <div className="text-gray-900 font-semibold text-sm">Include Zappi Questions</div>
+                      <div className="text-gray-500 text-xs mt-0.5">Each segment will answer 7 standardised concept-testing questions (brand fit, standout, emotion, relevance, understanding, purchase intent, brand appeal)</div>
+                    </div>
+                  </label>
+
                   <div className="space-y-1 mb-4">
                     <label className="flex items-center gap-2 p-2 cursor-pointer transition-colors">
                       <input type="radio" name="testingScale" value="scale-1-5-written" checked={testingScale === "scale-1-5-written"} onChange={(e) => setTestingScale(e.target.value)} className="w-4 h-4" />

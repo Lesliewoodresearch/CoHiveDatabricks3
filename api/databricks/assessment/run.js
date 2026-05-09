@@ -627,6 +627,7 @@ function buildRound1PersonaPrompt({
   persona, kbContext, kbModeInstructions, brand, projectType,
   hexLabel, hexId, taskDescription, assessmentTypeLabel, projectTypePrompt,
   requestMode, ideaElements, gemsBlock = '', iterationContextBlock = '',
+  zappiQuestionsBlock = '',
 }) {
   const name = persona.name || persona.identity?.name || 'Expert';
   const personaBlock = buildPersonaIdentityBlock(persona);
@@ -701,6 +702,7 @@ ROUND 1 RULES:
 - You MUST address at least 2 of your "Questions You Always Ask" listed above
 - Every factual claim must be cited per the knowledge mode above
 - This is Round 1 — you have not seen other personas' views yet. Stay original.
+${zappiQuestionsBlock ? `- After your scoring section, you MUST complete the ZAPPI RESPONSES for every idea scored (see instructions below).` : ''}
 
 TASK: ${taskDescription}
 BRAND: ${brand}
@@ -718,7 +720,7 @@ Format your response as:
 [What your specific background tells you about this task that others would miss]
 
 ${outputFormat}
-
+${zappiQuestionsBlock ? `\n${zappiQuestionsBlock}\n` : ''}
 **What I'd Debate in Round 2:**
 [1–2 sharp questions or provocations you'd put to the other personas]
 
@@ -1348,6 +1350,57 @@ async function fetchKbFileContent(kbFile, accessToken, workspaceHost, warehouseI
  * concrete positive examples of what "good" looks like for this brand/hex.
  */
 
+// ─── Zappi Questions block builder ────────────────────────────────────────────
+
+const ZAPPI_FIXED_EMOJIS = '😊 Excited  😐 Neutral  😟 Concerned  🤔 Curious  😤 Frustrated  💡 Inspired  ❤️ Loved  😮 Surprised';
+
+function buildZappiQuestionsBlock(brand, projectType) {
+  const pt = projectType || 'concept';
+  const b = brand || 'this brand';
+
+  return `
+ZAPPI CONCEPT TESTING QUESTIONS — REQUIRED FOR EACH IDEA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+After your scoring section, you MUST answer all 7 questions below for EACH idea you scored, from your segment's perspective.
+All scales run 1 (lowest/worst) → 5 (highest/best).
+
+Q1. BRAND FIT: "How would you describe this ${pt} for ${b}?"
+    1 = "It could be for any brand"  →  5 = "It could only be for this brand"
+
+Q2. STANDOUT: "How well would it stand out and grab your attention?"
+    1 = "Not at all well"  →  5 = "Very well"
+
+Q3. OVERALL EMOTION: Choose ONE emoji from the fixed set that best captures your reaction:
+    ${ZAPPI_FIXED_EMOJIS}
+    Then add ONE freely chosen emoji that completes your emotional response.
+
+Q4. RELEVANCE: "How relevant to you personally was this ${pt}?"
+    1 = "Not at all relevant"  →  5 = "Very relevant"
+
+Q5. EASE OF UNDERSTANDING: "How easy or difficult was it to understand?"
+    1 = "Very difficult"  →  5 = "Very easy"
+
+Q6. PURCHASE INTENT: "What impact would this have on your likelihood of choosing ${b}?"
+    1 = "Makes me much less likely"  →  5 = "Makes me much more likely to choose ${b}"
+
+Q7. BRAND APPEAL: "How has this made you feel about ${b}?"
+    1 = "Makes the brand much less appealing"  →  5 = "Makes the brand much more appealing"
+
+Format your Zappi responses as:
+
+**ZAPPI RESPONSES — [Idea Name]**
+Q1 Brand Fit: [score]/5 — [brief rationale]
+Q2 Standout: [score]/5 — [brief rationale]
+Q3 Emotion: [fixed-set emoji + name] + [freely chosen emoji] — [brief explanation]
+Q4 Relevance: [score]/5 — [brief rationale]
+Q5 Understanding: [score]/5 — [brief rationale]
+Q6 Purchase Intent: [score]/5 — [brief rationale]
+Q7 Brand Appeal: [score]/5 — [brief rationale]
+
+(Repeat for each idea scored.)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+}
+
 // ─── Main handler ──────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
@@ -1413,6 +1466,13 @@ export default async function handler(req, res) {
     if (wgMatch) {
       warGamesCompetitor = wgMatch[1].trim();
       cleanedUserSolution = cleanedUserSolution.replace(/\[WAR_GAMES_COMPETITOR:[^\]]+\]\n?/, '').trim();
+    }
+
+    // Extract Zappi Questions marker (Grade hex only)
+    let includeZappiQuestions = false;
+    if (cleanedUserSolution.includes('[ZAPPI_QUESTIONS:true]')) {
+      includeZappiQuestions = true;
+      cleanedUserSolution = cleanedUserSolution.replace(/\[ZAPPI_QUESTIONS:true\]\n?/, '').trim();
     }
 
     const priorContextBlock = priorPersonasContext
@@ -1628,6 +1688,9 @@ ${iterationDirections.map((d, i) => `${i + 1}. ${d}`).join('\n')}
       iterationContextBlock,       // prior hex results + iteration gems
       hasExampleFiles,             // true if any selected KB files are Example type
       exampleFileNames: exampleFiles.map(f => f.fileName),
+      zappiQuestionsBlock: (includeZappiQuestions && hexId === 'Grade')
+        ? buildZappiQuestionsBlock(brand, projectType)
+        : '',
     };
 
     // ── Step 3: SSE setup ────────────────────────────────────────────────────
