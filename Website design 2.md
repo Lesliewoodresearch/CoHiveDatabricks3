@@ -899,4 +899,87 @@ flowchart TD
 
 ---
 
+## 15. User Notes Panel
+
+The User Notes panel is a persistent sidebar area in ProcessWireframe that accumulates freetext notes, iteration signals, AI directions, and story records across an entire working session. Its contents are included in the iteration export.
+
+```mermaid
+flowchart TD
+    A([ProcessWireframe mounts]) --> B[noteEntries initialised:\none empty note entry]
+    B --> C[UserNotesBox rendered\nin sidebar]
+
+    C --> D{User action}
+
+    D --> E[User types in note textarea]
+    E --> F[AutoResizeTextarea expands\nto fit content]
+    F --> G[noteEntries updated via\nonEntriesChange]
+
+    D --> H[Gem / Check / Coal\nconfirmed in Review panel]
+    H --> I[handleReviewConfirmed:\npush gem / check / coal\nentry to noteEntries]
+    I --> J[Empty note entry appended\nso user can keep typing]
+
+    D --> K[User adds Iteration Direction\nin hex step]
+    K --> L[handleAddIterationDirection:\npush prompt entry to noteEntries\nwith hex label + run number]
+    L --> J
+
+    D --> M[Wisdom Story round\ncompletes in StoryModal]
+    M --> N[Each round pushed as\nstory entry to noteEntries\nbrief descriptor only]
+    N --> J
+
+    J --> O{New entry added?}
+    O -->|Yes| P[Auto-scroll to bottom\nof notes panel]
+    O -->|No| C
+
+    G --> Q{Content types present?}
+    Q --> R[Filter checkboxes appear\nprogressively: Notes · Gems\nPrompts · Stories]
+    R --> S{User toggles checkbox}
+    S -->|Hide| T[Entries of that type\nhidden from view]
+    S -->|Show| U[Entries of that type\nvisible again]
+
+    D --> V[User clicks Save Iteration]
+    V --> W[noteEntries serialised:\nstory entries excluded\nnote → plain text\ngem/check/coal/prompt → labelled prefix]
+    W --> X[USER NOTES block\nappended to .txt export]
+    X --> Y[File uploaded to\nKnowledge Base]
+
+    D --> Z{New iteration starts?}
+    Z -->|Enter hex completes| AA[noteEntries reset:\none empty note entry]
+    Z -->|Iteration saved| AA
+
+    style D fill:#fef3c7
+    style Q fill:#fef3c7
+    style S fill:#fef3c7
+    style Z fill:#fef3c7
+    style O fill:#fef3c7
+```
+
+| Element | Description |
+|---|---|
+| ProcessWireframe mounts | The main app component initialises User Notes as part of its broader state setup. Notes live at the ProcessWireframe level so they persist across hex switches. |
+| noteEntries initialised: one empty note entry | The initial state is a single entry of type `note` with an empty string. This gives the user an immediately available textarea without any UI to add one. |
+| UserNotesBox rendered in sidebar | The UserNotesBox component is mounted in the sidebar panel of ProcessWireframe. It receives the full entries array and a setter function — it owns no state of its own beyond visibility toggles. |
+| User action | The four paths by which new content reaches the notes panel: typing, confirming iteration signals, adding an AI direction, or completing a Wisdom story round. |
+| User types in note textarea | Plain text entry. Each note entry maps to one AutoResizeTextarea — the user types directly into it and the text is written back to noteEntries immediately. |
+| AutoResizeTextarea expands to fit content | The textarea grows vertically as the user types. It reads its own scrollHeight after each keystroke and sets its height accordingly, preventing scroll within the field. |
+| noteEntries updated via onEntriesChange | The UserNotesBox calls the parent setter with the full updated entries array. ProcessWireframe holds the source of truth. |
+| Gem / Check / Coal confirmed in Review panel | After an assessment, the user opens the iteration signal review, selects which gems, checks, and coal items to retain, and confirms. Selected items are passed to `handleReviewConfirmed`. |
+| handleReviewConfirmed: push gem / check / coal entry to noteEntries | Each confirmed item is appended as a coloured badge entry. Gems appear in yellow, checks in green, coal in dark grey. The originating hex label is stored on the entry for display. |
+| Empty note entry appended so user can keep typing | After any auto-pushed entry (gem, check, coal, direction, story), a blank note entry is added so the user can immediately type a reaction or annotation below it without clicking anything. |
+| handleAddIterationDirection: push prompt entry with hex label + run number | When the user clicks an "Add Direction" action in a hex, the text is stored as a `prompt` entry. The hex label (e.g. "Grade") and the current run count (e.g. "run 2") are encoded into the entry text to provide context when reviewing the session later. |
+| Wisdom Story round completes in StoryModal | When a Wisdom story assessment finishes, each round (character and setting combination) is pushed to noteEntries as a `story` type. Only a brief descriptor is stored here — the full story content lives separately in hexExecutions. |
+| Each round pushed as story entry — brief descriptor only | The story entry records which story type and character were used (e.g. "Story written: Brand Protagonist · Chapter 1") so the user has a log of what was generated without storing the full text in the notes panel. |
+| Auto-scroll to bottom of notes panel | When the entries array grows (new entries added), the notes panel scrolls smoothly to the newest entry. Triggered by a `useEffect` that compares the current entry count to the previous count. |
+| Content types present? | UserNotesBox tracks whether any note entries have non-empty text, whether any gem/check/coal entries exist, whether any prompt entries exist, and whether any story entries exist. |
+| Filter checkboxes appear progressively | The Notes, Gems, Prompts, and Stories filter checkboxes only appear once at least one entry of that type has content. A fresh session with only an empty note textarea shows no checkboxes at all — they appear as the session accumulates content. |
+| User toggles checkbox | Each checkbox controls a `showX` boolean state in UserNotesBox. Hidden entries are filtered from the render list but remain in the entries array — toggling back restores them instantly. |
+| Entries of that type hidden from view | The filtered entries return null from the map — they are not rendered but not deleted. The filter is cosmetic only and never modifies noteEntries. |
+| Entries of that type visible again | Unchecking hides; re-checking restores. State is local to the component and not persisted — refreshing the page or starting a new iteration resets the checkboxes to all-shown. |
+| User clicks Save Iteration | Triggered from the iteration save modal in ProcessWireframe. At this point the full noteEntries array is serialised for export. |
+| noteEntries serialised — stories excluded, typed entries labelled | Story entries are excluded from the export (their full content is already part of the iteration file). Plain notes are written as raw text. Gem, check, coal, and prompt entries are prefixed with `[GEM]`, `[CHECK]`, `[COAL]`, or `[DIRECTION]` labels, optionally including the hex label. |
+| USER NOTES block appended to .txt export | The serialised notes are appended under a `USER NOTES` header in the iteration text file, after all assessment content and grade scoring sections. |
+| File uploaded to Knowledge Base | The complete .txt iteration file — including notes — is uploaded to the Databricks knowledge base as a Findings file for future reference. |
+| New iteration starts? | Two events reset the notes panel: completing the Enter hex (which starts a fresh iteration) and successfully saving an iteration. Both clear noteEntries back to a single empty note entry. |
+| noteEntries reset: one empty note entry | The panel is wiped and returned to its initial blank state, ready for the next working session. Previous notes are preserved in the uploaded iteration file in the knowledge base. |
+
+---
+
 *Generated from CoHive codebase — May 2026*
