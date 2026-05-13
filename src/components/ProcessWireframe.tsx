@@ -617,6 +617,9 @@ export default function ProcessWireframe() {
   // Roles that can upload and manage Example files directly
   const canManageExamples = ['research-analyst', 'research-leader', 'data-scientist', 'administrator'].includes(userRole);
 
+  // CoHive internal users can always switch templates regardless of their current template's permissions
+  const isCohiveUser = userEmail.toLowerCase().endsWith('@cohivesolutions.com');
+
   // Strip extension for display — users never see .txt
   const displayFileName = (fileName: string): string =>
     fileName.replace(/\.(txt|json)$/i, '');
@@ -1435,11 +1438,15 @@ export default function ProcessWireframe() {
               <div className="flex flex-col"><span className="text-xs text-gray-500">Template</span><span className="text-sm text-gray-900">{currentTemplateId}</span></div>
             </div>
             <div className="relative">
-              <button className="w-full px-4 py-2 border-2 border-gray-400 text-gray-700 rounded flex items-center gap-2 hover:bg-gray-50" onClick={() => setShowTemplateManager(true)}>
-                <Settings className="w-4 h-4" />Manage Templates
-              </button>
-              {showTemplateManager && currentTemplate && (
-                <TemplateManager currentTemplate={currentTemplate} availableTemplates={templates} onTemplateChange={handleTemplateChange} onTemplateUpdate={handleTemplateUpdate} onTemplateCreate={handleTemplateCreate} />
+              {(isCohiveUser || currentTemplate?.permissions?.canEditTemplates) && (
+                <>
+                  <button className="w-full px-4 py-2 border-2 border-gray-400 text-gray-700 rounded flex items-center gap-2 hover:bg-gray-50" onClick={() => setShowTemplateManager(true)}>
+                    <Settings className="w-4 h-4" />Manage Templates
+                  </button>
+                  {showTemplateManager && currentTemplate && (
+                    <TemplateManager currentTemplate={currentTemplate} availableTemplates={templates} onTemplateChange={handleTemplateChange} onTemplateUpdate={handleTemplateUpdate} onTemplateCreate={handleTemplateCreate} />
+                  )}
+                </>
               )}
               {currentTemplate?.permissions?.canEditTemplates && (
                 <>
