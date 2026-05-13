@@ -98,6 +98,9 @@ export function CentralHexView({
   const [assessment, setAssessment] = useState("");
   const [showHistory, setShowHistory] = useState(false);
   const [sendToKnowledgeBase, setSendToKnowledgeBase] = useState(false);
+  const [showBugReport, setShowBugReport] = useState(false);
+  const [bugReportText, setBugReportText] = useState('');
+  const [bugReportSending, setBugReportSending] = useState(false);
   const [showDirectionModal, setShowDirectionModal] = useState(false);
   const [directionText, setDirectionText] = useState('');
   const [showPriorPersonaModal, setShowPriorPersonaModal] = useState(false);
@@ -1555,6 +1558,55 @@ export function CentralHexView({
               }}
             >
               Save to Knowledge base
+            </button>
+          </div>
+        )}
+
+        {/* Report Suggestions or Bugs */}
+        <label className="flex items-center gap-2 cursor-pointer mt-2">
+          <input
+            type="checkbox"
+            checked={showBugReport}
+            onChange={(e) => { setShowBugReport(e.target.checked); setBugReportText(''); }}
+            className="w-4 h-4"
+          />
+          <span className="text-gray-900">Report Suggestions or Bugs</span>
+        </label>
+        {showBugReport && (
+          <div className="space-y-2 ml-7 mt-2">
+            <textarea
+              className="w-full h-24 border-2 border-gray-300 bg-white rounded p-2 text-sm text-gray-700 resize-none focus:outline-none focus:border-purple-400"
+              placeholder="Share your suggestions or found bugs here:"
+              value={bugReportText}
+              onChange={(e) => setBugReportText(e.target.value)}
+            />
+            <button
+              className="px-4 py-2 bg-gray-700 text-white text-sm rounded hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
+              disabled={!bugReportText.trim() || bugReportSending}
+              onClick={async () => {
+                if (!bugReportText.trim()) return;
+                setBugReportSending(true);
+                try {
+                  await fetch('/api/feedback/report', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      message: bugReportText.trim(),
+                      userEmail,
+                      hexId,
+                      hexLabel,
+                      brand: userBrand,
+                      projectType,
+                      userRole,
+                    }),
+                  });
+                } catch (_) {}
+                setBugReportText('');
+                setShowBugReport(false);
+                setBugReportSending(false);
+              }}
+            >
+              Send
             </button>
           </div>
         )}

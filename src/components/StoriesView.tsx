@@ -10,6 +10,9 @@ interface StoriesViewProps {
   onGenerate: (params: { category: StoryCategory; subtype: StorySubtype }) => void;
   onAddIterationDirection?: (direction: string) => void;
   onSaveRecommendation?: (recommendation: string, hexId: string) => void;
+  userEmail?: string;
+  userRole?: string;
+  projectType?: string;
 }
 
 const ARC_LABEL: Record<string, string> = {
@@ -27,6 +30,9 @@ export function StoriesView({
   onGenerate,
   onAddIterationDirection,
   onSaveRecommendation,
+  userEmail = 'user@cohive.app',
+  userRole = 'user',
+  projectType = '',
 }: StoriesViewProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedSubtypeId, setSelectedSubtypeId] = useState<string | null>(null);
@@ -34,6 +40,9 @@ export function StoriesView({
   const [directionText, setDirectionText] = useState('');
   const [sendToKnowledgeBase, setSendToKnowledgeBase] = useState(false);
   const [recommendationText, setRecommendationText] = useState('');
+  const [showBugReport, setShowBugReport] = useState(false);
+  const [bugReportText, setBugReportText] = useState('');
+  const [bugReportSending, setBugReportSending] = useState(false);
 
   const selectedCategory = STORY_CATEGORIES.find(c => c.id === selectedCategoryId) ?? null;
   const selectedSubtype = selectedCategory?.subtypes.find(s => s.id === selectedSubtypeId) ?? null;
@@ -216,6 +225,55 @@ export function StoriesView({
                 }}
               >
                 Save to Knowledge base
+              </button>
+            </div>
+          )}
+
+          {/* Report Suggestions or Bugs */}
+          <label className="flex items-center gap-2 cursor-pointer mt-2">
+            <input
+              type="checkbox"
+              checked={showBugReport}
+              onChange={(e) => { setShowBugReport(e.target.checked); setBugReportText(''); }}
+              className="w-4 h-4"
+            />
+            <span className="text-gray-900">Report Suggestions or Bugs</span>
+          </label>
+          {showBugReport && (
+            <div className="space-y-2 ml-7 mt-2">
+              <textarea
+                className="w-full h-24 border-2 border-gray-300 bg-white rounded p-2 text-sm text-gray-700 resize-none focus:outline-none focus:border-purple-400"
+                placeholder="Share your suggestions or found bugs here:"
+                value={bugReportText}
+                onChange={e => setBugReportText(e.target.value)}
+              />
+              <button
+                className="px-4 py-2 bg-gray-700 text-white text-sm rounded hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled={!bugReportText.trim() || bugReportSending}
+                onClick={async () => {
+                  if (!bugReportText.trim()) return;
+                  setBugReportSending(true);
+                  try {
+                    await fetch('/api/feedback/report', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        message: bugReportText.trim(),
+                        userEmail,
+                        hexId: 'stories',
+                        hexLabel: 'Stories',
+                        brand,
+                        projectType,
+                        userRole,
+                      }),
+                    });
+                  } catch (_) {}
+                  setBugReportText('');
+                  setShowBugReport(false);
+                  setBugReportSending(false);
+                }}
+              >
+                Send
               </button>
             </div>
           )}

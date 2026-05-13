@@ -1551,6 +1551,9 @@ export default function ProcessWireframe() {
                     onGenerate={handleStoriesGenerate}
                     onAddIterationDirection={handleAddIterationDirection}
                     onSaveRecommendation={handleSaveRecommendation}
+                    userEmail={userEmail}
+                    userRole={userRole}
+                    projectType={responses['Enter']?.[1]?.trim() || ''}
                   />
                          ) : isCentralHex ? (
                   <>
