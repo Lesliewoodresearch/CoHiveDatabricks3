@@ -36,8 +36,16 @@ export async function getRoleForEmail(email, workspaceHost, accessToken, warehou
   const cached = CACHE.get(email);
   if (cached && Date.now() < cached.expiresAt) return cached.role;
 
+  const domain = email.split('@')[1] || '';
+
+  // CoHive internal users always get full access so they can operate in any
+  // client workspace and switch UI roles freely via the template selector.
+  if (domain === 'cohivesolutions.com') {
+    CACHE.set(email, { role: 'administrator', expiresAt: Date.now() + CACHE_TTL_MS });
+    return 'administrator';
+  }
+
   try {
-    const domain = email.split('@')[1] || '';
     const esc = (s) => String(s).replace(/'/g, "''");
 
     const statement =
