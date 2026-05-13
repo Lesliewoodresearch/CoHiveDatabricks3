@@ -13,6 +13,7 @@
 
 import { getDatabricksConfig } from '../../utils/validateEnv.js';
 import { logEvent } from '../../utils/logger.js';
+import { getRoleForEmail, roleIsAllowed, ROLES_MANAGE_PROMPTS } from '../../utils/userRole.js';
 
 // ── Inline system project type names ──────────────────────────────────────────
 // Mirrors systemProjectTypes from src/data/systemProjectTypes.ts.
@@ -107,26 +108,27 @@ export default async function handler(req, res) {
 
     // ── POST: Add a new project type with prompt ────────────────────────────
     if (req.method === 'POST') {
-      const { projectType, prompt, userEmail, userRole } = req.body;
+      const { projectType, prompt, userEmail } = req.body;
 
-      if (!projectType || !prompt || !userEmail || !userRole) {
+      if (!projectType || !prompt || !userEmail) {
         return res.status(400).json({
           error: 'Missing required fields',
-          required: ['projectType', 'prompt', 'userEmail', 'userRole'],
+          required: ['projectType', 'prompt', 'userEmail'],
         });
       }
 
-      if (userRole !== 'data-scientist') {
+      const resolvedRole = await getRoleForEmail(userEmail, workspaceHost, accessToken, warehouseId, schema);
+      if (!roleIsAllowed(resolvedRole, ROLES_MANAGE_PROMPTS)) {
         logEvent({
           eventType: 'project_type_prompt_unauthorized',
           severity: 'warn',
           userEmail,
-          message: `Unauthorized attempt to create project type prompt by ${userRole}`,
-          details: { projectType, userRole },
+          message: `Unauthorized attempt to create project type prompt by ${resolvedRole}`,
+          details: { projectType, resolvedRole },
         });
         return res.status(403).json({
           error: 'Access denied',
-          message: 'Only Data Scientists can create project type prompts',
+          message: 'Only Data Scientists and Administrators can create project type prompts',
         });
       }
 
@@ -233,26 +235,27 @@ export default async function handler(req, res) {
 
     // ── PATCH: Update an existing project type's prompt ─────────────────────
     if (req.method === 'PATCH') {
-      const { projectType, prompt, userEmail, userRole } = req.body;
+      const { projectType, prompt, userEmail } = req.body;
 
-      if (!projectType || !prompt || !userEmail || !userRole) {
+      if (!projectType || !prompt || !userEmail) {
         return res.status(400).json({
           error: 'Missing required fields',
-          required: ['projectType', 'prompt', 'userEmail', 'userRole'],
+          required: ['projectType', 'prompt', 'userEmail'],
         });
       }
 
-      if (userRole !== 'data-scientist') {
+      const resolvedRole = await getRoleForEmail(userEmail, workspaceHost, accessToken, warehouseId, schema);
+      if (!roleIsAllowed(resolvedRole, ROLES_MANAGE_PROMPTS)) {
         logEvent({
           eventType: 'project_type_prompt_unauthorized',
           severity: 'warn',
           userEmail,
-          message: `Unauthorized attempt to update project type prompt by ${userRole}`,
-          details: { projectType, userRole },
+          message: `Unauthorized attempt to update project type prompt by ${resolvedRole}`,
+          details: { projectType, resolvedRole },
         });
         return res.status(403).json({
           error: 'Access denied',
-          message: 'Only Data Scientists can update project type prompts',
+          message: 'Only Data Scientists and Administrators can update project type prompts',
         });
       }
 
@@ -340,26 +343,27 @@ export default async function handler(req, res) {
 
     // ── DELETE: Soft-delete a project type configuration ────────────────────
     if (req.method === 'DELETE') {
-      const { projectType, userEmail, userRole } = req.body;
+      const { projectType, userEmail } = req.body;
 
-      if (!projectType || !userEmail || !userRole) {
+      if (!projectType || !userEmail) {
         return res.status(400).json({
           error: 'Missing required fields',
-          required: ['projectType', 'userEmail', 'userRole'],
+          required: ['projectType', 'userEmail'],
         });
       }
 
-      if (userRole !== 'data-scientist') {
+      const resolvedRole = await getRoleForEmail(userEmail, workspaceHost, accessToken, warehouseId, schema);
+      if (!roleIsAllowed(resolvedRole, ROLES_MANAGE_PROMPTS)) {
         logEvent({
           eventType: 'project_type_prompt_unauthorized',
           severity: 'warn',
           userEmail,
-          message: `Unauthorized attempt to delete project type prompt by ${userRole}`,
-          details: { projectType, userRole },
+          message: `Unauthorized attempt to delete project type prompt by ${resolvedRole}`,
+          details: { projectType, resolvedRole },
         });
         return res.status(403).json({
           error: 'Access denied',
-          message: 'Only Data Scientists can delete project type prompts',
+          message: 'Only Data Scientists and Administrators can delete project type prompts',
         });
       }
 

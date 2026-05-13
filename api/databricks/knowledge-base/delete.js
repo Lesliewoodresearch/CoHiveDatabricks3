@@ -10,6 +10,7 @@
 
 import { getDatabricksConfig } from '../../utils/validateEnv.js';
 import { logFileEvent, logError } from '../../utils/logger.js';
+import { getRoleForEmail, roleIsAllowed, ROLES_DELETE_FILES } from '../../utils/userRole.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'DELETE') {
@@ -19,7 +20,7 @@ export default async function handler(req, res) {
   try {
     const { workspaceHost, accessToken, warehouseId, schema } = getDatabricksConfig();
 
-    const { fileId, userEmail, userRole } = req.body;
+    const { fileId, userEmail } = req.body;
 
     if (!fileId || !userEmail) {
       return res.status(400).json({
@@ -28,7 +29,15 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log(`[Knowledge Base Delete] User: ${userEmail} (${userRole}) deleting file: ${fileId}`);
+    const resolvedRole = await getRoleForEmail(userEmail, workspaceHost, accessToken, warehouseId, schema);
+    if (!roleIsAllowed(resolvedRole, ROLES_DELETE_FILES)) {
+      return res.status(403).json({
+        error: 'Access denied',
+        message: 'Only Research Leaders, Data Scientists, and Administrators can delete files',
+      });
+    }
+
+    console.log(`[Knowledge Base Delete] User: ${userEmail} (${resolvedRole}) deleting file: ${fileId}`);
 
     // Step 1: Get file path from metadata
     const selectResponse = await fetch(

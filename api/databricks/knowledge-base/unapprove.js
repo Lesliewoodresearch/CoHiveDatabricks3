@@ -9,6 +9,7 @@
 
 import { getDatabricksConfig } from '../../utils/validateEnv.js';
 import { logFileEvent, logError } from '../../utils/logger.js';
+import { getRoleForEmail, roleIsAllowed, ROLES_APPROVE_RESEARCH } from '../../utils/userRole.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -17,7 +18,7 @@ export default async function handler(req, res) {
 
   try {
     const { workspaceHost, accessToken, warehouseId, schema } = getDatabricksConfig();
-    const { fileId, userEmail, userRole } = req.body;
+    const { fileId, userEmail } = req.body;
 
     if (!fileId || !userEmail) {
       return res.status(400).json({
@@ -26,7 +27,15 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log(`[KB Unapprove] ${userEmail} (${userRole}) unapproving file: ${fileId}`);
+    const resolvedRole = await getRoleForEmail(userEmail, workspaceHost, accessToken, warehouseId, schema);
+    if (!roleIsAllowed(resolvedRole, ROLES_APPROVE_RESEARCH)) {
+      return res.status(403).json({
+        error: 'Access denied',
+        message: 'Only Research Leaders and Administrators can unapprove files',
+      });
+    }
+
+    console.log(`[KB Unapprove] ${userEmail} (${resolvedRole}) unapproving file: ${fileId}`);
 
     const updateResponse = await fetch(
       `https://${workspaceHost}/api/2.0/sql/statements`,

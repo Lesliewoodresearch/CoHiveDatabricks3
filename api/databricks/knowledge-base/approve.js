@@ -9,6 +9,7 @@
 
 import { getDatabricksConfig } from '../../utils/validateEnv.js';
 import { logFileEvent, logError } from '../../utils/logger.js';
+import { getRoleForEmail, roleIsAllowed, ROLES_APPROVE_RESEARCH } from '../../utils/userRole.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -22,7 +23,6 @@ export default async function handler(req, res) {
       fileId,
       approvalNotes = '',
       userEmail,
-      userRole,
     } = req.body;
 
     if (!fileId || !userEmail) {
@@ -32,7 +32,15 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log(`[KB Approve] User: ${userEmail} (${userRole}) approving fileId: "${fileId}"`);
+    const resolvedRole = await getRoleForEmail(userEmail, workspaceHost, accessToken, warehouseId, schema);
+    if (!roleIsAllowed(resolvedRole, ROLES_APPROVE_RESEARCH)) {
+      return res.status(403).json({
+        error: 'Access denied',
+        message: 'Only Research Leaders and Administrators can approve files',
+      });
+    }
+
+    console.log(`[KB Approve] User: ${userEmail} (${resolvedRole}) approving fileId: "${fileId}"`);
     console.log(`[KB Approve] Schema: ${schema}, Warehouse: ${warehouseId}`);
 
     // ── Step 1: Confirm the file exists and check current state ──────────────

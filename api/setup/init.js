@@ -195,6 +195,23 @@ export default async function handler(req, res) {
     );
     steps.push('default config values');
 
+    // ── Step 10: Create user_roles table ──────────────────────────────────
+    await runSQL(workspaceHost, accessToken, warehouseId,
+      `CREATE TABLE IF NOT EXISTS knowledge_base.${schema}.user_roles (
+        id           STRING NOT NULL,
+        match_type   STRING NOT NULL,
+        match_value  STRING NOT NULL,
+        role         STRING NOT NULL,
+        created_by   STRING,
+        created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
+        updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
+        is_active    BOOLEAN DEFAULT TRUE,
+        CONSTRAINT pk_user_roles PRIMARY KEY (id)
+      )`,
+      'Create user_roles table'
+    );
+    steps.push('user_roles table');
+
     console.log(`[Setup] ✅ All setup steps complete for ${clientName}`);
 
     return res.status(200).json({
