@@ -48,11 +48,15 @@ export default async function handler(req, res) {
 
     console.log('[Knowledge Base List] Query params:', { scope, category, brand, fileType, isApproved, projectType });
 
+    const esc = (s) => String(s || '').replace(/'/g, "''");
+    const safeLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 500);
+    const safeOffset = Math.max(parseInt(offset) || 0, 0);
+
     const conditions = [];
-    if (scope) conditions.push(`scope = '${scope}'`);
-    if (category) conditions.push(`category = '${category}'`);
-    if (brand) conditions.push(`brand = '${brand}'`);
-    if (fileType) conditions.push(`file_type = '${fileType}'`);
+    if (scope) conditions.push(`scope = '${esc(scope)}'`);
+    if (category) conditions.push(`category = '${esc(category)}'`);
+    if (brand) conditions.push(`brand = '${esc(brand)}'`);
+    if (fileType) conditions.push(`file_type = '${esc(fileType)}'`);
     if (isApproved !== undefined && isApproved !== '') {
       if (isApproved === 'true') {
         conditions.push(`is_approved = TRUE`);
@@ -60,18 +64,18 @@ export default async function handler(req, res) {
         conditions.push(`(is_approved = FALSE OR is_approved IS NULL)`);
       }
     }
-    if (projectType) conditions.push(`project_type = '${projectType}'`);
-    if (uploadedBy) conditions.push(`uploaded_by = '${uploadedBy}'`);
+    if (projectType) conditions.push(`project_type = '${esc(projectType)}'`);
+    if (uploadedBy) conditions.push(`uploaded_by = '${esc(uploadedBy)}'`);
     if (searchTerm) {
-      const s = searchTerm.replace(/'/g, "''");
+      const s = esc(searchTerm);
       conditions.push(`(file_name LIKE '%${s}%' OR content_summary LIKE '%${s}%')`);
     }
 
     if (includeGeneral === 'true' || includeCategory === 'true') {
       const scopeConditions = [];
       if (includeGeneral === 'true') scopeConditions.push("scope = 'general'");
-      if (includeCategory === 'true' && category) scopeConditions.push(`(scope = 'category' AND category = '${category}')`);
-      if (brand) scopeConditions.push(`(scope = 'brand' AND brand = '${brand}')`);
+      if (includeCategory === 'true' && category) scopeConditions.push(`(scope = 'category' AND category = '${esc(category)}')`);
+      if (brand) scopeConditions.push(`(scope = 'brand' AND brand = '${esc(brand)}')`);
       if (scopeConditions.length > 0) {
         const other = conditions.filter(c => !c.startsWith('scope ='));
         conditions.length = 0;
@@ -94,7 +98,7 @@ export default async function handler(req, res) {
       'FROM knowledge_base.' + schema + '.file_metadata ' +
       whereClause + ' ' +
       'ORDER BY ' + sortColumn + ' ' + sortDirection + ' ' +
-      'LIMIT ' + limit + ' OFFSET ' + offset;
+      'LIMIT ' + safeLimit + ' OFFSET ' + safeOffset;
 
     console.log('[Knowledge Base List] Executing SQL query');
 
@@ -160,7 +164,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       files,
-      pagination: { total: files.length, limit: parseInt(limit), offset: parseInt(offset) },
+      pagination: { total: files.length, limit: safeLimit, offset: safeOffset },
     });
 
   } catch (error) {

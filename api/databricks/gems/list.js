@@ -25,10 +25,14 @@ export default async function handler(req, res) {
       offset = 0,
     } = req.query;
 
+    const esc = (s) => String(s || '').replace(/'/g, "''");
+    const safeLimit = Math.min(Math.max(parseInt(limit) || 100, 1), 500);
+    const safeOffset = Math.max(parseInt(offset) || 0, 0);
+
     const conditions = [];
-    if (brand) conditions.push(`brand = '${brand.replace(/'/g, "''")}'`);
-    if (hexId) conditions.push(`hex_id = '${hexId.replace(/'/g, "''")}'`);
-    if (createdBy) conditions.push(`created_by = '${createdBy.replace(/'/g, "''")}'`);
+    if (brand) conditions.push(`brand = '${esc(brand)}'`);
+    if (hexId) conditions.push(`hex_id = '${esc(hexId)}'`);
+    if (createdBy) conditions.push(`created_by = '${esc(createdBy)}'`);
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
@@ -39,7 +43,7 @@ export default async function handler(req, res) {
       FROM knowledge_base.${schema}.gems
       ${whereClause}
       ORDER BY created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
+      LIMIT ${safeLimit} OFFSET ${safeOffset}
     `;
 
     const response = await fetch(
