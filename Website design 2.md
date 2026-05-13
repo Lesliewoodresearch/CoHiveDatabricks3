@@ -982,4 +982,77 @@ flowchart TD
 
 ---
 
+## 16. Databricks Security Layer — SQL Injection Prevention
+
+All SQL in CoHive is executed via the Databricks SQL Statements REST API (`POST /api/2.0/sql/statements`). There are no ORM or query-builder libraries — queries are built as strings in serverless functions and sent as JSON payloads. The defence against injection is therefore applied at the string-building stage in each API route.
+
+```mermaid
+flowchart TD
+    A([User input arrives\nat Vercel API route]) --> B{Input type}
+
+    B --> C[String value\ne.g. brand, category,\npersona name, search term]
+    B --> D[Numeric value\ne.g. limit, offset]
+    B --> E[Sort parameter\ne.g. sortBy, sortOrder]
+    B --> F[Boolean flag\ne.g. isApproved]
+
+    C --> G["esc() — replace all\nsingle quotes with ''\nSQL standard escaping"]
+    G --> H[Escaped value\ninterpolated into\nSQL string literal]
+
+    D --> I[parseInt — force integer\nclamp to valid range\n1–500 for limit, ≥0 for offset]
+    I --> J[Safe integer\ninterpolated directly\nno quotes needed]
+
+    E --> K[Allowlist check:\nvalidSortColumns array\nASC or DESC only]
+    K -->|Match| L[Whitelisted value used]
+    K -->|No match| M[Safe default applied\ne.g. upload_date DESC]
+
+    F --> N[Strict equality check:\n=== true or === false\nas string literals]
+    N --> O[Hard-coded SQL fragment\nTRUE / FALSE / IS NULL\nno user value in query]
+
+    H --> P[SQL string assembled]
+    J --> P
+    L --> P
+    M --> P
+    O --> P
+
+    P --> Q[POST to Databricks\n/api/2.0/sql/statements\nBearer token auth]
+    Q --> R[Databricks executes\nagainst warehouse]
+    R --> S[Results returned\nas data_array]
+
+    style B fill:#fef3c7
+    style K fill:#fef3c7
+    style N fill:#fef3c7
+```
+
+| Element | Description |
+|---|---|
+| User input arrives at Vercel API route | All SQL-generating endpoints are Vercel serverless functions. Input comes from `req.query` (GET) or `req.body` (POST). No input reaches the database directly — it always passes through this layer first. |
+| Input type | The defence applied depends on the type of value being inserted into the query. Strings, numerics, sort parameters, and boolean flags each have a different treatment. |
+| String value (brand, category, persona name, search term) | Any user-controlled text that will appear inside a SQL string literal — surrounded by single quotes in the query. These are the classic SQL injection target. |
+| esc() — replace all single quotes with '' | The SQL-standard escaping technique. A single quote in user input would otherwise terminate the string literal and allow arbitrary SQL to follow. Doubling it makes it a literal character inside the string. Applied in every API route that builds WHERE clause conditions or INSERT values. |
+| Escaped value interpolated into SQL string literal | After escaping, the value is safe to embed between single quotes in the query string. The SQL parser sees it as data, not as syntax. |
+| Numeric value (limit, offset) | Pagination parameters arrive as URL query strings — they are strings, not numbers. If interpolated directly, a value like `50 UNION SELECT password FROM users` would execute as SQL. |
+| parseInt — force integer, clamp to valid range | `parseInt()` strips everything after the first non-numeric character and returns `NaN` for non-numeric input. The `\|\|` fallback replaces `NaN` with a safe default. `Math.min`/`Math.max` clamp to 1–500 for limit and ≥ 0 for offset. A crafted string like `100 UNION SELECT...` becomes `100`. |
+| Safe integer interpolated directly | After `parseInt` and clamping, the value is a guaranteed JavaScript integer. Interpolating an integer into SQL needs no quotes and cannot carry injection payloads. |
+| Sort parameter (sortBy, sortOrder) | Column names and sort directions cannot be escaped the same way as string literals — they appear outside quotes in the SQL (in the ORDER BY clause). Escaping single quotes offers no protection here. |
+| Allowlist check: validSortColumns array, ASC or DESC only | `sortBy` is checked against a hard-coded array `['upload_date', 'citation_count', 'file_name', 'created_at']`. Only exact matches are used. `sortOrder` is forced to `'ASC'` or `'DESC'` by a ternary — any other value becomes `'DESC'`. The user's input value is never used directly in the query if it doesn't match. |
+| Whitelisted value used | When the sort parameter matches the allowlist exactly, that string literal from the allowlist (not from the request) is placed in the query. |
+| Safe default applied | When the sort parameter does not match, the code substitutes a hard-coded safe default. The user's input is discarded entirely. |
+| Boolean flag (isApproved) | Booleans control whether a condition is added at all, and what SQL fragment is used. The user's value (`'true'` or `'false'` as strings) determines which branch runs, but the SQL written is always a hard-coded fragment — `TRUE`, `FALSE`, or `IS NULL`. |
+| Strict equality check — as string literals | `=== 'true'` and `=== 'false'` require exact string matches. Anything else is ignored and no condition is added. The user-supplied value never appears in the SQL text. |
+| Hard-coded SQL fragment | The condition written into the query (`is_approved = TRUE`, `is_approved = FALSE OR is_approved IS NULL`) is a fixed string in source code, completely independent of what the user sent. |
+| SQL string assembled | The four defence paths converge here. The complete SQL statement is a JavaScript string where every user-originated value has been processed by one of the four mechanisms above before inclusion. |
+| POST to Databricks /api/2.0/sql/statements — Bearer token auth | The assembled SQL is sent to Databricks as a JSON payload. The request is authenticated with a service PAT (`DATABRICKS_TOKEN`) stored as a Vercel environment variable — never exposed to the browser. |
+| Databricks executes against warehouse | The SQL Warehouse receives the statement. At this point it is treated as a complete, trusted SQL string — Databricks has no awareness of which parts originated from user input. |
+| Results returned as data_array | Databricks returns results as a positional array of rows. Field values are read by index (`row[0]`, `row[1]`, etc.) and mapped to named properties before being sent back to the client. |
+
+### What this layer does not cover
+
+| Gap | Detail |
+|---|---|
+| No parameterized queries | The Databricks SQL Statements API supports a `parameters` field for true bind-variable execution. None of the routes use it — all queries are string-built. The escaping above is the defence, not structural separation of code from data. |
+| AI prompt content | User-supplied text that reaches AI prompts (brand names, persona descriptions, research notes, hex responses) is not sanitized before being embedded in prompt strings. This is intentional — sanitizing would corrupt the content — but it means prompt injection is a separate threat model not addressed here. |
+| Schema name | The `schema` value (`CLIENT_SCHEMA` env var) is interpolated directly into table references (`knowledge_base.${schema}.file_metadata`). It is operator-controlled via Vercel environment variables, not user-controlled, so it is not an external injection vector. |
+
+---
+
 *Generated from CoHive codebase — May 2026*
