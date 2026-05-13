@@ -26,6 +26,8 @@ import {
   Globe,
   Tag,
   Building2,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import gemIcon from "figma:asset/53dc6cf554f69e479cfbd60a46741f158d11dd21.png";
 import { GemCheckCoalReviewPanel, CoalIcon, type ReviewItem } from "./GemCheckCoalReviewPanel";
@@ -339,6 +341,7 @@ export function AssessmentModal({
   const [savedCoalItems,  setSavedCoalItems]  = useState<Array<{ text: string }>>([]);
   const [showReviewPanel, setShowReviewPanel] = useState(false);
   const [reviewItems, setReviewItems] = useState<ReviewItem[]>([]);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
   // null = no rounds yet; number = that round's tab; "summary" = summary tab
   const [activeTab, setActiveTab] = useState<number | "summary" | null>(null);
@@ -977,15 +980,21 @@ export function AssessmentModal({
 
     return (
       <div
-        className="fixed inset-y-0 left-0 z-50 flex items-center justify-center"
-        style={{ right: 'var(--modal-r)', padding: 'var(--modal-p-lg)', backgroundColor: "rgba(0, 0, 0, 0.2)" }}
+        className="fixed z-50 flex items-center justify-center"
+        style={isFullscreen
+          ? { inset: 0, padding: 0, backgroundColor: "rgba(0, 0, 0, 0.2)" }
+          : { top: 0, bottom: 0, left: 0, right: 'var(--modal-r)', padding: 'var(--modal-p-lg)', backgroundColor: "rgba(0, 0, 0, 0.2)" }
+        }
       >
         <div
-          className="bg-white rounded-xl shadow-2xl flex flex-col"
-          style={{ width: "560px", maxHeight: "85vh" }}
+          className="bg-white flex flex-col"
+          style={isFullscreen
+            ? { width: "100%", height: "100%", borderRadius: 0 }
+            : { width: "560px", maxHeight: "85vh", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }
+          }
         >
           {/* Settings header */}
-          <div className="bg-white border-b-2 border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-xl">
+          <div className="bg-white border-b-2 border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0" style={{ borderRadius: isFullscreen ? 0 : "0.75rem 0.75rem 0 0" }}>
             <div>
               <h2 className="text-gray-900 font-semibold modal-heading">
                 Assessment Settings
@@ -994,13 +1003,22 @@ export function AssessmentModal({
                 {brand} · {hexLabel}
               </p>
             </div>
-            <button
-              onClick={onClose}
-              aria-label="Close"
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setIsFullscreen(f => !f)}
+                aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={onClose}
+                aria-label="Close"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Settings body */}
@@ -1218,15 +1236,21 @@ export function AssessmentModal({
       )}
 
       <div
-        className="fixed inset-y-0 left-0 z-50 flex items-center justify-center"
-        style={{ right: 'var(--modal-r)', padding: 'var(--modal-p-lg)', backgroundColor: "rgba(0, 0, 0, 0.2)" }}
+        className="fixed z-50 flex items-center justify-center"
+        style={isFullscreen
+          ? { inset: 0, padding: 0, backgroundColor: "rgba(0, 0, 0, 0.2)" }
+          : { top: 0, bottom: 0, left: 0, right: 'var(--modal-r)', padding: 'var(--modal-p-lg)', backgroundColor: "rgba(0, 0, 0, 0.2)" }
+        }
       >
         <div
-          className="bg-white rounded-xl shadow-2xl flex flex-col"
-          style={{ width: "75%", height: "75vh", maxWidth: "1200px" }}
+          className="bg-white flex flex-col"
+          style={isFullscreen
+            ? { width: "100%", height: "100%", borderRadius: 0 }
+            : { width: "75%", height: "75vh", maxWidth: "1200px", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }
+          }
         >
           {/* Header */}
-          <div className="bg-white border-b-2 border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-xl">
+          <div className="bg-white border-b-2 border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0" style={{ borderRadius: isFullscreen ? 0 : "0.75rem 0.75rem 0 0" }}>
             <div className="flex items-center gap-4">
               <div>
                 <h2 className="text-gray-900 font-semibold modal-heading">
@@ -1310,6 +1334,13 @@ export function AssessmentModal({
                   Complete · {rounds.length} round{rounds.length !== 1 ? "s" : ""}
                 </span>
               )}
+              <button
+                onClick={() => setIsFullscreen(f => !f)}
+                aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
               <button
                 onClick={onClose}
                 aria-label="Close"
