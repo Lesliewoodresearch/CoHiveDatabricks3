@@ -258,6 +258,7 @@ export function StoryModal({
       setLoadingMessage(`Generating ${subtype.label} story…`);
 
       const totalRounds = subtype.dualPOV ? 2 : 1;
+      const generatedRounds: StoryRound[] = [];
 
       for (let i = 0; i < totalRounds; i++) {
         const roundLabel = totalRounds === 1
@@ -275,6 +276,7 @@ export function StoryModal({
         if (!result.success) throw new Error(result.error || 'Story generation failed');
 
         const round: StoryRound = { roundNumber: i + 1, label: roundLabel, content: result.response };
+        generatedRounds.push(round);
         setRounds(prev => [...prev, round]);
         setActiveTab(prev => prev === null ? round.roundNumber : prev);
       }
@@ -284,7 +286,7 @@ export function StoryModal({
       // Generate synopsis after all rounds complete
       setSynopsisLoading(true);
       try {
-        const allContent = rounds.map(r => r.content).join('\n\n') || '';
+        const allContent = generatedRounds.map(r => r.content).join('\n\n') || '';
         const synopsisResult = await executeAIPrompt({
           prompt: `In 2 concise sentences, summarize the following ${subtype.label} story for ${brand}. Focus on the strategic insight it reveals — not on retelling the plot.\n\n${allContent.slice(0, 2000)}`,
           systemPrompt: 'You are a brand strategy editor. Write a crisp 2-sentence strategic synopsis.',
