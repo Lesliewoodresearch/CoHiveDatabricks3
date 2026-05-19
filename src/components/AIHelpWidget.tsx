@@ -79,10 +79,14 @@ const HELP_MANUAL: Record<string, { guess: string; steps: string[] }> = {
     guess: "run a Luminaries (External Expert) analysis",
     steps: [
       "Step 1: Select one or more Luminary personas — advertising legends and thought leaders like David Ogilvy, Bill Bernbach, Seth Godin, Byron Sharp, and others.",
+      "Living Persons (*): Personas marked with an asterisk (*) — e.g. 'Seth Godin's Published Works' — are built solely from that person's books, articles, and documented public statements. They do not represent the person's actual current views. A disclaimer is shown in the picker and included in the AI prompt.",
       "Step 2: Choose your assessment type — Assess, Recommend, or Unified.",
       "Click Execute. Each Luminary responds from their own philosophy in Round 1 independently, then debates the others in subsequent rounds.",
       "The Moderator frames each round and closes with a decisive synthesis.",
       "Highlight text in the results to save as a Gem (keep this direction) or Coal (avoid this direction).",
+      "Fact-Checker Model: A separate, independent AI model reviews the results for factual accuracy. The fact-checker model can be configured per-hex in Model Templates → Fact Checking row (default: GPT-4o Mini, different from the main assessment model).",
+      "Fullscreen: Click the expand icon (⤢) in the top-right corner of the results window to make it cover the full screen. Click the compress icon to return to normal size.",
+      "Report Suggestions or Bugs: Check the 'Report Suggestions or Bugs' checkbox below the Knowledge Base option. A text box will appear — type your message and click Send. Your feedback is sent privately to the CoHive team along with your current hex and session context.",
     ],
   },
   stories: {
@@ -92,6 +96,8 @@ const HELP_MANUAL: Record<string, { guess: string; steps: string[] }> = {
       "Step 2: Choose your assessment type — Assess, Recommend, or Unified.",
       "Click Execute. Each stories evaluates from their specific household context — routines, family dynamics, purchase patterns.",
       "Storiess compare their household realities directly in debate rounds.",
+      "Fullscreen: Click the expand icon (⤢) in the top-right corner of the results window to make it cover the full screen. Click the compress icon to return to normal size.",
+      "Report Suggestions or Bugs: Check the 'Report Suggestions or Bugs' checkbox in the stories panel. A text box will appear — type your message and click Send. Your feedback is sent privately to the CoHive team with your current context.",
     ],
   },
   Consumers: {
@@ -101,6 +107,9 @@ const HELP_MANUAL: Record<string, { guess: string; steps: string[] }> = {
       "Step 2: Choose Assess, Recommend, or Unified.",
       "Click Execute. Each persona responds from their lived purchase experience.",
       "In debate rounds, personas compare purchase realities and challenge each other directly.",
+      "Fact-Checker Model: A separate AI model reviews results for factual accuracy. Configurable per-hex in Model Templates → Fact Checking row (default: GPT-4o Mini).",
+      "Fullscreen: Click the expand icon (⤢) in the top-right corner of the results window to fill the screen. Click the compress icon to return to normal size.",
+      "Report Suggestions or Bugs: Check 'Report Suggestions or Bugs' below the Knowledge Base checkbox. A text box appears — type your feedback and click Send.",
     ],
   },
   competitors: {
@@ -111,6 +120,8 @@ const HELP_MANUAL: Record<string, { guess: string; steps: string[] }> = {
       "In War Games mode: describe your competitive scenario or strategic question.",
       "Click Execute. Results cover differentiation, competitive threats, defensive positions, and offensive moves.",
       "Run again with a different competitor to compare — all executions are kept in history.",
+      "Fullscreen: Click the expand icon (⤢) in the top-right corner of the results window to fill the screen. Click compress to return.",
+      "Report Suggestions or Bugs: Check 'Report Suggestions or Bugs' below the Knowledge Base checkbox to send feedback to the CoHive team.",
     ],
   },
   Colleagues: {
@@ -120,6 +131,9 @@ const HELP_MANUAL: Record<string, { guess: string; steps: string[] }> = {
       "Each colleague evaluates from their functional responsibility — budget, feasibility, cross-functional dependencies.",
       "Step 2: Choose assessment type.",
       "Click Execute. In debate rounds, colleagues surface cross-functional tensions the strategy must resolve.",
+      "Fact-Checker Model: A separate AI model reviews results for factual accuracy. Configurable per-hex in Model Templates → Fact Checking row (default: GPT-4o Mini).",
+      "Fullscreen: Click the expand icon (⤢) in the top-right corner of the results window to fill the screen. Click compress to return.",
+      "Report Suggestions or Bugs: Check 'Report Suggestions or Bugs' below the Knowledge Base checkbox to send feedback to the CoHive team.",
     ],
   },
   cultural: {
@@ -129,6 +143,9 @@ const HELP_MANUAL: Record<string, { guess: string; steps: string[] }> = {
       "Step 2: Choose Assess, Recommend, or Unified.",
       "Click Execute. Each cultural persona evaluates for resonance, potential misreadings, and cultural fit.",
       "Personas compare their community realities directly in debate rounds.",
+      "Fact-Checker Model: A separate AI model reviews results for factual accuracy. Configurable per-hex in Model Templates → Fact Checking row (default: GPT-4o Mini).",
+      "Fullscreen: Click the expand icon (⤢) in the top-right corner of the results window to fill the screen. Click compress to return.",
+      "Report Suggestions or Bugs: Check 'Report Suggestions or Bugs' below the Knowledge Base checkbox to send feedback to the CoHive team.",
     ],
   },
   social: {
@@ -137,6 +154,8 @@ const HELP_MANUAL: Record<string, { guess: string; steps: string[] }> = {
       "Step 1: Select social listening and media research files from your Knowledge Base.",
       "Step 2: Choose Assess, Recommend, or Unified.",
       "Click Execute to analyse social sentiment and trends from your research files.",
+      "Fullscreen: Click the expand icon (⤢) in the top-right corner of the results window to fill the screen. Click compress to return.",
+      "Report Suggestions or Bugs: Check 'Report Suggestions or Bugs' below the Knowledge Base checkbox to send feedback to the CoHive team.",
     ],
   },
   Grade: {
@@ -144,13 +163,16 @@ const HELP_MANUAL: Record<string, { guess: string; steps: string[] }> = {
     steps: [
       "The Grade hex scores the ideas and strategies produced in this iteration against target consumer segments — it is not a persona dialogue.",
       "Step 1 of 3 — Select Ideas: When you open the Grade hex, it automatically extracts idea candidates from all hex discussions in this iteration (including Stories). Check or uncheck ideas to include. You can also type and add ideas manually.",
+      "Zappi Questions (optional, default OFF): Also in Step 1, check 'Include Zappi Questions' to add 7 standardised concept-testing questions to each segment's assessment. The questions cover Brand Fit, Standout, Emotion, Relevance, Ease of Understanding, Purchase Intent, and Brand Appeal — all on a 1–5 scale (5 = best). When Zappi is enabled, ideas are optional — you can run Zappi scoring against segments with no ideas selected.",
       "Step 2 of 3 — Select Segments: Choose which consumer segments will evaluate the ideas. Segments are grouped by Lifestyle (Activities, Consumption, Life Stage), Demographic (Age Groups, Income, Geography, Household), and Psychographic (Values, Personality, Attitudes). Where available, a US market population percentage is shown next to each segment.",
       "Step 3 of 3 — Choose Scoring Scale: Pick from five options: Scale of 1–5 with written assessments, Scale of 1–5 scores only, Scale of 1–10 with written assessments, Scale of 1–10 scores only, or Written assessments only (no numeric score).",
-      "Zappi Questions (optional, default OFF): Also in Step 3, check 'Include Zappi Questions' to add 7 standardised concept-testing questions to each segment's assessment. The questions cover Brand Fit, Standout, Overall Emotion (fixed emoji set + one free choice), Relevance, Ease of Understanding, Purchase Intent, and Brand Appeal — all on a 1–5 scale in the same direction (5 = best). Each segment answers all 7 questions for every idea scored.",
-      "Click 'Run Scoring'. The AI evaluates each idea from each segment's perspective and returns a score grid (ideas as rows, segments as columns) with population percentages in column headers where available.",
-      "If written assessments are requested, one paragraph per idea × segment pair is shown below the score grid, explaining why that segment would or would not respond.",
+      "Click 'Run Scoring'. A full-screen rotating hex appears while Databricks processes the scoring.",
+      "Results are formatted topic-first: each idea (TOPIC) is shown as a heading, followed by each segment's scores and written assessment beneath it — making it easy to compare how all segments responded to one idea.",
+      "If written assessments are requested, one paragraph per idea × segment pair explains why that segment would or would not respond.",
       "Score results are appended to the iteration file as two separate labeled blocks — [Grade: Score Grid] and [Grade: Written Assessments] — so each can be independently included in Findings reports.",
       "Score results and extracted ideas are cleared when you save the iteration or return to the Enter hex.",
+      "Fullscreen: Click the expand icon (⤢) in the top-right corner of the scoring results window to fill the screen. Click compress to return.",
+      "Report Suggestions or Bugs: Check 'Report Suggestions or Bugs' below the Knowledge Base checkbox to send feedback or bug reports privately to the CoHive team.",
     ],
   },
   research: {
@@ -169,9 +191,12 @@ const HELP_MANUAL: Record<string, { guess: string; steps: string[] }> = {
   review: {
     guess: "review saved project files (My Files)",
     steps: [
-      "My Files shows all project iterations saved via the Findings hex.",
-      "Click any file to view its full contents.",
-      "Use the delete button to remove files you no longer need.",
+      "My Files shows Findings files saved via the Findings hex — not uploaded files.",
+      "Click the eye icon on any row to view the full file contents.",
+      "Click the pencil (✏) icon on your own files to rename them. You can only rename files you uploaded — the icon does not appear on other people's files.",
+      "Select one or more files and use the Download or Delete buttons that appear in the toolbar.",
+      "Toggle 'Show All Users' Files' to see files saved by others in your organisation.",
+      "Use the Filters panel (Show Filters) to narrow by Brand, Project Type, File Type, User, or Date Range.",
       "Files are saved in Databricks and persist across sessions.",
     ],
   },
@@ -193,7 +218,7 @@ const HELP_MANUAL: Record<string, { guess: string; steps: string[] }> = {
       "Choose 'Summarise' to generate an AI-powered summary across selected iteration files.",
       "For a summary: select files to include, choose output options (Executive Summary, ideas list, gems, etc.), then click Read, Save to Workspace, or Download.",
       "Make sure you are signed into Databricks before saving.",
-      "Saving an iteration clears your Gems and Coal ready for the next iteration.",
+      "Saving an iteration clears your Gems, Tracks, and Coal ready for the next iteration.",
     ],
   },
 };
@@ -205,6 +230,8 @@ const FALLBACK_HELP = {
     "Select the relevant files or personas for your analysis.",
     "Choose your assessment type and provide instructions.",
     "Click Execute to run the analysis.",
+    "Fullscreen: Every assessment results window has an expand icon (⤢) next to the close button. Click it to make the results cover the full screen. Click the compress icon to return to normal size.",
+    "Report Suggestions or Bugs: Every hex panel has a 'Report Suggestions or Bugs' checkbox below the Knowledge Base option. Check it to open a text box, type your feedback, and click Send. Your message is sent privately to the CoHive team — they receive your email address, current hex, brand, project type, and role for context.",
   ],
 };
 

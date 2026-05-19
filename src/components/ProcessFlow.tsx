@@ -290,14 +290,15 @@ const hexInfo: {
   Grade: {
     title: "Score\nResults",
     description:
-      "Test hypotheses and strategies against defined target segments.",
+      "Score iteration ideas against target consumer segments with numeric grades and written assessments.",
     details: [
-      "Select audience segment and testing files",
-      "Define and test hypotheses for each segment",
-      "Choose appropriate testing methodology",
-      "Evaluate against defined success metrics",
-      "Generate segment-specific recommendations",
-      "Multiple executions for different segments or hypotheses",
+      "Step 1: Auto-extracted ideas from all hex discussions; add manual ideas; enable Zappi Questions (ideas optional in Zappi mode)",
+      "Step 2: Select consumer segments — Lifestyle, Demographic, and Psychographic groups with US population percentages",
+      "Step 3: Choose scoring scale (1–5, 1–10, or written-only)",
+      "Zappi Questions: 7 standardised concept-testing dimensions (Brand Fit, Standout, Emotion, Relevance, Understanding, Purchase Intent, Brand Appeal) scored 1–5",
+      "Topic-first output: results grouped by idea, with each segment's scores and assessment shown beneath",
+      "Full-screen loading hex while Databricks processes scoring",
+      "Results saved as [Grade: Score Grid] and [Grade: Written Assessments] blocks in the iteration file",
     ],
   },
   Findings: {
@@ -311,8 +312,15 @@ const hexInfo: {
   },
   review: {
     title: "My Files",
-    description: "Review all my saved files",
-    details: ["Review all gathered insights and test results"],
+    description: "View, rename, and download your saved project files.",
+    details: [
+      "Shows Findings files saved via the Findings hex — not uploaded files",
+      "Click the eye icon on any row to view the full file contents",
+      "Click the pencil icon (your files only) to rename a file",
+      "Select one or more files to download or delete using the action buttons",
+      "Toggle 'Show All Users' Files' to browse files saved by your whole team",
+      "Filter by Brand, Project Type, File Type, User, or Date Range",
+    ],
   },
 };
 

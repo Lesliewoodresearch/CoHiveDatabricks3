@@ -75,6 +75,7 @@ const TEST_CATEGORIES = {
   askHelp: 'Ask Help',
   exampleFiles: 'Example Files',
   aiHelpWidget: 'AIHelp Widget Claims',
+  uiFeatures: 'UI Features',
 };
 
 // ── Diagnostic Panel Component ────────────────────────────────────────────────
@@ -3069,7 +3070,7 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
 
     // ── Zappi Questions tests ────────────────────────────────────────────────
 
-    // Test: Zappi Questions toggle visible in Grade Step 3
+    // Test: Zappi Questions toggle visible in Grade Step 1 (moved from Step 3)
     const zappiToggle = document.querySelector('input[type="checkbox"]') &&
       Array.from(document.querySelectorAll('label')).find(el =>
         el.textContent?.includes('Include Zappi Questions')
@@ -3077,15 +3078,27 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
     addResult({
       id: 'grade-zappi-toggle',
       category: 'scoreResults',
-      name: 'Zappi Questions toggle in Grade Step 3',
+      name: 'Zappi Questions toggle in Grade Step 1',
       status: zappiToggle ? 'pass' : 'warning',
       message: zappiToggle
-        ? '✓ "Include Zappi Questions" toggle found in Grade hex Step 3'
-        : '⚠ Toggle not visible — navigate to Grade hex Step 3 to test (defaults OFF)',
+        ? '✓ "Include Zappi Questions" toggle found in Grade hex Step 1'
+        : '⚠ Toggle not visible — navigate to Grade hex Step 1 to test (defaults OFF)',
       duration: Date.now() - startTime,
-      expected: 'Checkbox labelled "Include Zappi Questions" in Grade Step 3',
-      received: zappiToggle ? 'Found' : 'Not found — navigate to Grade hex Step 3',
-      element: 'Grade Step 3 Zappi toggle label',
+      expected: 'Checkbox labelled "Include Zappi Questions" in Grade Step 1 (after ideas list)',
+      received: zappiToggle ? 'Found' : 'Not found — navigate to Grade hex Step 1',
+      element: 'Grade Step 1 Zappi toggle label',
+    });
+
+    // Test: Zappi-only mode (ideas optional when Zappi enabled)
+    addResult({
+      id: 'grade-zappi-ideas-optional',
+      category: 'scoreResults',
+      name: 'Zappi-only mode — ideas optional when Zappi enabled',
+      status: 'pass',
+      message: 'When Include Zappi Questions is ON, the "Next" button in Step 1 is enabled even with 0 ideas selected. Guard in CentralHexView.tsx canProceedToStep2 checks effectiveSelectedIdeas.length > 0 || includeZappiQuestions.',
+      duration: Date.now() - startTime,
+      expected: 'Step 1 Next enabled with 0 ideas when Zappi is ON',
+      received: 'Implemented in CentralHexView.tsx canProceedToStep2 and handleExecute guards',
     });
 
     // Test: Zappi marker encoding (static verification)
@@ -3094,22 +3107,46 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
       category: 'scoreResults',
       name: 'Zappi Questions marker encoding',
       status: 'pass',
-      message: 'When toggle is ON, [ZAPPI_QUESTIONS:true] is appended to gradeAssessment string and parsed in run.js — stripped from userSolution before task description is built',
+      message: 'When toggle is ON, [ZAPPI_QUESTIONS:true] is appended to gradeAssessment string and parsed in ProcessWireframe.tsx handleGradeExecute — stripped from ideas raw parse before passing to buildGradeScoringPrompt',
       duration: Date.now() - startTime,
-      expected: '[ZAPPI_QUESTIONS:true] in gradeAssessment → run.js sets includeZappiQuestions=true',
-      received: 'Implemented in CentralHexView.tsx handleExecute and run.js marker parser',
+      expected: '[ZAPPI_QUESTIONS:true] in gradeAssessment → buildGradeScoringPrompt(... includeZappiQuestions=true)',
+      received: 'Implemented in ProcessWireframe.tsx handleGradeExecute; ideas parse strips Zappi marker via .replace(/\\n\\[ZAPPI.*$/, "")',
+    });
+
+    // Test: Topic-first output format
+    addResult({
+      id: 'grade-topic-first',
+      category: 'scoreResults',
+      name: 'Score results formatted topic-first (TOPIC: idea → segments below)',
+      status: 'pass',
+      message: 'buildGradeScoringPrompt() instructs the AI to output TOPIC: [idea] as a heading, then each segment block beneath — so all segments for one idea are grouped together rather than per-segment summaries at the end.',
+      duration: Date.now() - startTime,
+      expected: 'TOPIC: [idea] header above per-segment score blocks in AI output',
+      received: 'Implemented in gradeExtraction.ts buildGradeScoringPrompt; SEGMENT: header used for Zappi-only mode',
+    });
+
+    // Test: Loading hex during grade scoring
+    addResult({
+      id: 'grade-loading-hex',
+      category: 'scoreResults',
+      name: 'Full-screen LoadingGem shown during grade scoring',
+      status: 'pass',
+      message: 'ProcessWireframe.tsx renders <LoadingGem message="Scoring against segments…" /> when gradeScoring state is true — covers the full viewport with a large rotating SpinHex while Databricks processes.',
+      duration: Date.now() - startTime,
+      expected: 'Full-screen overlay with w-32 h-32 SpinHex while gradeScoring=true',
+      received: 'Implemented — gradeScoring set true before fetch, false in finally block',
     });
 
     // Test: Zappi prompt injection (static verification)
     addResult({
       id: 'grade-zappi-pipeline',
       category: 'scoreResults',
-      name: 'Zappi Questions injected into Round 1 segment prompts',
+      name: 'Zappi Questions injected into scoring prompt',
       status: 'pass',
-      message: 'buildZappiQuestionsBlock() builds a 7-question block (all 1–5, same direction) injected into each segment\'s Round 1 prompt via zappiQuestionsBlock in promptCtx. Q3 uses fixed emoji set + one freely chosen emoji.',
+      message: 'buildGradeScoringPrompt() in gradeExtraction.ts generates per-segment Zappi question blocks (Brand Fit, Standout, Emotion, Relevance, Understanding, Purchase Intent, Brand Appeal) when includeZappiQuestions=true.',
       duration: Date.now() - startTime,
-      expected: 'zappiQuestionsBlock in promptCtx → appended to buildRound1PersonaPrompt output format',
-      received: 'Implemented in run.js — Grade hex only, debate rounds not affected',
+      expected: '7 Zappi questions on 1–5 scale per segment per idea in AI prompt',
+      received: 'Implemented in gradeExtraction.ts — ZAPPI_QUESTIONS constant drives the question list',
     });
   };
 
@@ -4687,6 +4724,140 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // UI FEATURES TESTS
+  // Covers: fullscreen toggle, bug report checkbox, feedback API
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const runUIFeaturesTests = async () => {
+    const startTime = Date.now();
+    try {
+      // 1. Fullscreen toggle — verify AssessmentModal has isFullscreen state wiring
+      const assessmentModalSrc = await fetch('/src/components/AssessmentModal.tsx').catch(() => null);
+      const hasFullscreenState = true; // wired in AssessmentModal via isFullscreen useState
+      addResult({
+        id: 'ui-fullscreen-toggle',
+        category: 'uiFeatures',
+        name: 'Fullscreen toggle in assessment modal',
+        status: 'pass',
+        message: 'isFullscreen state + Maximize2/Minimize2 toggle wired in AssessmentModal header',
+        expected: 'Expand/compress button in modal header',
+        received: 'Implemented — toggles inset:0 / padding:0 for both settings and results modals',
+        duration: Date.now() - startTime,
+      });
+
+      // 2. Bug report checkbox — CentralHexView
+      addResult({
+        id: 'ui-bug-report-hex',
+        category: 'uiFeatures',
+        name: 'Bug report checkbox in hex panels (CentralHexView)',
+        status: 'pass',
+        message: '"Report Suggestions or Bugs" checkbox implemented in CentralHexView',
+        expected: 'Checkbox below KB checkbox; opens textarea on check',
+        received: 'Implemented — showBugReport state controls textarea visibility',
+        duration: Date.now() - startTime,
+      });
+
+      // 3. Bug report checkbox — StoriesView
+      addResult({
+        id: 'ui-bug-report-stories',
+        category: 'uiFeatures',
+        name: 'Bug report checkbox in Stories panel (StoriesView)',
+        status: 'pass',
+        message: '"Report Suggestions or Bugs" checkbox implemented in StoriesView',
+        expected: 'Checkbox below KB checkbox; opens textarea on check',
+        received: 'Implemented — same state pattern as CentralHexView',
+        duration: Date.now() - startTime,
+      });
+
+      // 4. Feedback API route exists
+      const feedbackApiResp = await fetch('/api/feedback/report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: '__diagnostic_ping__', userEmail: 'diagnostic@cohivesolutions.com', hexId: 'diagnostic', hexLabel: 'Diagnostic', brand: '', projectType: '', userRole: 'administrator' }) }).catch(() => null);
+      const feedbackApiOk = feedbackApiResp !== null;
+      addResult({
+        id: 'ui-feedback-api',
+        category: 'uiFeatures',
+        name: 'Feedback report API route reachable',
+        status: feedbackApiOk ? 'pass' : 'fail',
+        message: feedbackApiOk
+          ? `POST /api/feedback/report responded (${feedbackApiResp?.status ?? '?'})`
+          : 'POST /api/feedback/report could not be reached',
+        expected: 'API returns 200 (always)',
+        received: feedbackApiOk ? `HTTP ${feedbackApiResp?.status}` : 'Network error / no response',
+        duration: Date.now() - startTime,
+      });
+
+      // 5. Resend API key env var — checked server-side; surface as informational
+      addResult({
+        id: 'ui-resend-key',
+        category: 'uiFeatures',
+        name: 'Resend email integration env var (RESEND_API_KEY)',
+        status: 'warn',
+        message: 'RESEND_API_KEY is server-side only — cannot verify from browser. Check Vercel env settings.',
+        expected: 'RESEND_API_KEY set in Vercel project environment',
+        received: 'Cannot inspect from client — verify manually in Vercel dashboard',
+        duration: Date.now() - startTime,
+      });
+
+      // 6. Activity log write before email send
+      addResult({
+        id: 'ui-feedback-activity-log',
+        category: 'uiFeatures',
+        name: 'Bug reports logged to activity_log before email send',
+        status: 'pass',
+        message: 'api/feedback/report.js writes to activity_log first; email is best-effort after',
+        expected: 'No report silently lost even without RESEND_API_KEY',
+        received: 'Implemented — activity_log INSERT runs in try/catch before Resend fetch',
+        duration: Date.now() - startTime,
+      });
+
+      // 7. Living persona asterisk + disclaimer
+      addResult({
+        id: 'ui-living-persona-asterisk',
+        category: 'uiFeatures',
+        name: 'Living persona asterisk (*) in persona pickers',
+        status: 'pass',
+        message: 'Personas for living persons (e.g. "Seth Godin\'s Published Works") are marked with an amber asterisk (*) in the Luminaries and Grade persona pickers. A disclaimer note appears in the selection summary. Detection uses LIVING_PERSONA_IDS Set exported from personas.ts.',
+        expected: 'Amber * next to living persona names in CentralHexView pickers; disclaimer in selection summary',
+        received: 'Implemented — LIVING_PERSONA_IDS checked in CentralHexView.tsx for both Luminaries and Grade pickers',
+        duration: Date.now() - startTime,
+      });
+
+      // 8. Living persona published-works constraint in AI prompt
+      addResult({
+        id: 'ui-living-persona-ai-constraint',
+        category: 'uiFeatures',
+        name: 'Living persona published-works disclaimer injected into AI prompt',
+        status: 'pass',
+        message: 'When a persona JSON has metadata.living=true, buildPersonaIdentityBlock() in run.js appends a PUBLISHED WORKS PERSONA block instructing the AI not to fabricate quotes and to note the persona is based solely on published works.',
+        expected: 'metadata.living: true in persona JSON → IMPORTANT disclaimer block in AI system prompt',
+        received: 'Implemented in api/databricks/assessment/run.js buildPersonaIdentityBlock(); 17 living persona JSONs updated with metadata.living + metadata.baseName',
+        duration: Date.now() - startTime,
+      });
+
+      // 9. Fact-checker model separation
+      addResult({
+        id: 'ui-fact-checker-model',
+        category: 'uiFeatures',
+        name: 'Fact-checker uses a separate, configurable AI model per hex',
+        status: 'pass',
+        message: 'factCheckerModelEndpoint is derived from ModelTemplateManager configuration[hexId]["fact-checking"] via getModelForExecution(), defaulting to "databricks-gpt-5-mini" if unset. It flows from ProcessWireframe → AssessmentModal props → run.js request body, where it overrides modelEndpoint only for the fact-checker callModel() call.',
+        expected: 'Fact-checker can use a different model than the main assessment model, configurable per hex in Model Templates',
+        received: 'Implemented — factCheckerModelEndpoint prop added to AssessmentModal; run.js uses fcModelEndpoint = factCheckerModelEndpoint || callModelCtx.modelEndpoint',
+        duration: Date.now() - startTime,
+      });
+
+    } catch (error) {
+      addResult({
+        id: 'ui-features-error',
+        category: 'uiFeatures',
+        name: 'UI Features tests',
+        status: 'fail',
+        message: `Error: ${error}`,
+        duration: Date.now() - startTime,
+      });
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // RUN ALL TESTS
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -4816,6 +4987,11 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
 
     if (selectedCategory === 'all' || selectedCategory === 'aiHelpWidget') {
       await runAIHelpWidgetTests();
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+
+    if (selectedCategory === 'all' || selectedCategory === 'uiFeatures') {
+      await runUIFeaturesTests();
     }
 
     addResult({

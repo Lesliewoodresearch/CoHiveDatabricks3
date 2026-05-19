@@ -151,6 +151,7 @@ interface AssessmentModalProps {
   kbFileNames: string[];
   researchFiles: ResearchFile[];
   modelEndpoint?: string;
+  factCheckerModelEndpoint?: string;
   userEmail?: string;
   projectTypeConfigs?: { projectType: string; prompt: string }[];
 
@@ -282,6 +283,7 @@ export function AssessmentModal({
   kbFileNames,
   researchFiles,
   modelEndpoint = "databricks-claude-sonnet-4-6",
+  factCheckerModelEndpoint = "databricks-gpt-5-mini",
   userEmail = "",
   projectTypeConfigs = [],
   ideaElements = [],
@@ -311,7 +313,7 @@ export function AssessmentModal({
   // kbMode and scope are user-selectable in the settings panel unless defaults provided.
   const hasDefaults = !!defaultKbMode && !!defaultScope;
 
-  const [kbMode, setKbMode] = useState<KbMode>(defaultKbMode ?? "kb-only");
+  const [kbMode, setKbMode] = useState<KbMode>(defaultKbMode ?? "hard-forbidden");
   const [scope, setScope] = useState<Scope>(defaultScope ?? "brand");
 
   // Show settings panel before running if no defaults provided
@@ -438,6 +440,7 @@ export function AssessmentModal({
           kbFiles,
           userEmail,
           modelEndpoint,
+          factCheckerModelEndpoint,
           projectTypeConfigs,
           // Auth credentials — required by run.js
           accessToken: session.accessToken,
@@ -983,14 +986,14 @@ export function AssessmentModal({
         className="fixed z-50 flex items-center justify-center"
         style={isFullscreen
           ? { inset: 0, padding: 0, backgroundColor: "rgba(0, 0, 0, 0.2)" }
-          : { top: 0, bottom: 0, left: 0, right: 'var(--modal-r)', padding: 'var(--modal-p-lg)', backgroundColor: "rgba(0, 0, 0, 0.2)" }
+          : { top: 0, bottom: 0, left: 0, right: 'var(--modal-r)', padding: '4px', backgroundColor: "rgba(0, 0, 0, 0.2)" }
         }
       >
         <div
-          className="bg-white flex flex-col"
+          className="bg-white flex flex-col w-full"
           style={isFullscreen
             ? { width: "100%", height: "100%", borderRadius: 0 }
-            : { width: "560px", maxHeight: "85vh", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }
+            : { maxWidth: "640px", height: "90vh", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }
           }
         >
           {/* Settings header */}
@@ -1239,14 +1242,14 @@ export function AssessmentModal({
         className="fixed z-50 flex items-center justify-center"
         style={isFullscreen
           ? { inset: 0, padding: 0, backgroundColor: "rgba(0, 0, 0, 0.2)" }
-          : { top: 0, bottom: 0, left: 0, right: 'var(--modal-r)', padding: 'var(--modal-p-lg)', backgroundColor: "rgba(0, 0, 0, 0.2)" }
+          : { top: 0, bottom: 0, left: 0, right: 'var(--modal-r)', padding: '4px', backgroundColor: "rgba(0, 0, 0, 0.2)" }
         }
       >
         <div
-          className="bg-white flex flex-col"
+          className="bg-white flex flex-col w-full"
           style={isFullscreen
             ? { width: "100%", height: "100%", borderRadius: 0 }
-            : { width: "75%", height: "75vh", maxWidth: "1200px", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }
+            : { height: "90vh", borderRadius: "0.75rem", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }
           }
         >
           {/* Header */}
@@ -1455,7 +1458,7 @@ export function AssessmentModal({
                   <polygon points="16,2 29,9 29,23 16,30 3,23 3,9" fill="url(#hintCheckGold)" />
                   <path d="M9 16.5l5 5 9.5-10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 </svg>
-                Check elements of interest
+                Track elements of interest
               </span>
               <span className="flex items-center gap-1.5 text-sm text-gray-800 font-medium">
                 <CoalIcon size={18} />
@@ -1597,7 +1600,7 @@ export function AssessmentModal({
                           <path d="M4 13l5 5L20 7" stroke="url(#checkSummGrad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                         <span className="text-purple-800 font-medium text-sm">
-                          {savedCheckCount} element{savedCheckCount !== 1 ? "s" : ""} checked for interest
+                          {savedCheckCount} element{savedCheckCount !== 1 ? "s" : ""} tracked
                         </span>
                       </div>
                     )}
@@ -1633,7 +1636,7 @@ export function AssessmentModal({
                     {savingGem ? <SpinHex className="w-3.5 h-3.5" /> : <img src={gemIcon} alt="Gem" style={{ width: "14px", height: "14px", objectFit: "contain" }} />}
                     Gem
                   </button>
-                  <button onClick={handleSaveCheck} disabled={savingCheck} title="Check elements of interest"
+                  <button onClick={handleSaveCheck} disabled={savingCheck} title="Track elements of interest"
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-purple-50 text-purple-800 text-xs font-medium rounded-full shadow border border-purple-400 disabled:opacity-60 transition-all whitespace-nowrap">
                     {savingCheck ? <SpinHex className="w-3.5 h-3.5" /> : (
                       <svg viewBox="0 0 32 32" style={{ width: "14px", height: "14px", flexShrink: 0 }} xmlns="http://www.w3.org/2000/svg">
@@ -1650,7 +1653,7 @@ export function AssessmentModal({
                         <path d="M9 16.5l5 5 9.5-10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                       </svg>
                     )}
-                    Check
+                    Track
                   </button>
                   <button onClick={handleSaveCoal} disabled={savingCoal} title="Flag elements you want to avoid"
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 text-xs font-medium rounded-full shadow border border-gray-400 disabled:opacity-60 transition-all whitespace-nowrap">
@@ -1860,7 +1863,7 @@ export function AssessmentModal({
               <path d="M4 13l5 5L20 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <div className="min-w-0">
-              <div className="font-medium">Checked!</div>
+              <div className="font-medium">Tracked!</div>
               <div className="text-purple-200 text-xs truncate">{toast.text}</div>
             </div>
           </div>

@@ -305,6 +305,13 @@ function buildPersonaIdentityBlock(persona) {
     lines.push(`\nHOW YOU EVALUATE & SCORE:\n${persona.evaluationCriteria.scoringRubric}`);
   }
 
+  // ── Living person disclaimer ──
+  if (persona.metadata?.living) {
+    const baseName = persona.metadata?.baseName || name.replace(/'s Published Works$/, '');
+    lines.push(`\nIMPORTANT — PUBLISHED WORKS PERSONA:\nThis persona is built exclusively from ${baseName}'s published books, articles, and documented public statements. Do not fabricate quotes, attribute opinions not found in their documented works, or claim to represent their personal views. All responses must be grounded in their published positions.`);
+    lines.push(`\n*This persona is based solely on ${baseName}'s published works and does not represent their actual views or statements.`);
+  }
+
   return lines.join('\n');
 }
 
@@ -894,7 +901,7 @@ function buildIterationContextBlock({ hexExecutions = {}, iterationGems = [], cu
 
   // ── Prior hex results ──────────────────────────────────────────────────────
   const hexOrder = [
-    'Luminaries', 'panelist', 'Consumers', 'competitors',
+    'stories', 'Luminaries', 'panelist', 'Consumers', 'competitors',
     'Colleagues', 'cultural', 'test', 'Grade',
   ];
 
@@ -1440,6 +1447,8 @@ export default async function handler(req, res) {
       iterationChecks = [],         // elements of interest
       iterationCoal = [],           // elements to avoid
       iterationDirections = [],     // user-added focus/direction notes for this iteration
+      // Per-hex fact-checker model — defaults to main model if not supplied
+      factCheckerModelEndpoint = '',
     } = req.body;
 
     // ── Parse prior persona context markers injected by CentralHexView ────────
@@ -1818,9 +1827,11 @@ ${iterationDirections.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     }
 
     // ── Fact-Checker ─────────────────────────────────────────────────────────
-    console.log(`[Assessment] Fact-Checker...`);
+    const fcModelEndpoint = factCheckerModelEndpoint || callModelCtx.modelEndpoint;
+    console.log(`[Assessment] Fact-Checker... model: ${fcModelEndpoint}`);
     const factCheckContent = await callModel({
       ...callModelCtx,
+      modelEndpoint: fcModelEndpoint,
       messages: [{
         role: 'user',
         content: buildFactCheckerPrompt({ fullTranscript, kbFileNames, kbMode }),

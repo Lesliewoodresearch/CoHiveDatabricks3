@@ -102,6 +102,7 @@ interface AssessmentModalPropsState {
   brand: string;
   projectType: string;
   modelEndpoint?: string;
+  factCheckerModelEndpoint?: string;
   // v3 additions — derived from Enter hex state before opening modal
   requestMode: RequestMode;
   ideaElements: IdeaElement[];
@@ -895,27 +896,28 @@ export default function ProcessWireframe() {
     const brand = responses['Enter']?.[0]?.trim() || '';
     const projectType = responses['Enter']?.[1]?.trim() || '';
 
-    // Parse encoded scale and ideas from the assessment string.
+    // Parse encoded scale, ideas, and Zappi flag from the assessment string.
     // Ideas are extracted by finding the marker and slicing to end-of-string so that
     // idea text containing ']' doesn't break the parse.
     const scaleMatch = assessment.match(/\[GRADE_SCALE:([^\]]+)\]/);
     const scale = scaleMatch?.[1] || 'scale-1-5-written';
+    const includeZappiQuestions = assessment.includes('[ZAPPI_QUESTIONS:true]');
     const ideasMarker = '[GRADE_IDEAS:';
     const ideasStart = assessment.indexOf(ideasMarker);
     let ideas: string[] = [];
     if (ideasStart !== -1) {
-      const raw = assessment.slice(ideasStart + ideasMarker.length).replace(/\]$/, '').trim();
+      const raw = assessment.slice(ideasStart + ideasMarker.length).replace(/\n\[ZAPPI.*$/, '').replace(/\]$/, '').trim();
       ideas = raw.split('||').map(s => s.trim()).filter(Boolean);
     }
 
-    if (ideas.length === 0) {
-      alert('No ideas to score. Please go back and select ideas.');
+    if (ideas.length === 0 && !includeZappiQuestions) {
+      alert('No ideas to score. Please go back and select ideas, or enable Zappi Questions.');
       return;
     }
 
     const segments = resolveGradeSegments(selectedSegmentIds);
     const modelEndpoint = currentModelTemplate?.hexModels?.['Grade']?.modelId || 'databricks-claude-haiku-4-5';
-    const prompt = buildGradeScoringPrompt(ideas, segments, scale, brand, projectType);
+    const prompt = buildGradeScoringPrompt(ideas, segments, scale, brand, projectType, includeZappiQuestions);
 
     setGradeScoring(true);
     try {
@@ -984,6 +986,10 @@ export default function ProcessWireframe() {
 
     const ideasFile = getIdeasFile(brand, projectType);
     const modelEndpoint = currentTemplate?.conversationSettings?.modelEndpoint || 'databricks-claude-haiku-4-5';
+    const factCheckerModelEndpoint =
+      (currentModelTemplate
+        ? getModelForExecution(currentModelTemplate, activeStepId as HexId, 'fact-checking') ?? ''
+        : '') || 'databricks-gpt-5-mini';
 
     // ── v3: Derive requestMode and ideaElements from Enter hex ───────────────
     const requestMode = deriveRequestMode();
@@ -1012,6 +1018,7 @@ export default function ProcessWireframe() {
       brand,
       projectType,
       modelEndpoint,
+      factCheckerModelEndpoint,
       // v3
       requestMode,
       ideaElements,
@@ -1559,12 +1566,12 @@ export default function ProcessWireframe() {
                   <>
                   <CentralHexView key={activeStepId} hexId={activeStepId} hexLabel={currentContent.title} researchFiles={researchFiles} customPersonas={customPersonas} onExecute={handleCentralHexExecute} databricksInstructions={currentTemplate?.databricksInstructions?.[activeStepId] || ''} previousExecutions={hexExecutions[activeStepId] || []} crossHexExecutions={[...['Consumers', 'Luminaries', 'Colleagues', 'cultural', 'Grade'].filter(h => h !== activeStepId).flatMap(h => hexExecutions[h] || []), ...(hexExecutions['stories'] || [])]} anyPriorPersonaRun={['Consumers', 'Luminaries', 'Colleagues', 'cultural', 'Grade'].some(h => hexExecutions[h]?.length > 0) || (hexExecutions['stories']?.length ?? 0) > 0} onSaveRecommendation={handleSaveRecommendation} projectType={responses['Enter']?.[1] || ''} userBrand={responses['Enter']?.[0] || ''} lastResults={lastAssessmentResults} conversationMode={currentTemplate?.conversationSettings?.conversationMode || 'multi-round'} modelEndpoint={currentTemplate?.conversationSettings?.modelEndpoint || 'databricks-claude-haiku-4-5'} requestMode={deriveRequestMode()} userEmail={userEmail} userRole={userRole} onContextChange={(files, step) => setHexWidgetContext({ files, step })} onAddIterationDirection={handleAddIterationDirection} iterationDirections={iterationDirections} extractedIdeas={gradeExtractedIdeas} ideasLoading={gradeIdeasLoading} />
                   {/* Grade hex: scoring results displayed inline */}
+                  {gradeScoring && <LoadingGem message="Scoring against segments…" />}
                   {activeStepId === 'Grade' && (
                     <div className="mt-4 px-3">
                       {gradeScoring && (
                         <div className="flex items-center gap-2 py-4 text-gray-500">
-                          <SpinHex className="w-5 h-5" />
-                          <span className="text-sm">Scoring ideas against segments…</span>
+                          <span className="text-sm">Scoring in progress…</span>
                         </div>
                       )}
                       {gradeScoreResults && !gradeScoring && (
@@ -2312,7 +2319,7 @@ export default function ProcessWireframe() {
                         }
                         if (idx === 2 && question === 'Output Options') {
                           const selectedOptions = responses[activeStepId]?.[idx]?.split(',').filter(Boolean) || [];
-                          const options = ['Executive Summary', 'Share all Ideas as a list', 'Provide a grid with all "final" ideas with their scores', 'Include Gems', 'Include Check', 'Include Coal', 'Include User Notes from all iterations as an Appendix'];
+                          const options = ['Executive Summary', 'Share all Ideas as a list', 'Provide a grid with all "final" ideas with their scores', 'Include Gems', 'Include Track', 'Include Coal', 'Include User Notes from all iterations as an Appendix'];
                           return (
                             <div key={idx} className="mb-2">
                               <label className="block text-gray-900 mb-1 flex items-start justify-between"><span>{idx + 1}. {question}</span>{hasResponse && <CircleCheck className="w-5 h-5 text-green-600 flex-shrink-0" />}</label>
@@ -2508,12 +2515,8 @@ export default function ProcessWireframe() {
               )}
               {gradeScoreResults.assessments && (
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Written Assessments</div>
-                  <div className="space-y-4 text-sm text-gray-800 leading-relaxed">
-                    {gradeScoreResults.assessments.split(/\n\n+/).map((para, i) => (
-                      <p key={i}>{para.trim()}</p>
-                    ))}
-                  </div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Results</div>
+                  <pre className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed bg-gray-50 border border-gray-200 rounded-lg p-4">{gradeScoreResults.assessments}</pre>
                 </div>
               )}
             </div>
@@ -2570,6 +2573,7 @@ export default function ProcessWireframe() {
           userEmail={userEmail}
           ideasFile={assessmentModalProps.ideasFile}
           modelEndpoint={assessmentModalProps.modelEndpoint}
+          factCheckerModelEndpoint={assessmentModalProps.factCheckerModelEndpoint}
           projectTypeConfigs={projectTypeConfigs}
           // v3: requestMode derived from Enter hex — never selected in modal
           requestMode={assessmentModalProps.requestMode}

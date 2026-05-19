@@ -131,9 +131,21 @@ export function resolveGradeSegments(selectedPersonaIds: string[]): GradeSegment
 
 // ── Prompt builder ────────────────────────────────────────────────────────────
 
+const ZAPPI_QUESTIONS = [
+  'Brand Fit',
+  'Standout',
+  'Emotion',
+  'Relevance',
+  'Understanding',
+  'Purchase Intent',
+  'Brand Appeal',
+] as const;
+
 /**
  * Builds the scoring prompt. Pure function — no side effects.
  * `scale` is one of the testingScale radio values from CentralHexView.
+ * `includeZappiQuestions` adds the 7 Zappi concept-testing dimensions per segment.
+ * `ideas` may be empty when Zappi-only mode is active.
  */
 export function buildGradeScoringPrompt(
   ideas: string[],
@@ -141,6 +153,7 @@ export function buildGradeScoringPrompt(
   scale: string,
   brand: string,
   projectType: string,
+  includeZappiQuestions = false,
 ): string {
   const scaleLabel = scale.startsWith('scale-1-5')
     ? '1 to 5 (1 = would not respond, 5 = would respond very strongly)'
@@ -148,49 +161,72 @@ export function buildGradeScoringPrompt(
     ? '1 to 10 (1 = would not respond, 10 = would respond very strongly)'
     : null;
 
-  const includeWritten = scale.includes('written') && !scale.includes('no-written');
+  const includeWritten = scale === 'no-scale-written' || (scale.includes('written') && !scale.includes('no-written'));
+  const hasIdeas = ideas.length > 0;
 
   const segmentLines = segments
     .map(s => `- ${s.name}${s.populationEstimate != null ? ` (${s.populationEstimate}% of US market)` : ''}`)
     .join('\n');
 
-  const ideaLines = ideas.map((idea, i) => `${i + 1}. ${idea}`).join('\n');
-
   const scaleInstruction = scaleLabel
-    ? `Rate each idea on a scale of ${scaleLabel}.`
+    ? `Rate responses on a scale of ${scaleLabel}.`
     : `Do not assign a numeric score — provide written assessments only.`;
 
-  const outputInstructions = scaleLabel
-    ? `
-OUTPUT FORMAT — follow exactly:
+  const zappiInstruction = includeZappiQuestions
+    ? `\nFor each segment, score all 7 Zappi concept-testing dimensions:\n${ZAPPI_QUESTIONS.map((q, i) => `  ${i + 1}. ${q}`).join('\n')}`
+    : '';
 
-SCORE GRID:
-Produce a markdown table. Ideas are rows, segments are columns.
-Each cell contains only the numeric score.
-Use the exact idea text (truncated to ~40 chars if needed) as row headers.
-Include segment population % in column headers where provided.
+  const zappiScoreLines = includeZappiQuestions
+    ? ZAPPI_QUESTIONS.map(q => `  • ${q}: [score]`).join('\n') + '\n'
+    : '';
 
-WRITTEN ASSESSMENTS:
-${includeWritten
-      ? 'For each idea × segment combination, write one paragraph explaining why that segment would or would not respond to the idea. Label each paragraph as "Idea [N] × [Segment Name]:".'
-      : 'No written assessments requested — omit this section entirely.'}`
-    : `
-OUTPUT FORMAT:
-For each idea × segment combination, write one paragraph explaining why that segment would or would not respond. Label each paragraph as "Idea [N] × [Segment Name]:".
-Do not produce a score grid.`;
+  let outputInstructions: string;
 
-  return `You are a market research scoring tool.
-Brand: ${brand}${projectType ? `\nProject type: ${projectType}` : ''}
+  if (hasIdeas) {
+    const ideaLines = ideas.map((idea, i) => `${i + 1}. ${idea}`).join('\n');
+    const segmentBlock = scaleLabel
+      ? `[Segment Name]${includeZappiQuestions ? ' ([pop%]) — Overall: [score]' : ' ([pop%]) — [score]'}\n${zappiScoreLines}${includeWritten ? '[One paragraph: why this segment would or would not respond to this idea]\n' : ''}`
+      : `[Segment Name] ([pop%])\n${zappiScoreLines}${includeWritten ? '[One paragraph: why this segment would or would not respond to this idea]\n' : ''}`;
 
-Your task: evaluate how each target consumer segment would respond to each idea as a way to market ${brand}.
+    outputInstructions = `OUTPUT FORMAT — follow exactly:
 
-${scaleInstruction}
+TOPIC: [Exact idea text]
+
+${segmentBlock}
+(repeat block for each segment, separated by a blank line)
+
+---
+
+(repeat TOPIC section for each idea)
 
 IDEAS TO EVALUATE:
 ${ideaLines}
 
 TARGET SEGMENTS:
-${segmentLines}
+${segmentLines}`;
+  } else {
+    // Zappi-only: no ideas, evaluate each segment on Zappi dimensions
+    const segmentBlock = scaleLabel
+      ? `SEGMENT: [Segment Name] ([pop%]) — Overall: [score]\n${zappiScoreLines}${includeWritten ? '[One paragraph: how this segment relates to the brand overall]\n' : ''}`
+      : `SEGMENT: [Segment Name] ([pop%])\n${zappiScoreLines}${includeWritten ? '[One paragraph: how this segment relates to the brand overall]\n' : ''}`;
+
+    outputInstructions = `OUTPUT FORMAT — follow exactly:
+
+${segmentBlock}
+---
+
+(repeat for each segment)
+
+TARGET SEGMENTS:
+${segmentLines}`;
+  }
+
+  return `You are a market research scoring tool.
+Brand: ${brand}${projectType ? `\nProject type: ${projectType}` : ''}
+
+Your task: evaluate how each target consumer segment would respond to${hasIdeas ? ' each idea as a way to market' : ''} ${brand}.
+
+${scaleInstruction}${zappiInstruction}
 
 ${outputInstructions}`;
 }

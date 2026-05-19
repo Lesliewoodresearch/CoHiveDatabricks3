@@ -160,7 +160,7 @@ flowchart TD
     M --> N[User sets KB mode + scope\nStarts assessment]
     N --> O[POST /api/databricks/assessment/run]
     O --> P[SSE stream opens\nRounds arrive in real-time]
-    P --> Q[Results displayed in modal\nUser can save Gems / Checks / Coal]
+    P --> Q[Results displayed in modal\nUser can save Gems / Tracks / Coal]
 
     style D fill:#fef3c7
     style G fill:#fef3c7
@@ -171,6 +171,7 @@ flowchart TD
 |---|---|
 | User opens persona hex | One of four discussion-based analysis hexes: Luminaries (advertising legends and thought leaders), Consumers (buyer personas), Colleagues (internal business stakeholders), or Cultural Voices (community representatives). Each has its own persona library but follows the same flow. |
 | Step 1 of 2: Persona picker tree | A three-level hierarchical selector. Level 1 groups by broad category (e.g. Era/Approach for Luminaries, Purchase Behaviour for Consumers). Level 2 narrows to a sub-group. Level 3 shows individual named personas with checkboxes. Select All shortcuts operate at each level. |
+| Living persona indicator (*) | Personas built solely from a living person's published works are shown with an amber asterisk (*) — e.g. "Seth Godin's Published Works". A disclaimer note appears in the selection summary, and the AI prompt includes a PUBLISHED WORKS PERSONA constraint block preventing fabrication of quotes or statements beyond documented sources. Detection uses the LIVING_PERSONA_IDS Set in personas.ts (client-side) and metadata.living in the persona JSON (server-side). |
 | User checks individual personas or uses Select All | Multiple personas can be selected simultaneously. Each selected persona will respond independently in Round 1 and debate the others in subsequent rounds. |
 | Custom personas available for this hex? | Checks the customPersonas state loaded from Databricks at startup. Custom personas appear here if their hexIds field includes this hex's ID or is set to 'any'. |
 | Show Custom Personas section | Rendered below the built-in persona list. Shows each custom persona's name with a [Custom] badge and a one-line context preview. Uses the same checkbox interaction as built-in personas. |
@@ -183,9 +184,10 @@ flowchart TD
 | handleExecute called | The internal function that packages all selections — persona IDs, assessment type, and any user-typed assessment text — into the props needed to open the assessment modal. |
 | Assessment modal opens with full context | The modal launches pre-loaded with brand, project type, KB file names, request mode, idea elements, model endpoint, and all prior hex executions. The user does not re-enter any of this information. |
 | User sets KB mode + scope | Two final configuration choices before the AI runs. KB mode controls how strictly the AI is limited to KB files (hard-forbidden, strong-preference, or equal-weight with general knowledge). Scope controls the breadth of evidence (brand-only, category-level, or broad market). |
-| POST /api/databricks/assessment/run | The assessment request fires to the Vercel backend. Initiates the full multi-round AI pipeline. |
+| POST /api/databricks/assessment/run | The assessment request fires to the Vercel backend. Initiates the full multi-round AI pipeline. factCheckerModelEndpoint is passed separately so the fact-checker step uses a different, independently configurable model (default: GPT-4o Mini) from the main assessment model. |
 | SSE stream opens — rounds arrive in real-time | Server-Sent Events stream starts immediately. The modal displays each round as it is generated — Moderator Opening, Round 1, Debate rounds, Fact-Checker, Synthesis — without waiting for the full response to complete. |
-| Results displayed in modal — user can save Gems / Checks / Coal | The complete assessment is readable in the modal. Users can highlight any text to save it as a directional signal: Gem (keep going this way), Check (note of interest), Coal (avoid this direction). |
+| Fact-Checker model | A separate AI model reviews the completed assessment for factual accuracy. Configured independently per hex in Model Templates → Fact Checking row. Defaults to GPT-4o Mini (a different model from the main assessment model). Stories hex does not include a fact-checker step. |
+| Results displayed in modal — user can save Gems / Tracks / Coal | The complete assessment is readable in the modal. Users can highlight any text to save it as a directional signal: Gem (keep going this way), Track (note of interest), Coal (avoid this direction). |
 
 ---
 
@@ -196,32 +198,32 @@ flowchart TD
     A([User opens Grade hex]) --> B[Step 1: Ideas extracted automatically\nfrom all prior hex discussions]
     B --> C[Ideas displayed as checkboxes\nall checked by default]
     C --> D[User unchecks to exclude\nor types to add manually]
-    D --> E{At least 1 idea\nselected?}
-    E -- No --> D
-    E -- Yes --> F[Step 2: Segment picker\nLifestyle / Demographic / Psychographic hierarchy]
-    F --> G[User selects target segments\npopulation % shown per segment]
-    G --> H{At least 1 segment\nselected?}
-    H -- No --> G
-    H -- Yes --> I[Step 3: Choose scoring scale\n1-5 written / 1-5 scores only\n1-10 written / 1-10 scores only\nWritten only]
-    I --> J[Zappi Questions toggle\ndefault OFF]
-    J --> K{Include Zappi\nQuestions?}
-    K -- Yes --> L[7 concept-testing questions per\nidea × segment: Brand Fit, Standout,\nEmotion, Relevance, Understanding,\nPurchase Intent, Brand Appeal\nAll 1-5 same direction]
-    K -- No --> M
-    L --> M[Run Scoring clicked\ngradeAssessment encoded:\nGRADE_SCALE + GRADE_IDEAS\n+ optional ZAPPI_QUESTIONS:true]
+    D --> E[Zappi Questions toggle in Step 1\ndefault OFF]
+    E --> F{Include Zappi\nQuestions?}
+    F -- Yes → ideas optional --> G{At least 1 idea\nOR Zappi enabled?}
+    F -- No → ideas required --> G
+    G -- No --> D
+    G -- Yes --> H[Step 2: Segment picker\nLifestyle / Demographic / Psychographic hierarchy]
+    H --> I[User selects target segments\npopulation % shown per segment]
+    I --> J{At least 1 segment\nselected?}
+    J -- No --> I
+    J -- Yes --> K[Step 3: Choose scoring scale\n1-5 written / 1-5 scores only\n1-10 written / 1-10 scores only\nWritten only]
+    K --> L[Run Scoring clicked\ngradeAssessment encoded:\nGRADE_SCALE + GRADE_IDEAS\n+ optional ZAPPI_QUESTIONS:true]
+    L --> M[Full-screen loading hex\nwhile Databricks processes]
     M --> N[POST /api/databricks/assessment/run\nassessmentTypes = grade\nselectedPersonas = segment IDs]
-    N --> O[run.js parses markers\nbuilds scoring + optional Zappi prompt]
+    N --> O[buildGradeScoringPrompt called\ntopic-first format instructions]
     O --> P[Each segment scores each idea\nfrom segment persona perspective]
     P --> Q[Score grid returned\nideas × segments with populations]
-    Q --> R{Written assessments\nrequested?}
-    R -- Yes --> S[One paragraph per idea × segment pair]
-    R -- No --> T
-    S --> T[Zappi responses section\nif toggle was ON]
+    Q --> R[Results: TOPIC heading per idea\nthen per-segment scores below]
+    R --> S{Written assessments\nrequested?}
+    S -- Yes --> T[One paragraph per idea × segment pair]
+    S -- No --> U
     T --> U[Results appended to iteration file\nGrade: Score Grid + Grade: Written Assessments]
 
-    style E fill:#fef3c7
-    style H fill:#fef3c7
-    style K fill:#fef3c7
-    style R fill:#fef3c7
+    style F fill:#fef3c7
+    style G fill:#fef3c7
+    style J fill:#fef3c7
+    style S fill:#fef3c7
 ```
 
 | Element | Description |
@@ -230,22 +232,22 @@ flowchart TD
 | Step 1: Ideas extracted automatically | On open, ProcessWireframe scans all prior hex discussion results using an AI extraction call and pulls out idea candidates — strategies, creative concepts, and recommendations that emerged from the iteration so far. |
 | Ideas displayed as checkboxes — all checked by default | Every extracted idea is pre-selected. The user reviews the list and unchecks any ideas that are incomplete, tangential, or not ready for scoring. |
 | User unchecks to exclude or types to add manually | Full editorial control. Ideas can be deselected from the extracted list, and entirely new ideas not mentioned in any hex discussion can be typed in and added manually. |
-| At least 1 idea selected? | Validation gate — the flow cannot proceed to segment selection without at least one idea to score. |
+| Zappi Questions toggle in Step 1 — default OFF | The Zappi toggle lives in Step 1 (alongside idea selection), not Step 3. This placement allows the validation logic to know whether ideas are required before the user advances. |
+| Include Zappi Questions? | When ON, 7 standardised concept-testing questions are added per segment: Brand Fit, Standout, Emotion, Relevance, Ease of Understanding, Purchase Intent, and Brand Appeal — all scored 1–5 (5 = best). When Zappi is ON, ideas are optional — the hex can run Zappi scoring against segments with no ideas selected (Zappi-only mode). |
+| At least 1 idea OR Zappi enabled? | Validation gate. If Zappi is OFF, at least one idea must be selected. If Zappi is ON, the flow proceeds even with zero ideas, producing a segment-only Zappi assessment. |
 | Step 2: Segment picker — Lifestyle / Demographic / Psychographic hierarchy | A three-category segment tree. Lifestyle covers Activities, Consumption patterns, and Life Stage. Demographic covers Age Groups, Income levels, Geography, and Household composition. Psychographic covers Values, Personality types, and Attitudes. Each leaf node is a scorable consumer segment. |
 | User selects target segments — population % shown | Each leaf segment shows its estimated US market population percentage where available. This helps users understand the scale of the audience they are scoring against and appears as column headers in the output score grid. |
 | At least 1 segment selected? | Validation gate — scoring requires at least one target segment. |
 | Step 3: Choose scoring scale | Five options that control the output format: 1–5 with written rationale per score cell, 1–5 numeric scores only, 1–10 with written rationale, 1–10 numeric scores only, or written assessments with no numeric scores at all. |
-| Zappi Questions toggle — default OFF | An opt-in addition to the standard scoring run. Off by default so it does not add time or complexity unless explicitly requested. |
-| Include Zappi Questions? | The decision point. Users enable this when they want structured concept-testing data — standardised question responses — alongside the scoring. |
-| 7 concept-testing questions | The full Zappi battery asked per idea per segment: Q1 Brand Fit (1=any brand, 5=only this brand), Q2 Standout (1=not at all, 5=very well), Q3 Overall Emotion (one emoji from a fixed set plus one freely chosen), Q4 Relevance (1=not relevant, 5=very relevant), Q5 Ease of Understanding (1=very difficult, 5=very easy), Q6 Purchase Intent (1=much less likely, 5=much more likely), Q7 Brand Appeal (1=much less appealing, 5=much more appealing). All scales run the same direction — 5 is always best. |
-| Run Scoring clicked — gradeAssessment encoded | The assessment parameters are packed into a structured marker string: [GRADE_SCALE:value] records the chosen scale, [GRADE_IDEAS:idea1\|\|idea2] lists all ideas pipe-separated, and [ZAPPI_QUESTIONS:true] is appended when the toggle is on. |
+| Run Scoring clicked — gradeAssessment encoded | The assessment parameters are packed into a structured marker string: [GRADE_SCALE:value] records the chosen scale, [GRADE_IDEAS:idea1\|\|idea2] lists all ideas pipe-separated, and [ZAPPI_QUESTIONS:true] is appended when the toggle is on. The ideas parser strips the Zappi marker before extracting the ideas list. |
+| Full-screen loading hex while Databricks processes | A full-viewport overlay with a large rotating SpinHex (w-32 h-32) covers the screen while the scoring request is in flight, replacing the grade section until results return. |
 | POST /api/databricks/assessment/run | The same assessment endpoint used by persona hexes, called with assessmentTypes=['grade'] and selectedPersonas set to the chosen segment IDs. |
-| run.js parses markers | The backend strips the three markers from the solution string and uses their values to construct the appropriate scoring prompt — including the Zappi question block in the output format instructions when present. |
+| buildGradeScoringPrompt called — topic-first format instructions | The gradeExtraction.ts function builds the scoring prompt with topic-first output instructions: the AI must output TOPIC: [idea] as a heading, then each segment's response below it, so all segments for one idea are grouped together. |
 | Each segment scores each idea from segment persona perspective | Each selected segment acts as a persona evaluating the ideas as a real consumer in that profile would respond to them. This produces the full ideas × segments matrix. |
 | Score grid returned — ideas × segments with populations | The primary output. A table with ideas as rows and consumer segments as column headers. Population percentages appear in column headers where data was available. |
+| Results: TOPIC heading per idea then per-segment scores below | The written output is structured topic-first — the idea phrase appears as a bold heading (TOPIC:), followed by each segment's score and assessment indented beneath. This makes it easy to compare all segment reactions to one idea before moving to the next. |
 | Written assessments requested? | Determined by the chosen scoring scale. Scales that include 'written' add a prose paragraph per cell; scores-only scales return just numbers. |
 | One paragraph per idea × segment pair | When written assessments are included, a short explanatory paragraph accompanies each score — explaining the specific reasons that segment would or would not respond positively to that idea. |
-| Zappi responses section — if toggle was ON | When Zappi Questions were enabled, a structured Q1–Q7 response block follows each segment's main scoring section, answering all seven questions for every idea scored. |
 | Results appended to iteration file | The score grid and written assessments are saved to the iteration file as two clearly labelled sections — [Grade: Score Grid] and [Grade: Written Assessments] — so each can be independently selected when building Findings summaries. |
 
 ---
@@ -303,7 +305,7 @@ flowchart TD
 | Resolve credentials — env vars preferred over OAuth token | Credential hierarchy: server-side environment variables (DATABRICKS_TOKEN, DATABRICKS_HOST) are used whenever present, as they represent stable service principal credentials. OAuth tokens passed from the browser are used only as fallback for user-passthrough OAuth mode. |
 | Fetch KB file content from Databricks volumes | For each selected KB file, the backend queries the file_metadata table for the file path, then downloads the content. If a processed _txt version exists it is used in preference to the original — faster and already extracted. Content is capped at 80KB per file to control prompt size. |
 | Fetch prior gems for this brand + hex | Queries the Databricks gems table to find text the user previously marked as exemplary for this brand and hex in past sessions. These examples are injected into every persona prompt as positive calibration signals showing what good output looks like. |
-| Build combinedSignals block | Assembles all directional context into a single prompt block: KB gems from previous sessions, iteration signals from this session's GemCheckCoalReviewPanel (gems ranked by importance, checks to explore, coal to avoid), any prior persona context the user chose to include, and mid-iteration direction notes added by the user. |
+| Build combinedSignals block | Assembles all directional context into a single prompt block: KB gems from previous sessions, iteration signals from this session's GemCheckCoalReviewPanel (gems ranked by importance, tracks to explore, coal to avoid), any prior persona context the user chose to include, and mid-iteration direction notes added by the user. |
 | Build iterationContextBlock | Summarises what the other hexes have already produced in this iteration — truncated to 500 characters per hex. Personas use this to build forward rather than repeat what earlier hexes established. |
 | Resolve projectTypePrompt | Determines which AI prompt template drives the assessment. Priority order: user-defined prompts from the project_type_configs Databricks table, then system built-in prompts (one for each of the 20+ system project types), then a generic analytical fallback. |
 | Load persona data | Maps each selected persona ID to its full profile data. IDs beginning with custom- are resolved from the customPersonaData object passed in the request body. Built-in IDs call getPersonaContent() to retrieve the full persona including voice characteristics, evaluation criteria, psychographics, and scoring rubric. |
@@ -489,7 +491,7 @@ flowchart TD
     G --> H[Backend saves to Databricks\nworkspace /findings/ folder]
     H --> I[Insert row in findings_iterations table]
     I --> J[Store sessionVersions in localStorage]
-    J --> K[Clear iterationGems / Checks / Coal\nready for next iteration]
+    J --> K[Clear iterationGems / Tracks / Coal\nready for next iteration]
 
     B -- Summarize --> L[User selects saved iteration files]
     L --> M[Choose output options:\nExecutive Summary\nIdea list\nGems + Coal\ncombined report]
@@ -517,7 +519,7 @@ flowchart TD
 | Backend saves to Databricks workspace /findings/ folder | The document is written to the Databricks workspace file system as a persistent markdown file. |
 | Insert row in findings_iterations table | A metadata record is created in the SQL table — filename, brand, project type, creation timestamp, created_by. This index is what the Summarize feature queries when listing available iteration files. |
 | Store sessionVersions in localStorage | Tracks which versions of this iteration have been saved in this browser session. Used by the versioning logic to determine the next suffix. |
-| Clear iterationGems / Checks / Coal — ready for next iteration | Resets all directional signals in ProcessWireframe state. The next iteration begins with a clean slate of no pre-existing signals. |
+| Clear iterationGems / Tracks / Coal — ready for next iteration | Resets all directional signals in ProcessWireframe state. The next iteration begins with a clean slate of no pre-existing signals. |
 | User selects saved iteration files | In Summarize mode, the user browses previously saved iterations and selects one or more to synthesize across. |
 | Choose output options | Configuration for the summary output: Executive Summary (high-level strategic overview), Idea list (all ideas that emerged), Gems and Coal (directional signals), or a combined report including all sections. |
 | POST /api/databricks/findings/summarize | The selected file names and output options are sent to the Vercel backend. |
@@ -675,7 +677,7 @@ flowchart TD
 
 ---
 
-## 12. Iteration Signals: Gems / Checks / Coal
+## 12. Iteration Signals: Gems / Tracks / Coal
 
 ```mermaid
 flowchart TD
@@ -687,7 +689,7 @@ flowchart TD
     E --> F[Gem stored in Databricks gems table]
     F --> G[iterationGems state updated\nin AssessmentModal → bubbled to ProcessWireframe]
 
-    C -- Check: interested --> H[Check saved to iterationChecks state]
+    C -- Track: interested --> H[Track saved to iterationChecks state]
     C -- Coal: avoid this --> I[Coal saved to iterationCoal state]
 
     G --> J
@@ -698,13 +700,13 @@ flowchart TD
     J --> K[Confirmed signals stored\nin ranked order]
 
     K --> L[Next hex execution triggered]
-    L --> M[buildIterationSignalsBlock:\nGems ranked by importance\nChecks worth exploring\nCoal to actively avoid]
+    L --> M[buildIterationSignalsBlock:\nGems ranked by importance\nTracks worth exploring\nCoal to actively avoid]
     M --> N[Injected into every persona prompt\nand Moderator opening]
     N --> O[Personas calibrate their\nresponses toward gems\naway from coal]
 
     O --> P{Iteration saved\nor next iteration?}
     P -- Save iteration --> Q[Signals appended to\niteration markdown file]
-    Q --> R[iterationGems / Checks / Coal\ncleared from state]
+    Q --> R[iterationGems / Tracks / Coal\ncleared from state]
     P -- Next hex in same iteration --> L
 
     style C fill:#fef3c7
@@ -721,17 +723,17 @@ flowchart TD
 | saveGem called — POST /api/databricks/gems/save | The gem is persisted to Databricks with brand, project type, hex ID, gem text, file name reference, and the user's email. These are retrieved automatically in future sessions for the same brand and hex. |
 | Gem stored in Databricks gems table | Permanent storage. Gems from previous sessions are fetched at the start of every assessment call and injected as positive examples. |
 | iterationGems state updated in AssessmentModal → bubbled to ProcessWireframe | The gem is added immediately to the in-memory iteration state so it is available for the remaining hexes in the current session without a database fetch. |
-| Check: interested | A neutral signal of interest. The user wants to keep this in mind but is not as certain as a gem. Saved to in-memory state only — not persisted to the database. |
+| Track: interested | A neutral signal of interest. The user wants to keep this in mind but is not as certain as a gem. Saved to in-memory state only — not persisted to the database. |
 | Coal: avoid this | A negative signal. The user explicitly does not want the AI to go in this direction. Saved to in-memory state and actively steers subsequent persona prompts away from this territory. |
 | GemCheckCoalReviewPanel — shown post-assessment | A review interface that appears after each assessment. The user sees all signals accumulated so far in the iteration. They can confirm which signals to carry forward and drag to rank them in order of importance. |
 | Confirmed signals stored in ranked order | The user's rankings are preserved. Higher-ranked signals receive more prominence in the prompt injections. |
 | Next hex execution triggered | When the user runs another hex, all confirmed ranked signals are included in the assessment context. |
 | buildIterationSignalsBlock | The function that assembles all three signal types into a structured prompt section with clear headings and numbered rankings. |
 | Injected into every persona prompt and Moderator opening | Every persona in every subsequent round receives the signals block as part of their context — it is not a footnote but a core part of their briefing. |
-| Personas calibrate their responses toward gems, away from coal | The signals directly influence AI generation. Personas are instructed to build on gem directions, explore check items, and actively steer away from coal directions. |
+| Personas calibrate their responses toward gems, away from coal | The signals directly influence AI generation. Personas are instructed to build on gem directions, explore track items, and actively steer away from coal directions. |
 | Iteration saved or next iteration? | At the end of the session, signals are either preserved in the iteration file or cleared to start fresh. |
-| Signals appended to iteration markdown file | Gems, Checks, and Coal are saved as a dedicated section in the Findings iteration document — preserving the user's directional judgments alongside the assessment content. |
-| iterationGems / Checks / Coal cleared from state | All signals are reset when the iteration is saved. The next iteration begins with no pre-existing directional signals. |
+| Signals appended to iteration markdown file | Gems, Tracks, and Coal are saved as a dedicated section in the Findings iteration document — preserving the user's directional judgments alongside the assessment content. |
+| iterationGems / Tracks / Coal cleared from state | All signals are reset when the iteration is saved. The next iteration begins with no pre-existing directional signals. |
 
 ---
 
@@ -815,7 +817,7 @@ flowchart TD
         B --> J[AIHelpWidget\nContextual help\non every page]
         D --> K[CentralHexView\n3-step workflow]
         E --> K
-        K --> L[AssessmentModal\nSSE streaming results\nGem / Check / Coal]
+        K --> L[AssessmentModal\nSSE streaming results\nGem / Track / Coal]
     end
 
     subgraph API ["Vercel Serverless Functions (api/)"]
@@ -863,7 +865,7 @@ flowchart TD
 | Element | Description |
 |---|---|
 | App.tsx — Auth gate | The root React component. Reads the login flag from localStorage, blocks unauthenticated users from seeing any application content, and routes authenticated users to ProcessWireframe. The /oauth/callback path renders OAuthCallback for returning from Databricks OAuth. |
-| ProcessWireframe — Main orchestrator | The central state manager for the entire application. Owns all shared state: brands list, project types, selected KB files, hex executions, iteration gems, checks, coal, direction notes, template configurations, custom personas, and model selections. Every hex component is rendered as a child of ProcessWireframe and communicates through it. |
+| ProcessWireframe — Main orchestrator | The central state manager for the entire application. Owns all shared state: brands list, project types, selected KB files, hex executions, iteration gems, tracks, coal, direction notes, template configurations, custom personas, and model selections. Every hex component is rendered as a child of ProcessWireframe and communicates through it. |
 | Enter Hex | The configuration hex. Sets the brand, project type, iteration filename, ideas mode (get-inspired or load-ideas), ideas file, and KB research files for the entire iteration. All other hexes are locked until Enter is complete. |
 | Persona Hexes — Luminaries / Consumers / Colleagues / Cultural | The four multi-persona discussion hexes. Each runs a guided debate between selected personas against the KB evidence. Luminaries uses advertising legends and thought leaders. Consumers uses buyer profiles. Colleagues uses internal business role personas. Cultural Voices uses community representative personas. |
 | Grade Hex — Score ideas × segments, Zappi Questions | The quantitative scoring hex. Extracts ideas from prior hex discussions and scores each one against selected consumer segments. Optional Zappi Questions adds seven standardised concept-testing questions per idea-segment combination. |
@@ -873,7 +875,7 @@ flowchart TD
 | Findings Hex — Save iteration, Summarize | The output hex. Saves the complete iteration to Databricks with smart versioning. Optionally runs AI synthesis across one or more saved iterations to generate reports. |
 | AIHelpWidget — Contextual help on every page | A persistent chat interface always visible throughout the app. Receives live context props showing exactly where the user is and provides page-specific guidance, step-by-step walkthroughs, and freeform AI answers without requiring navigation. |
 | CentralHexView — 3-step workflow | The shared UI shell used by all analysis hexes. Manages the step progression (files or personas → assessment type → execute), hosts the bottom panel for iteration signals, and handles the Prior Persona context modal. |
-| AssessmentModal — SSE streaming results / Gem / Check / Coal | The modal that opens when any assessment runs. Displays AI output in real time via Server-Sent Events. The primary interface for reading AI output and saving directional signals. |
+| AssessmentModal — SSE streaming results / Gem / Track / Coal | The modal that opens when any assessment runs. Displays AI output in real time via Server-Sent Events. The primary interface for reading AI output and saving directional signals. |
 
 ### API Layer (Vercel Serverless Functions)
 
@@ -914,8 +916,8 @@ flowchart TD
     E --> F[AutoResizeTextarea expands\nto fit content]
     F --> G[noteEntries updated via\nonEntriesChange]
 
-    D --> H[Gem / Check / Coal\nconfirmed in Review panel]
-    H --> I[handleReviewConfirmed:\npush gem / check / coal\nentry to noteEntries]
+    D --> H[Gem / Track / Coal\nconfirmed in Review panel]
+    H --> I[handleReviewConfirmed:\npush gem / track / coal\nentry to noteEntries]
     I --> J[Empty note entry appended\nso user can keep typing]
 
     D --> K[User adds Iteration Direction\nin hex step]
@@ -937,7 +939,7 @@ flowchart TD
     S -->|Show| U[Entries of that type\nvisible again]
 
     D --> V[User clicks Save Iteration]
-    V --> W[noteEntries serialised:\nstory entries excluded\nnote → plain text\ngem/check/coal/prompt → labelled prefix]
+    V --> W[noteEntries serialised:\nstory entries excluded\nnote → plain text\ngem/track/coal/prompt → labelled prefix]
     W --> X[USER NOTES block\nappended to .txt export]
     X --> Y[File uploaded to\nKnowledge Base]
 
@@ -961,9 +963,9 @@ flowchart TD
 | User types in note textarea | Plain text entry. Each note entry maps to one AutoResizeTextarea — the user types directly into it and the text is written back to noteEntries immediately. |
 | AutoResizeTextarea expands to fit content | The textarea grows vertically as the user types. It reads its own scrollHeight after each keystroke and sets its height accordingly, preventing scroll within the field. |
 | noteEntries updated via onEntriesChange | The UserNotesBox calls the parent setter with the full updated entries array. ProcessWireframe holds the source of truth. |
-| Gem / Check / Coal confirmed in Review panel | After an assessment, the user opens the iteration signal review, selects which gems, checks, and coal items to retain, and confirms. Selected items are passed to `handleReviewConfirmed`. |
-| handleReviewConfirmed: push gem / check / coal entry to noteEntries | Each confirmed item is appended as a coloured badge entry. Gems appear in yellow, checks in green, coal in dark grey. The originating hex label is stored on the entry for display. |
-| Empty note entry appended so user can keep typing | After any auto-pushed entry (gem, check, coal, direction, story), a blank note entry is added so the user can immediately type a reaction or annotation below it without clicking anything. |
+| Gem / Track / Coal confirmed in Review panel | After an assessment, the user opens the iteration signal review, selects which gems, tracks, and coal items to retain, and confirms. Selected items are passed to `handleReviewConfirmed`. |
+| handleReviewConfirmed: push gem / track / coal entry to noteEntries | Each confirmed item is appended as a coloured badge entry. Gems appear in yellow, tracks in green, coal in dark grey. The originating hex label is stored on the entry for display. |
+| Empty note entry appended so user can keep typing | After any auto-pushed entry (gem, track, coal, direction, story), a blank note entry is added so the user can immediately type a reaction or annotation below it without clicking anything. |
 | handleAddIterationDirection: push prompt entry with hex label + run number | When the user clicks an "Add Direction" action in a hex, the text is stored as a `prompt` entry. The hex label (e.g. "Grade") and the current run count (e.g. "run 2") are encoded into the entry text to provide context when reviewing the session later. |
 | Wisdom Story round completes in StoryModal | When a Wisdom story assessment finishes, each round (character and setting combination) is pushed to noteEntries as a `story` type. Only a brief descriptor is stored here — the full story content lives separately in hexExecutions. |
 | Each round pushed as story entry — brief descriptor only | The story entry records which story type and character were used (e.g. "Story written: Brand Protagonist · Chapter 1") so the user has a log of what was generated without storing the full text in the notes panel. |
@@ -974,7 +976,7 @@ flowchart TD
 | Entries of that type hidden from view | The filtered entries return null from the map — they are not rendered but not deleted. The filter is cosmetic only and never modifies noteEntries. |
 | Entries of that type visible again | Unchecking hides; re-checking restores. State is local to the component and not persisted — refreshing the page or starting a new iteration resets the checkboxes to all-shown. |
 | User clicks Save Iteration | Triggered from the iteration save modal in ProcessWireframe. At this point the full noteEntries array is serialised for export. |
-| noteEntries serialised — stories excluded, typed entries labelled | Story entries are excluded from the export (their full content is already part of the iteration file). Plain notes are written as raw text. Gem, check, coal, and prompt entries are prefixed with `[GEM]`, `[CHECK]`, `[COAL]`, or `[DIRECTION]` labels, optionally including the hex label. |
+| noteEntries serialised — stories excluded, typed entries labelled | Story entries are excluded from the export (their full content is already part of the iteration file). Plain notes are written as raw text. Gem, track, coal, and prompt entries are prefixed with `[GEM]`, `[TRACK]`, `[COAL]`, or `[DIRECTION]` labels, optionally including the hex label. |
 | USER NOTES block appended to .txt export | The serialised notes are appended under a `USER NOTES` header in the iteration text file, after all assessment content and grade scoring sections. |
 | File uploaded to Knowledge Base | The complete .txt iteration file — including notes — is uploaded to the Databricks knowledge base as a Findings file for future reference. |
 | New iteration starts? | Two events reset the notes panel: completing the Enter hex (which starts a fresh iteration) and successfully saving an iteration. Both clear noteEntries back to a single empty note entry. |

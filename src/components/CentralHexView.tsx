@@ -7,7 +7,7 @@ import {
   Cpu,
 } from "lucide-react";
 import gemIcon from "figma:asset/53dc6cf554f69e479cfbd60a46741f158d11dd21.png";
-import { getPersonasForHex, type PersonaLevel1, type PersonaLevel2, type PersonaLevel3 } from "../data/personas";
+import { getPersonasForHex, LIVING_PERSONA_IDS, type PersonaLevel1, type PersonaLevel2, type PersonaLevel3 } from "../data/personas";
 import type { CustomPersona } from "../utils/databricksAPI";
 import { isBrandInCategory } from "../data/brandCategoryMapping";
 import { availableModels } from "./ModelTemplateManager";
@@ -308,8 +308,8 @@ export function CentralHexView({
 
     // Grade hex: validate ideas + segments + scale, then encode and fire
     if (hexId === 'Grade') {
-      if (effectiveSelectedIdeas.length === 0) {
-        alert("Please select at least one idea to score.");
+      if (effectiveSelectedIdeas.length === 0 && !includeZappiQuestions) {
+        alert("Please select at least one idea to score, or enable Zappi Questions.");
         return;
       }
       if (selectedFiles.length === 0) {
@@ -392,7 +392,7 @@ export function CentralHexView({
   const isWarGamesProject = projectType === 'War Games';
   // Grade uses all 3 steps: step1=ideas, step2=segments, step3=scale
   const canProceedToStep2 = hexId === 'Grade'
-    ? effectiveSelectedIdeas.length > 0
+    ? effectiveSelectedIdeas.length > 0 || includeZappiQuestions
     : isWarGamesProject || selectedFiles.length > 0;
   const canProceedToStep3 =
     hexId === "Grade"
@@ -768,8 +768,26 @@ export function CentralHexView({
                 </button>
               </div>
 
+              {/* Zappi Questions toggle */}
+              <label className="flex items-start gap-2 p-2 mt-3 border-2 border-gray-200 rounded cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={includeZappiQuestions}
+                  onChange={(e) => setIncludeZappiQuestions(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 flex-shrink-0"
+                />
+                <div>
+                  <div className="text-gray-900 font-semibold text-sm">Include Zappi Questions</div>
+                  <div className="text-gray-500 text-xs mt-0.5">Each segment answers 7 standardised concept-testing questions (brand fit, standout, emotion, relevance, understanding, purchase intent, brand appeal). Ideas are optional when Zappi is enabled.</div>
+                </div>
+              </label>
+
               <div className="flex justify-between mt-4">
-                <span className="text-sm text-gray-500">{effectiveSelectedIdeas.length} idea{effectiveSelectedIdeas.length !== 1 ? 's' : ''} selected</span>
+                <span className="text-sm text-gray-500">
+                  {includeZappiQuestions && effectiveSelectedIdeas.length === 0
+                    ? 'Zappi Questions mode — no ideas required'
+                    : `${effectiveSelectedIdeas.length} idea${effectiveSelectedIdeas.length !== 1 ? 's' : ''} selected`}
+                </span>
                 <button
                   className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => setCurrentStep(2)}
@@ -952,6 +970,9 @@ export function CentralHexView({
                                           <div className="flex-1">
                                             <div className="text-gray-900">
                                               {level3.name}
+                                              {LIVING_PERSONA_IDS.has(level3.id) && (
+                                                <span className="text-amber-600 ml-1 text-xs">*</span>
+                                              )}
                                             </div>
                                           </div>
                                         </label>
@@ -1012,6 +1033,11 @@ export function CentralHexView({
                   <p className="text-green-800">
                     <strong>{selectedPersonas.length}</strong> persona(s) selected
                   </p>
+                  {selectedPersonas.some(id => LIVING_PERSONA_IDS.has(id)) && (
+                    <p className="text-amber-700 text-xs mt-1">
+                      * Personas based solely on published works and do not represent those individuals' actual views or statements.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -1214,6 +1240,9 @@ export function CentralHexView({
                                         />
                                         <div className="flex-1 text-gray-900 text-sm">
                                           {role.name}
+                                          {LIVING_PERSONA_IDS.has(role.id) && (
+                                            <span className="text-amber-600 ml-1 text-xs">*</span>
+                                          )}
                                           {(role as any).populationEstimate != null && (
                                             <span className="text-gray-400 ml-1 text-xs">({(role as any).populationEstimate}%)</span>
                                           )}
@@ -1237,6 +1266,11 @@ export function CentralHexView({
                   <p className="text-green-800 text-sm">
                     <strong>{selectedPersonas.length}</strong> segment{selectedPersonas.length !== 1 ? 's' : ''} selected
                   </p>
+                  {selectedPersonas.some(id => LIVING_PERSONA_IDS.has(id)) && (
+                    <p className="text-amber-700 text-xs mt-1">
+                      * Personas based solely on published works and do not represent those individuals' actual views or statements.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -1336,22 +1370,8 @@ export function CentralHexView({
                     Step 3 of 3: Choose Scoring Scale
                   </h3>
                   <p className="text-gray-600 mb-3 text-sm">
-                    Select how the AI should score each idea against each segment.
+                    Select how the AI should score {includeZappiQuestions ? 'each Zappi dimension' : 'each idea'} against each segment.
                   </p>
-
-                  {/* Zappi Questions toggle */}
-                  <label className="flex items-start gap-2 p-2 mb-3 border-2 border-gray-200 rounded cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={includeZappiQuestions}
-                      onChange={(e) => setIncludeZappiQuestions(e.target.checked)}
-                      className="w-4 h-4 mt-0.5 flex-shrink-0"
-                    />
-                    <div>
-                      <div className="text-gray-900 font-semibold text-sm">Include Zappi Questions</div>
-                      <div className="text-gray-500 text-xs mt-0.5">Each segment will answer 7 standardised concept-testing questions (brand fit, standout, emotion, relevance, understanding, purchase intent, brand appeal)</div>
-                    </div>
-                  </label>
 
                   <div className="space-y-1 mb-4">
                     <label className="flex items-center gap-2 p-2 cursor-pointer transition-colors">
@@ -1466,39 +1486,6 @@ export function CentralHexView({
 
       {/* Send Recommendations to Knowledge base */}
       <div className="p-3 border-t-2 border-gray-300 mt-4">
-        {/* Gem — display only, interaction happens in assessment modal */}
-        <div className="mb-3 flex items-center gap-2">
-          <img src={gemIcon} alt="CoHive gem icon" className="w-7 h-7 flex-shrink-0" />
-          <span className="text-gray-900">Highlight elements you like</span>
-        </div>
-
-        {/* Check — display only */}
-        <div className="mb-3 flex items-center gap-2">
-          <svg viewBox="0 0 32 32" className="w-7 h-7 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="chkBg" x1="0%" y1="50%" x2="100%" y2="50%">
-                <stop offset="0%" stopColor="#0F766E" />
-                <stop offset="50%" stopColor="#7C3AED" />
-                <stop offset="100%" stopColor="#DC2626" />
-              </linearGradient>
-              <radialGradient id="chkGold" cx="50%" cy="50%" r="30%">
-                <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            <polygon points="16,2 29,9 29,23 16,30 3,23 3,9" fill="url(#chkBg)" />
-            <polygon points="16,2 29,9 29,23 16,30 3,23 3,9" fill="url(#chkGold)" />
-            <path d="M9 16.5l5 5 9.5-10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-          </svg>
-          <span className="text-gray-900">Check elements of interest</span>
-        </div>
-
-        {/* Coal — display only */}
-        <div className="mb-3 flex items-center gap-2">
-          <span className="w-7 flex items-center justify-center"><CoalIcon size={22} /></span>
-          <span className="text-gray-900">Flag elements you want to avoid</span>
-        </div>
-
         {/* Add Direction / Focus */}
         <div className="mb-4">
           <label className="flex items-center gap-2 cursor-pointer" onClick={() => setShowDirectionModal(true)}>
@@ -1610,6 +1597,37 @@ export function CentralHexView({
             </button>
           </div>
         )}
+
+        {/* Gem / Check / Coal legend */}
+        <div className="mt-4 pt-3 border-t border-gray-200 space-y-2">
+          <div className="flex items-center gap-2">
+            <img src={gemIcon} alt="CoHive gem icon" className="w-7 h-7 flex-shrink-0" />
+            <span className="text-gray-900">Highlight elements you like</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg viewBox="0 0 32 32" className="w-7 h-7 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="chkBg" x1="0%" y1="50%" x2="100%" y2="50%">
+                  <stop offset="0%" stopColor="#0F766E" />
+                  <stop offset="50%" stopColor="#7C3AED" />
+                  <stop offset="100%" stopColor="#DC2626" />
+                </linearGradient>
+                <radialGradient id="chkGold" cx="50%" cy="50%" r="30%">
+                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+              <polygon points="16,2 29,9 29,23 16,30 3,23 3,9" fill="url(#chkBg)" />
+              <polygon points="16,2 29,9 29,23 16,30 3,23 3,9" fill="url(#chkGold)" />
+              <path d="M9 16.5l5 5 9.5-10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </svg>
+            <span className="text-gray-900">Track elements of interest</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-7 flex items-center justify-center"><CoalIcon size={22} /></span>
+            <span className="text-gray-900">Flag elements you want to avoid</span>
+          </div>
+        </div>
       </div>
 
       {/* Prior Persona Re-use Modal */}

@@ -119,9 +119,9 @@ export const hexPersonas: HexPersonaConfig[] = [
             description: 'Art, wit, and human truth',
             roles: [
               { id: 'bill-bernbach', name: 'Bill Bernbach' },
-              { id: 'george-lois', name: 'George Lois' },
+              { id: 'george-lois', name: "George Lois's Published Works" },
               { id: 'howard-gossage', name: 'Howard Gossage' },
-              { id: 'mary-wells-lawrence', name: 'Mary Wells Lawrence' }
+              { id: 'mary-wells-lawrence', name: "Mary Wells Lawrence's Published Works" }
             ]
           },
           {
@@ -145,10 +145,10 @@ export const hexPersonas: HexPersonaConfig[] = [
             description: 'Creating cultural icons through design and storytelling',
             roles: [
               { id: 'dan-wieden', name: 'Dan Wieden' },
-              { id: 'lee-clow', name: 'Lee Clow' },
-              { id: 'jeff-goodby', name: 'Jeff Goodby' },
-              { id: 'rich-silverstein', name: 'Rich Silverstein' },
-              { id: 'john-hegarty', name: 'Sir John Hegarty' }
+              { id: 'lee-clow', name: "Lee Clow's Published Works" },
+              { id: 'jeff-goodby', name: "Jeff Goodby's Published Works" },
+              { id: 'rich-silverstein', name: "Rich Silverstein's Published Works" },
+              { id: 'john-hegarty', name: "Sir John Hegarty's Published Works" }
             ]
           },
           {
@@ -156,8 +156,8 @@ export const hexPersonas: HexPersonaConfig[] = [
             name: 'Disruptors & Provocateurs',
             description: 'Bold ideas and cultural hacking',
             roles: [
-              { id: 'alex-bogusky', name: 'Alex Bogusky' },
-              { id: 'dave-trott', name: 'Dave Trott' }
+              { id: 'alex-bogusky', name: "Alex Bogusky's Published Works" },
+              { id: 'dave-trott', name: "Dave Trott's Published Works" }
             ]
           }
         ]
@@ -172,8 +172,8 @@ export const hexPersonas: HexPersonaConfig[] = [
             name: 'System Thinkers & Experience Designers',
             description: 'Platforms, ecosystems, and living brands',
             roles: [
-              { id: 'tiffany-rolfe', name: 'Tiffany Rolfe' },
-              { id: 'margaret-johnson', name: 'Margaret Johnson' }
+              { id: 'tiffany-rolfe', name: "Tiffany Rolfe's Published Works" },
+              { id: 'margaret-johnson', name: "Margaret Johnson's Published Works" }
             ]
           },
           {
@@ -181,7 +181,7 @@ export const hexPersonas: HexPersonaConfig[] = [
             name: 'Modern Craft & Wit',
             description: 'Simple, smart, culturally fluent work',
             roles: [
-              { id: 'greg-hahn', name: 'Greg Hahn' }
+              { id: 'greg-hahn', name: "Greg Hahn's Published Works" }
             ]
           }
         ]
@@ -196,8 +196,8 @@ export const hexPersonas: HexPersonaConfig[] = [
             name: 'Behavioral Economics',
             description: 'Psychology over logic',
             roles: [
-              { id: 'rory-sutherland', name: 'Rory Sutherland' },
-              { id: 'byron-sharp', name: 'Byron Sharp' }
+              { id: 'rory-sutherland', name: "Rory Sutherland's Published Works" },
+              { id: 'byron-sharp', name: "Byron Sharp's Published Works" }
             ]
           },
           {
@@ -205,7 +205,7 @@ export const hexPersonas: HexPersonaConfig[] = [
             name: 'Design & Visual Language',
             description: 'Typography and visual systems as strategy',
             roles: [
-              { id: 'paula-scher', name: 'Paula Scher' }
+              { id: 'paula-scher', name: "Paula Scher's Published Works" }
             ]
           },
           {
@@ -213,7 +213,7 @@ export const hexPersonas: HexPersonaConfig[] = [
             name: 'Copywriters / Direct Response',
             description: 'Results-driven copy and measurable persuasion',
             roles: [
-              { id: 'drayton-bird', name: 'Drayton Bird' },
+              { id: 'drayton-bird', name: "Drayton Bird's Published Works" },
               { id: 'eugene-schwartz', name: 'Eugene Schwartz' },
               { id: 'joseph-sugarman', name: 'Joe Sugarman' }
             ]
@@ -458,8 +458,8 @@ export const hexPersonas: HexPersonaConfig[] = [
               { id: 'coco-chanel', name: 'Coco Chanel' },
               { id: 'estee-lauder', name: 'Estée Lauder' },
               { id: 'mary-kay-ash', name: 'Mary Kay Ash' },
-              { id: 'oprah-winfrey', name: 'Oprah Winfrey' },
-              { id: 'seth-godin', name: 'Seth Godin' },
+              { id: 'oprah-winfrey', name: "Oprah Winfrey's Published Works" },
+              { id: 'seth-godin', name: "Seth Godin's Published Works" },
               { id: 'steve-jobs', name: 'Steve Jobs' }
             ]
           }
@@ -836,3 +836,12 @@ export function getAllPersonaIdsForHex(hexId: string): string[] {
   
   return ids;
 }
+
+// IDs of personas based on living real people — used to show disclaimer in UI and AI prompts
+export const LIVING_PERSONA_IDS = new Set([
+  'george-lois', 'mary-wells-lawrence', 'drayton-bird', 'lee-clow',
+  'john-hegarty', 'rich-silverstein', 'paula-scher', 'dave-trott',
+  'jeff-goodby', 'rory-sutherland', 'alex-bogusky', 'byron-sharp',
+  'seth-godin', 'tiffany-rolfe', 'margaret-johnson', 'greg-hahn',
+  'oprah-winfrey',
+]);
