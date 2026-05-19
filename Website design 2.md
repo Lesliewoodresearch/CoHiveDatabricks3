@@ -122,7 +122,9 @@ flowchart TD
 |---|---|
 | User opens Enter hex | The first and required hex. Sets up the project context for the entire iteration. All other hexes are locked until Enter is complete. |
 | Step 1: Select brand | A dropdown populated from the shared Databricks configuration. The selected brand scopes which KB files, custom project types, and configurations are available for this iteration. |
-| Step 2: Select project type | A dropdown combining built-in system project types (Creative Messaging, War Games, Brand Strategy, etc.) with any user-created custom types stored in Databricks. The project type determines which AI prompt template drives every assessment in the iteration. |
+| Step 2: Select project type | A dropdown combining built-in system project types (Creative Messaging, War Games, Brand Strategy, Manifesto, Big Idea, etc.) with any user-created custom types stored in Databricks. The project type determines which AI prompt template drives every assessment in the iteration. |
+| Manifesto project type | A built-in system project type. Requires every generated concept to include two parts: a Story/Script (emotional insight, scenario, brand tone, brand role) and an embedded Product/Brand Claim (product truth or promise). Round 1 generates 2 distinct concepts per persona; Round 2+ debates and scores on Emotional Truth, Brand Fit, Claim Integrity, and Distinctiveness. |
+| Custom project type — guided prompt builder | Data Scientists can create custom project types in the Knowledge Base → Workspace tab. A guided form offers 8 optional fields: The Task, What It Is, What It Is Not, How the Session Works, Focus Areas / Evaluation Criteria, Scoring Criteria, Output Format, and Additional Prompt Text. Line-item fields (What It Is, What It Is Not, Focus Areas) are automatically converted to bullet lists. All filled fields are assembled with section headers into the final prompt on save. |
 | War Games project type? | A branching decision. War Games is a specialized competitive strategy framework that does not use ideas files — it always generates new strategy. Selecting it skips the filename, ideas source, and ideas upload steps. |
 | Step 3: Edit auto-generated filename | A pre-filled text input showing the auto-generated iteration name in the format Brand_ProjectType_YYYY-MM-DD. Users can edit this before saving. The filename persists through all iterations and versioning. |
 | Step 4a: Choose ideas source | The working mode declaration. Get Inspired means the AI generates fresh ideas from scratch. Load Current Ideas means the user has existing work they want the AI to assess, compare, and improve. |
@@ -233,7 +235,7 @@ flowchart TD
 | Ideas displayed as checkboxes — all checked by default | Every extracted idea is pre-selected. The user reviews the list and unchecks any ideas that are incomplete, tangential, or not ready for scoring. |
 | User unchecks to exclude or types to add manually | Full editorial control. Ideas can be deselected from the extracted list, and entirely new ideas not mentioned in any hex discussion can be typed in and added manually. |
 | Zappi Questions toggle in Step 1 — default OFF | The Zappi toggle lives in Step 1 (alongside idea selection), not Step 3. This placement allows the validation logic to know whether ideas are required before the user advances. |
-| Include Zappi Questions? | When ON, 7 standardised concept-testing questions are added per segment: Brand Fit, Standout, Emotion, Relevance, Ease of Understanding, Purchase Intent, and Brand Appeal — all scored 1–5 (5 = best). When Zappi is ON, ideas are optional — the hex can run Zappi scoring against segments with no ideas selected (Zappi-only mode). |
+| Include Zappi Questions? | Two independent Zappi sets, both optional and default OFF. Set 1: 7 standardised concept-testing dimensions (Brand Fit, Standout, Emotion, Relevance, Understanding, Purchase Intent, Brand Appeal) scored 1–5. Set 2: 6 brand & creative dimensions (Clarity, Product Anchoring, Emotional Resonance, Distinctiveness, Sensory Impact, Authenticity) scored 0–5, each with guiding sub-questions; the brand name is interpolated into Product Anchoring and Distinctiveness sub-questions at prompt-build time. Either set alone (or both together) makes ideas optional — Zappi-only mode is active if at least one set is enabled with no ideas selected. |
 | At least 1 idea OR Zappi enabled? | Validation gate. If Zappi is OFF, at least one idea must be selected. If Zappi is ON, the flow proceeds even with zero ideas, producing a segment-only Zappi assessment. |
 | Step 2: Segment picker — Lifestyle / Demographic / Psychographic hierarchy | A three-category segment tree. Lifestyle covers Activities, Consumption patterns, and Life Stage. Demographic covers Age Groups, Income levels, Geography, and Household composition. Psychographic covers Values, Personality types, and Attitudes. Each leaf node is a scorable consumer segment. |
 | User selects target segments — population % shown | Each leaf segment shows its estimated US market population percentage where available. This helps users understand the scale of the audience they are scoring against and appears as column headers in the output score grid. |
@@ -591,8 +593,8 @@ flowchart TD
 |---|---|
 | User opens Wisdom hex | The knowledge contribution hex. Any authenticated user can add their expert knowledge, field observations, or strategic insights to the Knowledge Base. Designed for capturing tacit knowledge that is not already in a document. |
 | Choose input method | Six capture methods covering different scenarios — from a quick typed note to a structured multi-turn interview. |
-| Text | For when the user wants to type an insight directly. The simplest and fastest method. |
-| Voice | For capturing spoken insights quickly, useful when ideas come faster than typing. |
+| Text | Labelled "Text / dictation, unlimited time". For typing an insight directly with no time limit. A microphone icon enables voice-to-text dictation into the textarea. |
+| Voice | Labelled "Voice / audio - 90 seconds". For capturing a spoken insight as an audio file (up to 90 seconds). The recording is transcribed by Whisper-1 when a Research Leader processes the file. |
 | Photo | For capturing physical materials — whiteboard notes, printed documents, visual references. |
 | Video | For capturing presentations, walkthroughs, or demonstrations. |
 | File | For uploading an existing document. Identical to KB upload but tagged as Wisdom input type. |
@@ -620,6 +622,7 @@ flowchart TD
 | Save summary as file | The final edited summary is uploaded to the Knowledge Base as a document. |
 | uploadToKnowledgeBase — fileType=Wisdom, scope=brand/category/general | All six input methods converge here. The content is uploaded with Wisdom as the file type and the user's chosen scope: brand-specific insight, category-level observation, or general industry knowledge. |
 | File pending processing — Research Leader must Process then Approve | Wisdom files follow the same processing and approval pipeline as all other KB files. They are not immediately usable in hex assessments until a Research Leader processes and approves them. |
+| Video submission note | For brand video footage (events, in-use demonstrations), users are directed to email help@cohivesolutions.com or share via a link with filename and address/URL. This note appears below all input method options in the Wisdom hex. |
 
 ---
 

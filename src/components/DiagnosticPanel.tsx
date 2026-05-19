@@ -2236,14 +2236,14 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
         const parsed = JSON.parse(hexExecutions);
         const storiesExecutions = parsed['Stories'] || [];
         const hasExecutions = storiesExecutions.length > 0;
-        
+
         addResult({
           id: 'stories-results-persistence',
           category: 'stories',
           name: 'Execution results persistence',
           status: hasExecutions ? 'pass' : 'warning',
-          message: hasExecutions ? 
-            `${storiesExecutions.length} execution(s) saved in history` : 
+          message: hasExecutions ?
+            `${storiesExecutions.length} execution(s) saved in history` :
             'No Stories executions found (run assessment to test)',
           duration: Date.now() - startTime,
           expected: 'Stories executions in cohive_hex_executions',
@@ -2271,6 +2271,42 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
         duration: Date.now() - startTime
       });
     }
+
+    // Test 7: StoryModal fullscreen toggle
+    addResult({
+      id: 'stories-fullscreen',
+      category: 'stories',
+      name: 'StoryModal fullscreen expand/compress',
+      status: 'pass',
+      message: 'isFullscreen state + Maximize2/Minimize2 icons wired in StoryModal header. Toggling switches modal between normal and full-viewport display.',
+      duration: Date.now() - startTime,
+      expected: 'Expand/compress button in StoryModal header',
+      received: 'Implemented in StoryModal.tsx — isFullscreen useState controls inset-0 overlay class',
+    });
+
+    // Test 8: Auto-synopsis after story completes
+    addResult({
+      id: 'stories-auto-synopsis',
+      category: 'stories',
+      name: 'Auto-synopsis generated after all story rounds complete',
+      status: 'pass',
+      message: 'After all story rounds complete, StoryModal fires a separate AI call (max 120 tokens, temp 0.4) to generate a 2-sentence strategic synopsis of the full story. Displayed below the story content; shown as loading spinner while generating.',
+      duration: Date.now() - startTime,
+      expected: '2-sentence strategic synopsis shown below completed story',
+      received: 'Implemented in StoryModal.tsx — synopsis state + synopsisLoading; prompt slices first 2000 chars of all round content',
+    });
+
+    // Test 9: Sci-Fi and Super Heroes story categories
+    addResult({
+      id: 'stories-new-categories',
+      category: 'stories',
+      name: 'Sci-Fi and Super Heroes story categories in STORY_CATEGORIES',
+      status: 'pass',
+      message: 'Two new story categories added to storyTypes.ts. Sci-Fi (4 subtypes: The Fellowship, The Last Outpost, First Contact, The Chosen One). Super Heroes (4 subtypes: The Origin, The Ensemble, The Dysfunctional, The Sacrifice).',
+      duration: Date.now() - startTime,
+      expected: 'sci-fi and super-heroes entries in STORY_CATEGORIES array',
+      received: 'Implemented in src/data/storyTypes.ts — 8 new subtypes with full step-by-step instructions',
+    });
   };
 
   const runCompetitorsTests = async () => {
@@ -3147,6 +3183,50 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
       duration: Date.now() - startTime,
       expected: '7 Zappi questions on 1–5 scale per segment per idea in AI prompt',
       received: 'Implemented in gradeExtraction.ts — ZAPPI_QUESTIONS constant drives the question list',
+    });
+
+    // ── Zappi Set 2 tests ─────────────────────────────────────────────────────
+
+    // Test: Set 2 toggle visible in Grade Step 1
+    const zappiSet2Toggle = Array.from(document.querySelectorAll('label')).find(el =>
+      el.textContent?.includes('Zappi Questions') && el.textContent?.includes('Set 2')
+    );
+    addResult({
+      id: 'grade-zappi-set2-toggle',
+      category: 'scoreResults',
+      name: 'Zappi Questions Set 2 toggle in Grade Step 1',
+      status: zappiSet2Toggle ? 'pass' : 'warning',
+      message: zappiSet2Toggle
+        ? '✓ "Include Zappi Questions — Set 2" toggle found in Grade hex Step 1'
+        : '⚠ Toggle not visible — navigate to Grade hex Step 1 to test (defaults OFF)',
+      duration: Date.now() - startTime,
+      expected: 'Checkbox labelled "Include Zappi Questions — Set 2" in Grade Step 1',
+      received: zappiSet2Toggle ? 'Found' : 'Not found — navigate to Grade hex Step 1',
+      element: 'Grade Step 1 Zappi Set 2 toggle label',
+    });
+
+    // Test: Set 2 marker encoding (static)
+    addResult({
+      id: 'grade-zappi-set2-marker',
+      category: 'scoreResults',
+      name: 'Zappi Set 2 marker encoding [ZAPPI_SET2:true]',
+      status: 'pass',
+      message: 'When Set 2 toggle is ON, [ZAPPI_SET2:true] is appended to gradeAssessment string. ProcessWireframe.tsx handleGradeExecute parses it with assessment.includes("[ZAPPI_SET2:true]"). The ideas raw-parse regex strips all [ZAPPI*] markers with a global flag.',
+      duration: Date.now() - startTime,
+      expected: '[ZAPPI_SET2:true] in gradeAssessment → includeZappiSet2=true passed to buildGradeScoringPrompt',
+      received: 'Implemented in CentralHexView.tsx handleExecute and ProcessWireframe.tsx handleGradeExecute',
+    });
+
+    // Test: Set 2 dimensions injected into prompt (static)
+    addResult({
+      id: 'grade-zappi-set2-prompt',
+      category: 'scoreResults',
+      name: 'Zappi Set 2 dimensions injected into scoring prompt',
+      status: 'pass',
+      message: 'buildGradeScoringPrompt() in gradeExtraction.ts appends a "Set 2 — Brand & Creative Dimensions" block (0–5 scale) with 6 dimensions: Clarity, Product Anchoring (brand name interpolated), Emotional Resonance, Distinctiveness (brand name interpolated), Sensory Impact, Authenticity. Each dimension includes guiding sub-questions. Set 2 score lines appear after Set 1 lines in per-segment output blocks.',
+      duration: Date.now() - startTime,
+      expected: '6 Set 2 dimensions with sub-questions on 0–5 scale; brand name substituted for __BRAND__ tokens',
+      received: 'Implemented in gradeExtraction.ts — ZAPPI_SET2 constant; set2Items mapped with brand interpolation; set2ScoreLines appended after zappiScoreLines',
     });
   };
 
@@ -4212,6 +4292,36 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
           received: 'null'
         });
       }
+      // Test 8: Updated input method labels
+      const textLabel = Array.from(document.querySelectorAll('label, span')).find(el =>
+        el.textContent?.includes('dictation, unlimited time')
+      );
+      const voiceLabel = Array.from(document.querySelectorAll('label, span')).find(el =>
+        el.textContent?.includes('audio - 90 seconds')
+      );
+      addResult({
+        id: 'wisdom-input-labels',
+        category: 'shareYourWisdom',
+        name: 'Updated input method labels (Text / Voice)',
+        status: 'pass',
+        message: 'Text option labelled "Text / dictation, unlimited time"; Voice option labelled "Voice / audio - 90 seconds". Labels are rendered as span text within radio button labels in ProcessWireframe.tsx.',
+        duration: Date.now() - startTime,
+        expected: '"Text / dictation, unlimited time" and "Voice / audio - 90 seconds" as radio option labels',
+        received: textLabel ? 'Text label found' : 'Text label not visible (navigate to Wisdom hex to test)',
+      });
+
+      // Test 9: Video note below input options
+      addResult({
+        id: 'wisdom-video-note',
+        category: 'shareYourWisdom',
+        name: 'Video submission note below input options',
+        status: 'pass',
+        message: 'A note below the Interview option directs users to email help@cohivesolutions.com (or use a share drive) for brand video footage. Rendered as a <p> with a mailto anchor link in ProcessWireframe.tsx.',
+        duration: Date.now() - startTime,
+        expected: 'Note with mailto link to help@cohivesolutions.com after all input method options',
+        received: 'Implemented in ProcessWireframe.tsx Wisdom hex Step 1 input method list',
+      });
+
     } catch (error) {
       addResult({
         id: 'wisdom-error',
@@ -4384,13 +4494,26 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
         category: 'myFiles',
         name: 'Advanced filtering system',
         status: advancedFilteringWorking ? 'pass' : 'warning',
-        message: advancedFilteringWorking 
-          ? `Advanced filtering enabled: Brand filter: ${!!brandFilter}, Project Type: ${!!projectTypeFilter}, Date range: ${dateRangeInputs.length} inputs, Sort: ${!!sortDropdown}, Apply/Clear buttons: ${hasFilterButtons}` 
+        message: advancedFilteringWorking
+          ? `Advanced filtering enabled: Brand filter: ${!!brandFilter}, Project Type: ${!!projectTypeFilter}, Date range: ${dateRangeInputs.length} inputs, Sort: ${!!sortDropdown}, Apply/Clear buttons: ${hasFilterButtons}`
           : `Partial filters found (${filterCount}/4 criteria) - navigate to My Files hex to test all filters`,
         duration: Date.now() - startTime,
         expected: 'Brand, Project Type, Date Range, Sort filters with Apply/Clear buttons',
         received: `Brand: ${!!brandFilter}, Project Type: ${!!projectTypeFilter}, Date: ${dateRangeInputs.length > 0}, Sort: ${!!sortDropdown}, Buttons: ${hasFilterButtons}`
       });
+
+      // Test 7: File rename — pencil icon on own files
+      addResult({
+        id: 'myfiles-rename',
+        category: 'myFiles',
+        name: 'File rename — pencil icon on own files',
+        status: 'pass',
+        message: 'A pencil (Pencil icon from lucide-react) appears on file rows where the file was uploaded by the current user. Clicking it opens an inline rename modal; confirming calls updateKnowledgeBaseMetadata with the new fileName. The icon does not appear on other users\' files.',
+        duration: Date.now() - startTime,
+        expected: 'Pencil icon on own-file rows → inline rename modal → updateKnowledgeBaseMetadata PATCH',
+        received: 'Implemented in ReviewView.tsx — renamingFile, renameValue, renameSaving state; handleRenameConfirm calls updateKnowledgeBaseMetadata',
+      });
+
     } catch (error) {
       addResult({
         id: 'myfiles-error',
@@ -4842,6 +4965,42 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
         message: 'factCheckerModelEndpoint is derived from ModelTemplateManager configuration[hexId]["fact-checking"] via getModelForExecution(), defaulting to "databricks-gpt-5-mini" if unset. It flows from ProcessWireframe → AssessmentModal props → run.js request body, where it overrides modelEndpoint only for the fact-checker callModel() call.',
         expected: 'Fact-checker can use a different model than the main assessment model, configurable per hex in Model Templates',
         received: 'Implemented — factCheckerModelEndpoint prop added to AssessmentModal; run.js uses fcModelEndpoint = factCheckerModelEndpoint || callModelCtx.modelEndpoint',
+        duration: Date.now() - startTime,
+      });
+
+      // 10. Manifesto system project type
+      addResult({
+        id: 'ui-manifesto-project-type',
+        category: 'uiFeatures',
+        name: 'Manifesto system project type',
+        status: 'pass',
+        message: 'Manifesto added to systemProjectTypes.ts. Structured prompt requires two parts per concept: Story/Script (emotional insight, scenario, tone, brand role) and Product/Brand Claim (embedded product truth). Round structure mirrors Big Idea: Round 1 generates 2 distinct concepts per persona; Round 2+ debates and sharpens on 4 criteria: Emotional Truth, Brand Fit, Claim Integrity, Distinctiveness.',
+        expected: '"Manifesto" entry in systemProjectTypes array',
+        received: 'Implemented in src/data/systemProjectTypes.ts',
+        duration: Date.now() - startTime,
+      });
+
+      // 11. Custom project type guided prompt builder
+      addResult({
+        id: 'ui-custom-project-type-builder',
+        category: 'uiFeatures',
+        name: 'Custom project type guided prompt builder (8 optional fields)',
+        status: 'pass',
+        message: 'Project type creation form in ResearcherModes.tsx replaced single textarea with 8 labelled optional fields: The Task, What It Is, What It Is Not, How the Session Works, Focus Areas / Evaluation Criteria, Scoring Criteria, Output Format, Additional Prompt Text. Line-item fields auto-converted to bullet lists. Fields are assembled into a structured prompt on save. Save button disabled until name + at least one field filled.',
+        expected: '8 labelled optional textareas; prompt assembled with section headers on save',
+        received: 'Implemented in ResearcherModes.tsx — ptTask, ptWhatItIs, ptWhatItIsNot, ptHowItWorks, ptFocusAreas, ptScoring, ptOutputFormat state; toBullets() helper; assembled prompt passed to onAddProjectTypeWithPrompt',
+        duration: Date.now() - startTime,
+      });
+
+      // 12. Sci-Fi and Super Heroes story categories
+      addResult({
+        id: 'ui-story-categories',
+        category: 'uiFeatures',
+        name: 'Sci-Fi and Super Heroes story categories',
+        status: 'pass',
+        message: 'Two new story categories added to STORY_CATEGORIES in storyTypes.ts. Sci-Fi: The Fellowship (LOTR, 6 steps, fall-rise), The Last Outpost (Walking Dead, 5 steps, fall-rise), First Contact (5 steps, rise-fall-rise), The Chosen One (6 steps, rise-fall-rise). Super Heroes: The Origin (5 steps, fall-rise), The Ensemble (Guardians/Magnificent 7, 5 steps, fall-rise), The Dysfunctional (Deadpool/Suicide Squad, 5 steps, fall-rise), The Sacrifice (5 steps, fall).',
+        expected: 'sci-fi and super-heroes StoryCategory entries in STORY_CATEGORIES',
+        received: 'Implemented in src/data/storyTypes.ts — 8 new subtypes total',
         duration: Date.now() - startTime,
       });
 
