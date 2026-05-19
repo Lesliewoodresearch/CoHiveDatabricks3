@@ -172,7 +172,7 @@ const TYPE_CONFIG: Record<ItemType, {
     icon: (size) => <GemIcon size={size} />,
   },
   check: {
-    label: 'Checks',
+    label: 'Tracks',
     description: 'Elements we\'re interested in',
     bg: 'bg-purple-50',
     border: 'border-purple-200',
@@ -298,6 +298,24 @@ export function GemCheckCoalReviewPanel({
           </button>
         </div>
 
+        {/* Instructions */}
+        <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-6 flex-shrink-0 text-xs text-gray-600">
+          <span className="flex items-center gap-1.5">
+            <span className="font-bold text-gray-400">↑↓</span>
+            Drag the arrows to rank priority order
+          </span>
+          <span className="text-gray-300">·</span>
+          <span className="flex items-center gap-1.5">
+            <input type="checkbox" className="w-3 h-3 accent-purple-600" readOnly />
+            Uncheck to remove an item
+          </span>
+          <span className="text-gray-300">·</span>
+          <span className="flex items-center gap-1.5">
+            <span className="font-mono text-gray-400">⬡▾</span>
+            Use the dropdown to change type
+          </span>
+        </div>
+
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
           {(['gem', 'check', 'coal'] as ItemType[]).map(type => {
@@ -347,7 +365,7 @@ export function GemCheckCoalReviewPanel({
                             className="text-xs border border-gray-200 rounded px-1 py-0.5 bg-white text-gray-600 focus:outline-none"
                           >
                             <option value="gem">⬡ Gem</option>
-                            <option value="check">✓ Check</option>
+                            <option value="check">✓ Track</option>
                             <option value="coal">🪨 Coal</option>
                           </select>
 

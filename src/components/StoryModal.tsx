@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, CircleCheck, CircleAlert, BookOpen, Tag, Globe, Building2 } from 'lucide-react';
+import { X, CircleCheck, CircleAlert, BookOpen, Tag, Globe, Building2, Maximize2, Minimize2 } from 'lucide-react';
 import gemIcon from 'figma:asset/53dc6cf554f69e479cfbd60a46741f158d11dd21.png';
 import { GemCheckCoalReviewPanel, CoalIcon, type ReviewItem } from './GemCheckCoalReviewPanel';
 import { saveGem, readKnowledgeBaseFile } from '../utils/databricksAPI';
@@ -190,8 +190,11 @@ export function StoryModal({
 }: StoryModalProps) {
   // Settings state — shown before generation starts
   const [showSettings, setShowSettings] = useState(true);
-  const [kbMode, setKbMode] = useState<KbMode>('equal-weight');
+  const [kbMode, setKbMode] = useState<KbMode>('hard-forbidden');
   const [scope, setScope] = useState<Scope>('brand');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [synopsis, setSynopsis] = useState<string | null>(null);
+  const [synopsisLoading, setSynopsisLoading] = useState(false);
 
   const [rounds, setRounds] = useState<StoryRound[]>([]);
   const [activeTab, setActiveTab] = useState<number | null>(null);
@@ -277,6 +280,23 @@ export function StoryModal({
       }
 
       setIsComplete(true);
+
+      // Generate synopsis after all rounds complete
+      setSynopsisLoading(true);
+      try {
+        const allContent = rounds.map(r => r.content).join('\n\n') || '';
+        const synopsisResult = await executeAIPrompt({
+          prompt: `In 2 concise sentences, summarize the following ${subtype.label} story for ${brand}. Focus on the strategic insight it reveals — not on retelling the plot.\n\n${allContent.slice(0, 2000)}`,
+          systemPrompt: 'You are a brand strategy editor. Write a crisp 2-sentence strategic synopsis.',
+          modelEndpoint,
+          maxTokens: 120,
+          temperature: 0.4,
+          userEmail,
+          userRole,
+        });
+        if (synopsisResult.success) setSynopsis(synopsisResult.response.trim());
+      } catch (_) {}
+      setSynopsisLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Story generation failed');
     } finally {
@@ -289,8 +309,11 @@ export function StoryModal({
     if (!isOpen) {
       hasStarted.current = false;
       setShowSettings(true);
-      setKbMode('equal-weight');
+      setKbMode('hard-forbidden');
       setScope('brand');
+      setIsFullscreen(false);
+      setSynopsis(null);
+      setSynopsisLoading(false);
       setRounds([]);
       setActiveTab(null);
       setIsComplete(false);
@@ -445,18 +468,26 @@ export function StoryModal({
 
     return (
       <div className="fixed inset-y-0 left-0 z-50 flex items-center justify-center"
-        style={{ right: 'var(--modal-r)', padding: 'var(--modal-p-lg)', backgroundColor: 'rgba(0,0,0,0.2)' }}>
-        <div className="bg-white rounded-xl shadow-2xl flex flex-col" style={{ width: '560px', maxHeight: '85vh' }}>
+        style={isFullscreen ? { inset: 0, padding: 0, backgroundColor: 'rgba(0,0,0,0.6)' } : { right: 'var(--modal-r)', padding: '4px', backgroundColor: 'rgba(0,0,0,0.2)' }}>
+        <div className="bg-white flex flex-col w-full"
+          style={isFullscreen ? { width: '100%', height: '100%', borderRadius: 0 } : { maxWidth: '600px', maxHeight: '90vh', borderRadius: '0.75rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
 
           {/* Header */}
-          <div className="bg-white border-b-2 border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-xl">
+          <div className="bg-white border-b-2 border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0"
+            style={{ borderRadius: isFullscreen ? 0 : '0.75rem 0.75rem 0 0' }}>
             <div>
               <h2 className="text-gray-900 font-semibold modal-heading">Story Settings</h2>
               <p className="text-gray-500 text-sm mt-0.5">{brand} · {category.label} · {subtype.label}</p>
             </div>
-            <button onClick={onClose} aria-label="Close" className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setIsFullscreen(f => !f)} aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+              <button onClick={onClose} aria-label="Close" className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Body */}
@@ -525,7 +556,8 @@ export function StoryModal({
           </div>
 
           {/* Footer */}
-          <div className="bg-white border-t-2 border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-b-xl">
+          <div className="bg-white border-t-2 border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0"
+            style={{ borderRadius: isFullscreen ? 0 : '0 0 0.75rem 0.75rem' }}>
             <div className="flex items-center gap-2">
               <span className={`px-2 py-1 rounded text-xs font-medium border ${activeKbOption.activeClasses}`}>
                 {activeKbOption.label}
@@ -550,11 +582,13 @@ export function StoryModal({
   // ── Story content ────────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-y-0 left-0 z-50 flex items-center justify-center"
-      style={{ right: 'var(--modal-r)', padding: 'var(--modal-p-lg)', backgroundColor: 'rgba(0,0,0,0.2)' }}>
-      <div className="bg-white rounded-xl shadow-2xl flex flex-col" style={{ width: '700px', maxHeight: '85vh' }}>
+      style={isFullscreen ? { inset: 0, padding: 0, backgroundColor: 'rgba(0,0,0,0.6)' } : { right: 'var(--modal-r)', padding: '4px', backgroundColor: 'rgba(0,0,0,0.2)' }}>
+      <div className="bg-white flex flex-col w-full"
+        style={isFullscreen ? { width: '100%', height: '100%', borderRadius: 0 } : { maxWidth: '960px', height: '90vh', borderRadius: '0.75rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
 
         {/* Header */}
-        <div className="bg-white border-b-2 border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-xl">
+        <div className="bg-white border-b-2 border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0"
+          style={{ borderRadius: isFullscreen ? 0 : '0.75rem 0.75rem 0 0' }}>
           <div>
             <h2 className="text-gray-900 font-semibold modal-heading">
               {category.label} · {subtype.label}
@@ -563,10 +597,27 @@ export function StoryModal({
               {brand}{subtype.dualPOV ? ' · Dual perspective' : ''}
             </p>
           </div>
-          <button onClick={onClose} aria-label="Close" className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setIsFullscreen(f => !f)} aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+            <button onClick={onClose} aria-label="Close" className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+
+        {/* Synopsis */}
+        {(synopsis || synopsisLoading) && (
+          <div className="px-6 py-3 bg-purple-50 border-b border-purple-100 flex-shrink-0">
+            {synopsisLoading ? (
+              <p className="text-xs text-purple-400 italic">Generating synopsis…</p>
+            ) : (
+              <p className="text-sm text-purple-800 leading-snug">{synopsis}</p>
+            )}
+          </div>
+        )}
 
         {/* Loading */}
         {isRunning && rounds.length === 0 && (
@@ -625,10 +676,10 @@ export function StoryModal({
                   {savingGem ? '…' : 'Gem'}
                 </button>
                 <div className="w-px h-4 bg-gray-300" />
-                <button onClick={handleSaveCheck} disabled={savingCheck} title="Save as Check"
+                <button onClick={handleSaveCheck} disabled={savingCheck} title="Save as Track"
                   className="flex items-center gap-1 px-2 py-1 rounded hover:bg-green-50 text-xs font-medium text-green-800 transition-colors">
                   <CircleCheck className="w-3.5 h-3.5" />
-                  {savingCheck ? '…' : 'Check'}
+                  {savingCheck ? '…' : 'Track'}
                 </button>
                 <div className="w-px h-4 bg-gray-300" />
                 <button onClick={handleSaveCoal} disabled={savingCoal} title="Save as Coal"
@@ -650,7 +701,7 @@ export function StoryModal({
                 {savedCheckItems.length > 0 && (
                   <span className="flex items-center gap-1 text-green-700">
                     <CircleCheck className="w-3 h-3" />
-                    {savedCheckItems.length} check{savedCheckItems.length !== 1 ? 's' : ''}
+                    {savedCheckItems.length} track{savedCheckItems.length !== 1 ? 's' : ''}
                   </span>
                 )}
                 {savedCoalItems.length > 0 && (
@@ -660,7 +711,8 @@ export function StoryModal({
             )}
 
             {isComplete && (
-              <div className="bg-white border-t-2 border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-b-xl">
+              <div className="bg-white border-t-2 border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0"
+                style={{ borderRadius: isFullscreen ? 0 : '0 0 0.75rem 0.75rem' }}>
                 <button onClick={onClose}
                   className="px-4 py-2 border-2 border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm">
                   Discard

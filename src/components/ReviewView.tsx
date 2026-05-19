@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Filter, RefreshCw, Download, Trash2, Eye, X, ChevronDown } from 'lucide-react';
+import { Filter, RefreshCw, Download, Trash2, Eye, X, ChevronDown, Pencil } from 'lucide-react';
 import { listKnowledgeBaseFiles, deleteKnowledgeBaseFile, downloadKnowledgeBaseFile, readKnowledgeBaseFile, downloadFile, KnowledgeBaseFile } from '../utils/databricksAPI';
 import { getValidSession, getCurrentUserEmail } from '../utils/databricksAuth';
 import { CircleAlert } from 'lucide-react';
@@ -41,6 +41,11 @@ export function ReviewView({ projectFiles, onDeleteFiles }: ReviewViewProps) {
   const [viewingFile, setViewingFile] = useState<KnowledgeBaseFile | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
   const [loadingContent, setLoadingContent] = useState(false);
+
+  // Rename modal state
+  const [renamingFile, setRenamingFile] = useState<KnowledgeBaseFile | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [renameSaving, setRenameSaving] = useState(false);
 
   // Get current user email on mount and check authentication
   useEffect(() => {
@@ -279,6 +284,32 @@ export function ReviewView({ projectFiles, onDeleteFiles }: ReviewViewProps) {
       setFileContent('Error: Failed to load file content.');
     } finally {
       setLoadingContent(false);
+    }
+  };
+
+  const handleRenameConfirm = async () => {
+    if (!renamingFile || !renameValue.trim() || renameValue.trim() === renamingFile.fileName) {
+      setRenamingFile(null);
+      return;
+    }
+    setRenameSaving(true);
+    try {
+      const result = await updateKnowledgeBaseMetadata(
+        renamingFile.fileId,
+        { fileName: renameValue.trim() },
+        currentUserEmail,
+        'marketing-manager'
+      );
+      if (result.success) {
+        setRenamingFile(null);
+        fetchFiles();
+      } else {
+        alert(`Rename failed: ${result.error}`);
+      }
+    } catch (e) {
+      alert('Rename failed. Please try again.');
+    } finally {
+      setRenameSaving(false);
     }
   };
 
@@ -575,16 +606,16 @@ export function ReviewView({ projectFiles, onDeleteFiles }: ReviewViewProps) {
           ) : sortedFiles.length === 0 ? (
             <div className="p-8 bg-gray-50 border-2 border-gray-300 rounded-lg text-center">
               <p className="text-gray-900 mb-2">
-                {showAllUsers ? 'No files found in the Knowledge Base.' : 'You haven\'t uploaded any files yet.'}
+                {showAllUsers ? 'No files found in the Knowledge Base.' : 'You haven\'t run and saved any files yet.'}
               </p>
               <p className="text-gray-600 text-sm mb-3">
-                {showAllUsers 
-                  ? 'The Knowledge Base is empty. Upload files through the Wisdom hex or other workflow steps to get started.'
-                  : 'Files uploaded through workflow hexes (Wisdom, Luminaries, etc.) will appear here.'}
+                {showAllUsers
+                  ? 'The Knowledge Base is empty. Run and save findings through the workflow steps to get started.'
+                  : 'Files saved from workflow steps (assessments, findings, etc.) will appear here.'}
               </p>
               {!showAllUsers && (
                 <p className="text-gray-600 text-sm">
-                  💡 <span className="font-medium">Tip:</span> Check "Show All Users' Files" to see files uploaded by others in your organization.
+                  💡 <span className="font-medium">Tip:</span> Check "Show All Users' Files" to see files saved by others in your organization.
                 </p>
               )}
             </div>
@@ -607,7 +638,7 @@ export function ReviewView({ projectFiles, onDeleteFiles }: ReviewViewProps) {
                 <div className="w-24">File Type</div>
                 {showAllUsers && <div className="w-32">User</div>}
                 <div className="w-28">Upload Date</div>
-                <div className="w-16">Actions</div>
+                <div className="w-20">Actions</div>
               </div>
 
               {/* Table Rows */}
@@ -658,7 +689,16 @@ export function ReviewView({ projectFiles, onDeleteFiles }: ReviewViewProps) {
                       <div className="w-28 text-gray-600">
                         {new Date(file.uploadDate).toLocaleDateString()}
                       </div>
-                      <div className="w-16 flex items-center justify-end">
+                      <div className="w-20 flex items-center justify-end gap-2">
+                        {isCurrentUser && (
+                          <button
+                            onClick={() => { setRenamingFile(file); setRenameValue(file.fileName); }}
+                            className="text-gray-400 hover:text-purple-600"
+                            title="Rename file"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleViewFile(file)}
                           className="text-gray-500 hover:text-gray-700"
@@ -683,6 +723,45 @@ export function ReviewView({ projectFiles, onDeleteFiles }: ReviewViewProps) {
         </>
       )}
       
+      {/* Rename Modal */}
+      {renamingFile && (
+        <div className="fixed inset-y-0 left-0 z-50 flex items-center justify-center bg-black bg-opacity-50" style={{ right: 'var(--modal-r)', padding: 'var(--modal-p)' }}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-gray-900 font-semibold">Rename File</h3>
+              <p className="text-gray-500 text-sm mt-1 truncate">{renamingFile.fileName}</p>
+            </div>
+            <div className="px-6 py-4">
+              <label className="block text-sm text-gray-700 mb-1">New file name</label>
+              <input
+                autoFocus
+                type="text"
+                value={renameValue}
+                onChange={e => setRenameValue(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleRenameConfirm(); if (e.key === 'Escape') setRenamingFile(null); }}
+                className="w-full border-2 border-gray-300 bg-white rounded-lg px-3 py-2 text-gray-900 text-sm focus:outline-none focus:border-purple-500"
+              />
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+              <button
+                onClick={() => setRenamingFile(null)}
+                disabled={renameSaving}
+                className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRenameConfirm}
+                disabled={renameSaving || !renameValue.trim() || renameValue.trim() === renamingFile.fileName}
+                className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 text-sm font-medium"
+              >
+                {renameSaving ? 'Saving…' : 'Rename'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* File Viewer Modal */}
       {viewingFile && (
         <div className="fixed inset-y-0 left-0 z-50 flex items-center justify-center bg-black bg-opacity-50" style={{ right: 'var(--modal-r)', padding: 'var(--modal-p)' }}>

@@ -130,41 +130,8 @@ export function StoriesView({
         </p>
       )}
 
-      {/* ── 5 notices ── */}
+      {/* ── notices ── */}
       <div className="p-3 border-t-2 border-gray-300 mt-4 space-y-3">
-
-        {/* Gem */}
-        <div className="flex items-center gap-2">
-          <img src={gemIcon} alt="CoHive gem icon" className="w-7 h-7 flex-shrink-0" />
-          <span className="text-gray-900">Highlight elements you like</span>
-        </div>
-
-        {/* Check */}
-        <div className="flex items-center gap-2">
-          <svg viewBox="0 0 32 32" className="w-7 h-7 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="storiesChkBg" x1="0%" y1="50%" x2="100%" y2="50%">
-                <stop offset="0%" stopColor="#0F766E" />
-                <stop offset="50%" stopColor="#7C3AED" />
-                <stop offset="100%" stopColor="#DC2626" />
-              </linearGradient>
-              <radialGradient id="storiesChkGold" cx="50%" cy="50%" r="30%">
-                <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            <polygon points="16,2 29,9 29,23 16,30 3,23 3,9" fill="url(#storiesChkBg)" />
-            <polygon points="16,2 29,9 29,23 16,30 3,23 3,9" fill="url(#storiesChkGold)" />
-            <path d="M9 16.5l5 5 9.5-10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-          </svg>
-          <span className="text-gray-900">Check elements of interest</span>
-        </div>
-
-        {/* Coal */}
-        <div className="flex items-center gap-2">
-          <span className="w-7 flex items-center justify-center"><CoalIcon size={22} /></span>
-          <span className="text-gray-900">Flag elements you want to avoid</span>
-        </div>
 
         {/* Add Direction / Focus */}
         <div>
@@ -277,6 +244,37 @@ export function StoriesView({
               </button>
             </div>
           )}
+        </div>
+
+        {/* Gem / Check / Coal legend */}
+        <div className="pt-3 border-t border-gray-200 space-y-2">
+          <div className="flex items-center gap-2">
+            <img src={gemIcon} alt="CoHive gem icon" className="w-7 h-7 flex-shrink-0" />
+            <span className="text-gray-900">Highlight elements you like</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg viewBox="0 0 32 32" className="w-7 h-7 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="storiesChkBg" x1="0%" y1="50%" x2="100%" y2="50%">
+                  <stop offset="0%" stopColor="#0F766E" />
+                  <stop offset="50%" stopColor="#7C3AED" />
+                  <stop offset="100%" stopColor="#DC2626" />
+                </linearGradient>
+                <radialGradient id="storiesChkGold" cx="50%" cy="50%" r="30%">
+                  <stop offset="0%" stopColor="#FBBF24" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#FBBF24" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+              <polygon points="16,2 29,9 29,23 16,30 3,23 3,9" fill="url(#storiesChkBg)" />
+              <polygon points="16,2 29,9 29,23 16,30 3,23 3,9" fill="url(#storiesChkGold)" />
+              <path d="M9 16.5l5 5 9.5-10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </svg>
+            <span className="text-gray-900">Track elements of interest</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-7 flex items-center justify-center"><CoalIcon size={22} /></span>
+            <span className="text-gray-900">Flag elements you want to avoid</span>
+          </div>
         </div>
       </div>
 
