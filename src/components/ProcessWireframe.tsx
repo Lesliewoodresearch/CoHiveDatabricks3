@@ -1825,10 +1825,20 @@ export default function ProcessWireframe() {
                                 {['Text', 'Voice', 'Photo', 'File', 'Interview'].map(method => (
                                   <label key={method} className="flex items-center gap-2 cursor-pointer">
                                     <input type="radio" name="inputMethod" value={method} checked={responses[activeStepId]?.[idx] === method} onChange={(e) => handleResponseChange(idx, e.target.value)} className="w-4 h-4" />
-                                    <span className="text-gray-700">{method === 'Interview' ? 'Be Interviewed' : method}</span>
+                                    <span className="text-gray-700">
+                                      {method === 'Text' ? 'Text / dictation, unlimited time'
+                                        : method === 'Voice' ? 'Voice / audio - 90 seconds'
+                                        : method === 'Interview' ? 'Be Interviewed'
+                                        : method}
+                                    </span>
                                   </label>
                                 ))}
                               </div>
+                              <p className="mt-3 text-xs text-gray-500 leading-relaxed">
+                                If you have a video of the brand in use or at an event, please send it to{' '}
+                                <a href="mailto:help@cohivesolutions.com" className="text-blue-600 hover:underline">help@cohivesolutions.com</a>
+                                , or load the file into a share drive and send a note with the filename and address/url.
+                              </p>
                             </div>
                           );
                         }
