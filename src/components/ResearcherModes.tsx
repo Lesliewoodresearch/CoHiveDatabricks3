@@ -223,6 +223,13 @@ export function ResearcherModes({
   const [newBrand, setNewBrand] = useState('');
   const [newProjectType, setNewProjectType] = useState('');
   const [newProjectTypePrompt, setNewProjectTypePrompt] = useState('');
+  const [ptTask, setPtTask] = useState('');
+  const [ptWhatItIs, setPtWhatItIs] = useState('');
+  const [ptWhatItIsNot, setPtWhatItIsNot] = useState('');
+  const [ptHowItWorks, setPtHowItWorks] = useState('');
+  const [ptFocusAreas, setPtFocusAreas] = useState('');
+  const [ptScoring, setPtScoring] = useState('');
+  const [ptOutputFormat, setPtOutputFormat] = useState('');
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [editingFile, setEditingFile] = useState<ResearchFile | null>(null);
   const [editedContent, setEditedContent] = useState('');
@@ -1436,9 +1443,53 @@ export function ResearcherModes({
         )}
         {synthesisOption === 'new-project-type' && onAddProjectTypeWithPrompt && userRole === 'data-scientist' && (
           <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 space-y-3">
-            <input type="text" className="w-full border-2 border-gray-300 bg-white rounded p-2 text-gray-700" placeholder="Project type name..." value={newProjectType} onChange={e => setNewProjectType(e.target.value)} />
-            <textarea className="w-full border-2 border-gray-300 bg-white rounded p-2 text-gray-700 h-24" placeholder="Project type prompt..." value={newProjectTypePrompt} onChange={e => setNewProjectTypePrompt(e.target.value)} />
-            <button onClick={async () => { if (newProjectType.trim() && newProjectTypePrompt.trim()) { await onAddProjectTypeWithPrompt(newProjectType.trim(), newProjectTypePrompt.trim()); setNewProjectType(''); setNewProjectTypePrompt(''); } }} disabled={!newProjectType.trim() || !newProjectTypePrompt.trim()} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400">Add Project Type</button>
+            <input type="text" className="w-full border-2 border-gray-300 bg-white rounded p-2 text-gray-700" placeholder="Project type name (required)..." value={newProjectType} onChange={e => setNewProjectType(e.target.value)} />
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide pt-1">Prompt elements — fill any that apply</p>
+            {[
+              { label: 'The Task', hint: 'What is this project type asking personas to do?', value: ptTask, set: setPtTask, rows: 2 },
+              { label: 'What It Is', hint: 'Key characteristics — one per line (becomes a bullet list)', value: ptWhatItIs, set: setPtWhatItIs, rows: 3 },
+              { label: 'What It Is Not', hint: 'Common confusions to avoid — one per line', value: ptWhatItIsNot, set: setPtWhatItIsNot, rows: 3 },
+              { label: 'How the Session Works', hint: 'Describe the round structure, e.g. Round 1 — Generation: ... Round 2+ — Debate: ...', value: ptHowItWorks, set: setPtHowItWorks, rows: 3 },
+              { label: 'Focus Areas / Evaluation Criteria', hint: 'What should be assessed — one per line (becomes a bullet list)', value: ptFocusAreas, set: setPtFocusAreas, rows: 3 },
+              { label: 'Scoring Criteria', hint: 'Dimensions to score, e.g. Brand Truth, Cultural Relevance, Longevity — with scale if needed', value: ptScoring, set: setPtScoring, rows: 2 },
+              { label: 'Output Format', hint: 'How should responses be structured? e.g. "Format: Action 1: [Name] — [Description] — [Rationale]"', value: ptOutputFormat, set: setPtOutputFormat, rows: 2 },
+              { label: 'Additional Prompt Text', hint: 'Any other instructions not covered above', value: newProjectTypePrompt, set: setNewProjectTypePrompt, rows: 3 },
+            ].map(({ label, hint, value, set, rows }) => (
+              <div key={label}>
+                <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+                <textarea
+                  rows={rows}
+                  className="w-full border-2 border-gray-300 bg-white rounded p-2 text-gray-700 text-sm resize-y"
+                  placeholder={hint}
+                  value={value}
+                  onChange={e => set(e.target.value)}
+                />
+              </div>
+            ))}
+            <button
+              onClick={async () => {
+                const toBullets = (text: string) =>
+                  text.trim().split('\n').map(l => l.trim()).filter(Boolean).map(l => `- ${l}`).join('\n');
+                const sections: string[] = [];
+                if (ptTask.trim()) sections.push(`THE TASK: ${ptTask.trim()}`);
+                if (ptWhatItIs.trim()) sections.push(`WHAT IT IS:\n${toBullets(ptWhatItIs)}`);
+                if (ptWhatItIsNot.trim()) sections.push(`WHAT IT IS NOT:\n${toBullets(ptWhatItIsNot)}`);
+                if (ptHowItWorks.trim()) sections.push(`HOW THIS SESSION WORKS:\n${ptHowItWorks.trim()}`);
+                if (ptFocusAreas.trim()) sections.push(`FOCUS AREAS:\n${toBullets(ptFocusAreas)}`);
+                if (ptScoring.trim()) sections.push(`SCORING CRITERIA:\n${ptScoring.trim()}`);
+                if (ptOutputFormat.trim()) sections.push(`OUTPUT FORMAT:\n${ptOutputFormat.trim()}`);
+                if (newProjectTypePrompt.trim()) sections.push(newProjectTypePrompt.trim());
+                const assembled = sections.join('\n\n');
+                if (newProjectType.trim() && assembled.trim()) {
+                  await onAddProjectTypeWithPrompt(newProjectType.trim(), assembled);
+                  setNewProjectType(''); setNewProjectTypePrompt('');
+                  setPtTask(''); setPtWhatItIs(''); setPtWhatItIsNot('');
+                  setPtHowItWorks(''); setPtFocusAreas(''); setPtScoring(''); setPtOutputFormat('');
+                }
+              }}
+              disabled={!newProjectType.trim() || !(ptTask || ptWhatItIs || ptWhatItIsNot || ptHowItWorks || ptFocusAreas || ptScoring || ptOutputFormat || newProjectTypePrompt).trim()}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+            >Add Project Type</button>
           </div>
         )}
         {synthesisOption === 'new-project-type' && userRole !== 'data-scientist' && <div className="bg-red-50 border-2 border-red-200 rounded p-4"><p className="text-red-900 text-sm">❌ Only Data Scientists can create new project types.</p></div>}
