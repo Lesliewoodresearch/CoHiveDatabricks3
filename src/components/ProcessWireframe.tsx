@@ -902,22 +902,23 @@ export default function ProcessWireframe() {
     const scaleMatch = assessment.match(/\[GRADE_SCALE:([^\]]+)\]/);
     const scale = scaleMatch?.[1] || 'scale-1-5-written';
     const includeZappiQuestions = assessment.includes('[ZAPPI_QUESTIONS:true]');
+    const includeZappiSet2 = assessment.includes('[ZAPPI_SET2:true]');
     const ideasMarker = '[GRADE_IDEAS:';
     const ideasStart = assessment.indexOf(ideasMarker);
     let ideas: string[] = [];
     if (ideasStart !== -1) {
-      const raw = assessment.slice(ideasStart + ideasMarker.length).replace(/\n\[ZAPPI.*$/, '').replace(/\]$/, '').trim();
+      const raw = assessment.slice(ideasStart + ideasMarker.length).replace(/\n\[ZAPPI.*$/gm, '').replace(/\]$/, '').trim();
       ideas = raw.split('||').map(s => s.trim()).filter(Boolean);
     }
 
-    if (ideas.length === 0 && !includeZappiQuestions) {
+    if (ideas.length === 0 && !includeZappiQuestions && !includeZappiSet2) {
       alert('No ideas to score. Please go back and select ideas, or enable Zappi Questions.');
       return;
     }
 
     const segments = resolveGradeSegments(selectedSegmentIds);
     const modelEndpoint = currentModelTemplate?.hexModels?.['Grade']?.modelId || 'databricks-claude-haiku-4-5';
-    const prompt = buildGradeScoringPrompt(ideas, segments, scale, brand, projectType, includeZappiQuestions);
+    const prompt = buildGradeScoringPrompt(ideas, segments, scale, brand, projectType, includeZappiQuestions, includeZappiSet2);
 
     setGradeScoring(true);
     try {

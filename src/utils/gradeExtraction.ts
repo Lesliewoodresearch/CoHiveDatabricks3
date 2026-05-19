@@ -141,10 +141,21 @@ const ZAPPI_QUESTIONS = [
   'Brand Appeal',
 ] as const;
 
+// Set 2: brand & creative dimensions, each with guiding sub-questions (0–5 scale)
+const ZAPPI_SET2 = [
+  { label: 'Clarity',            subQuestions: ['Is the message easy to follow?', 'Does the idea get to the point quickly?'] },
+  { label: 'Product Anchoring',  subQuestions: ['Is __BRAND__ clearly described?', 'Is the benefit tangible?'] },
+  { label: 'Emotional Resonance',subQuestions: ['Does it feel real, relatable, human?'] },
+  { label: 'Distinctiveness',    subQuestions: ['Could this be for any brand?', 'Or is it uniquely __BRAND__?'] },
+  { label: 'Sensory Impact',     subQuestions: ['Does it make you feel the product?'] },
+  { label: 'Authenticity',       subQuestions: ['Does it avoid trying too hard?', 'Does it feel natural?'] },
+] as const;
+
 /**
  * Builds the scoring prompt. Pure function — no side effects.
  * `scale` is one of the testingScale radio values from CentralHexView.
  * `includeZappiQuestions` adds the 7 Zappi concept-testing dimensions per segment.
+ * `includeZappiSet2` adds the 6 brand & creative dimensions (Set 2) per segment.
  * `ideas` may be empty when Zappi-only mode is active.
  */
 export function buildGradeScoringPrompt(
@@ -154,6 +165,7 @@ export function buildGradeScoringPrompt(
   brand: string,
   projectType: string,
   includeZappiQuestions = false,
+  includeZappiSet2 = false,
 ): string {
   const scaleLabel = scale.startsWith('scale-1-5')
     ? '1 to 5 (1 = would not respond, 5 = would respond very strongly)'
@@ -173,20 +185,34 @@ export function buildGradeScoringPrompt(
     : `Do not assign a numeric score — provide written assessments only.`;
 
   const zappiInstruction = includeZappiQuestions
-    ? `\nFor each segment, score all 7 Zappi concept-testing dimensions:\n${ZAPPI_QUESTIONS.map((q, i) => `  ${i + 1}. ${q}`).join('\n')}`
+    ? `\nSet 1 — Zappi concept-testing dimensions (1–5, 5 = best):\n${ZAPPI_QUESTIONS.map((q, i) => `  ${i + 1}. ${q}`).join('\n')}`
+    : '';
+
+  const set2Items = includeZappiSet2
+    ? ZAPPI_SET2.map(q => ({ ...q, label: q.label, subQuestions: q.subQuestions.map(sq => sq.replace(/__BRAND__/g, brand)) }))
+    : [];
+
+  const set2Instruction = includeZappiSet2
+    ? `\nSet 2 — Brand & creative dimensions (0–5, 5 = best):\n${set2Items.map((q, i) => `  ${i + 1}. ${q.label} — ${q.subQuestions.join(' / ')}`).join('\n')}`
     : '';
 
   const zappiScoreLines = includeZappiQuestions
     ? ZAPPI_QUESTIONS.map(q => `  • ${q}: [score]`).join('\n') + '\n'
     : '';
 
+  const set2ScoreLines = includeZappiSet2
+    ? set2Items.map(q => `  • ${q.label}: [score]`).join('\n') + '\n'
+    : '';
+
   let outputInstructions: string;
+
+  const hasZappi = includeZappiQuestions || includeZappiSet2;
 
   if (hasIdeas) {
     const ideaLines = ideas.map((idea, i) => `${i + 1}. ${idea}`).join('\n');
     const segmentBlock = scaleLabel
-      ? `[Segment Name]${includeZappiQuestions ? ' ([pop%]) — Overall: [score]' : ' ([pop%]) — [score]'}\n${zappiScoreLines}${includeWritten ? '[One paragraph: why this segment would or would not respond to this idea]\n' : ''}`
-      : `[Segment Name] ([pop%])\n${zappiScoreLines}${includeWritten ? '[One paragraph: why this segment would or would not respond to this idea]\n' : ''}`;
+      ? `[Segment Name]${hasZappi ? ' ([pop%]) — Overall: [score]' : ' ([pop%]) — [score]'}\n${zappiScoreLines}${set2ScoreLines}${includeWritten ? '[One paragraph: why this segment would or would not respond to this idea]\n' : ''}`
+      : `[Segment Name] ([pop%])\n${zappiScoreLines}${set2ScoreLines}${includeWritten ? '[One paragraph: why this segment would or would not respond to this idea]\n' : ''}`;
 
     outputInstructions = `OUTPUT FORMAT — follow exactly:
 
@@ -207,8 +233,8 @@ ${segmentLines}`;
   } else {
     // Zappi-only: no ideas, evaluate each segment on Zappi dimensions
     const segmentBlock = scaleLabel
-      ? `SEGMENT: [Segment Name] ([pop%]) — Overall: [score]\n${zappiScoreLines}${includeWritten ? '[One paragraph: how this segment relates to the brand overall]\n' : ''}`
-      : `SEGMENT: [Segment Name] ([pop%])\n${zappiScoreLines}${includeWritten ? '[One paragraph: how this segment relates to the brand overall]\n' : ''}`;
+      ? `SEGMENT: [Segment Name] ([pop%]) — Overall: [score]\n${zappiScoreLines}${set2ScoreLines}${includeWritten ? '[One paragraph: how this segment relates to the brand overall]\n' : ''}`
+      : `SEGMENT: [Segment Name] ([pop%])\n${zappiScoreLines}${set2ScoreLines}${includeWritten ? '[One paragraph: how this segment relates to the brand overall]\n' : ''}`;
 
     outputInstructions = `OUTPUT FORMAT — follow exactly:
 
@@ -226,7 +252,7 @@ Brand: ${brand}${projectType ? `\nProject type: ${projectType}` : ''}
 
 Your task: evaluate how each target consumer segment would respond to${hasIdeas ? ' each idea as a way to market' : ''} ${brand}.
 
-${scaleInstruction}${zappiInstruction}
+${scaleInstruction}${zappiInstruction}${set2Instruction}
 
 ${outputInstructions}`;
 }

@@ -123,6 +123,7 @@ export function CentralHexView({
   const [manualIdea, setManualIdea] = useState<string>('');
   const [gradeSubmitted, setGradeSubmitted] = useState(false);
   const [includeZappiQuestions, setIncludeZappiQuestions] = useState(false);
+  const [includeZappiSet2, setIncludeZappiSet2] = useState(false);
   const effectiveSelectedIdeas = [
     ...extractedIdeas.filter(idea => !excludedIdeas.has(idea)),
     ...manualIdeas,
@@ -308,7 +309,7 @@ export function CentralHexView({
 
     // Grade hex: validate ideas + segments + scale, then encode and fire
     if (hexId === 'Grade') {
-      if (effectiveSelectedIdeas.length === 0 && !includeZappiQuestions) {
+      if (effectiveSelectedIdeas.length === 0 && !includeZappiQuestions && !includeZappiSet2) {
         alert("Please select at least one idea to score, or enable Zappi Questions.");
         return;
       }
@@ -320,7 +321,7 @@ export function CentralHexView({
         alert("Please choose a scoring scale.");
         return;
       }
-      const gradeAssessment = `[GRADE_SCALE:${testingScale}]\n[GRADE_IDEAS:${effectiveSelectedIdeas.join('||')}]${includeZappiQuestions ? '\n[ZAPPI_QUESTIONS:true]' : ''}`;
+      const gradeAssessment = `[GRADE_SCALE:${testingScale}]\n[GRADE_IDEAS:${effectiveSelectedIdeas.join('||')}]${includeZappiQuestions ? '\n[ZAPPI_QUESTIONS:true]' : ''}${includeZappiSet2 ? '\n[ZAPPI_SET2:true]' : ''}`;
       onExecute(selectedFiles, ['grade'], gradeAssessment);
       setGradeSubmitted(true);
       return;
@@ -392,7 +393,7 @@ export function CentralHexView({
   const isWarGamesProject = projectType === 'War Games';
   // Grade uses all 3 steps: step1=ideas, step2=segments, step3=scale
   const canProceedToStep2 = hexId === 'Grade'
-    ? effectiveSelectedIdeas.length > 0 || includeZappiQuestions
+    ? effectiveSelectedIdeas.length > 0 || includeZappiQuestions || includeZappiSet2
     : isWarGamesProject || selectedFiles.length > 0;
   const canProceedToStep3 =
     hexId === "Grade"
@@ -768,23 +769,37 @@ export function CentralHexView({
                 </button>
               </div>
 
-              {/* Zappi Questions toggle */}
-              <label className="flex items-start gap-2 p-2 mt-3 border-2 border-gray-200 rounded cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={includeZappiQuestions}
-                  onChange={(e) => setIncludeZappiQuestions(e.target.checked)}
-                  className="w-4 h-4 mt-0.5 flex-shrink-0"
-                />
-                <div>
-                  <div className="text-gray-900 font-semibold text-sm">Include Zappi Questions</div>
-                  <div className="text-gray-500 text-xs mt-0.5">Each segment answers 7 standardised concept-testing questions (brand fit, standout, emotion, relevance, understanding, purchase intent, brand appeal). Ideas are optional when Zappi is enabled.</div>
-                </div>
-              </label>
+              {/* Zappi Questions toggles */}
+              <div className="mt-3 space-y-2">
+                <label className="flex items-start gap-2 p-2 border-2 border-gray-200 rounded cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={includeZappiQuestions}
+                    onChange={(e) => setIncludeZappiQuestions(e.target.checked)}
+                    className="w-4 h-4 mt-0.5 flex-shrink-0"
+                  />
+                  <div>
+                    <div className="text-gray-900 font-semibold text-sm">Include Zappi Questions — Set 1</div>
+                    <div className="text-gray-500 text-xs mt-0.5">7 standardised concept-testing dimensions: brand fit, standout, emotion, relevance, understanding, purchase intent, brand appeal (1–5). Ideas are optional when either Zappi set is enabled.</div>
+                  </div>
+                </label>
+                <label className="flex items-start gap-2 p-2 border-2 border-gray-200 rounded cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={includeZappiSet2}
+                    onChange={(e) => setIncludeZappiSet2(e.target.checked)}
+                    className="w-4 h-4 mt-0.5 flex-shrink-0"
+                  />
+                  <div>
+                    <div className="text-gray-900 font-semibold text-sm">Include Zappi Questions — Set 2</div>
+                    <div className="text-gray-500 text-xs mt-0.5">6 brand & creative dimensions: clarity, product anchoring, emotional resonance, distinctiveness, sensory impact, authenticity (0–5). Can be used with or without Set 1.</div>
+                  </div>
+                </label>
+              </div>
 
               <div className="flex justify-between mt-4">
                 <span className="text-sm text-gray-500">
-                  {includeZappiQuestions && effectiveSelectedIdeas.length === 0
+                  {(includeZappiQuestions || includeZappiSet2) && effectiveSelectedIdeas.length === 0
                     ? 'Zappi Questions mode — no ideas required'
                     : `${effectiveSelectedIdeas.length} idea${effectiveSelectedIdeas.length !== 1 ? 's' : ''} selected`}
                 </span>
@@ -1370,7 +1385,7 @@ export function CentralHexView({
                     Step 3 of 3: Choose Scoring Scale
                   </h3>
                   <p className="text-gray-600 mb-3 text-sm">
-                    Select how the AI should score {includeZappiQuestions ? 'each Zappi dimension' : 'each idea'} against each segment.
+                    Select how the AI should score {(includeZappiQuestions || includeZappiSet2) && effectiveSelectedIdeas.length === 0 ? 'each Zappi dimension' : 'each idea'} against each segment.
                   </p>
 
                   <div className="space-y-1 mb-4">
