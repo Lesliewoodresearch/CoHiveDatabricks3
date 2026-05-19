@@ -149,6 +149,51 @@ CRITICAL: The competitor name is provided in the prompt as [WAR_GAMES_COMPETITOR
 - Cost-effectiveness and scalability`,
     isSystem: true,
   },
+  {
+    projectType: 'Manifesto',
+    prompt: `THE TASK: Generate and debate brand manifesto concepts for \${brand} — short, emotionally true pieces of writing that express what the brand believes and where it belongs in a consumer's life.
+
+WHAT A MANIFESTO CONCEPT IS:
+Each manifesto concept has two inseparable parts:
+
+1. THE STORY / SCRIPT
+A short written narrative (3–6 sentences or a punchy paragraph) that expresses:
+- The emotional insight — the real human truth this brand connects to
+- The moment or scenario — the specific situation where the brand lives
+- The tone and personality of \${brand} — how it speaks, what it sounds like
+- The role \${brand} plays in that moment — not as the hero, but as the thing that makes the moment work
+This is the core creative expression — the part consumers actually read or hear.
+
+2. THE PRODUCT OR BRAND CLAIM
+Even when subtle, every manifesto concept contains a product truth or brand promise grounded in what \${brand} actually is. The claim does not have to be explicit — it can live inside the story — but it must be present. It might be a sensory truth, an ingredient or process fact, an occasions truth, or a feeling the product reliably delivers.
+
+The claim is not a tagline bolted on at the end. It is the reason the story is true.
+
+WHAT A MANIFESTO IS NOT:
+- A mission statement or corporate values list
+- A product description or feature list
+- A campaign concept (executions, media formats, channels)
+- A tagline in search of a story
+- An emotional claim disconnected from a product truth
+
+HOW THIS SESSION WORKS:
+Round 1 — Generation: Each persona writes exactly 2 complete manifesto concepts for \${brand}. Each concept must include both the Story/Script AND the embedded Product or Brand Claim, clearly labelled. Concepts should be genuinely distinct in emotional territory, scenario, and tone — not variations on the same idea.
+Round 2+ — Debate and Sharpening: Personas challenge the emotional truth, the distinctiveness of the scenario, and whether the product claim is genuinely embedded or merely appended. The goal is to identify the 1–2 strongest concepts with the sharpest story and the most honest product truth. Score each concept 1–10 for: Emotional Truth, Brand Fit, Claim Integrity, and Distinctiveness.
+
+CRITERIA FOR A STRONG MANIFESTO CONCEPT:
+- Emotional Truth: Does the story describe a real human feeling or moment — not a marketing aspiration?
+- Brand Fit: Could only \${brand} tell this story, or could any brand in the category claim it?
+- Claim Integrity: Is the product or brand claim genuinely embedded in the story, or is it decoration?
+- Distinctiveness: Does it sound like \${brand} — in tone, in scenario, in what it notices?
+- Restraint: Does it say what it needs to say and stop? Manifestos earn their brevity.
+
+OUTPUT FORMAT for Round 1 — each concept must follow this structure:
+CONCEPT [N]: [Working title]
+Story/Script: [The narrative — 3–6 sentences or one punchy paragraph]
+Product/Brand Claim: [The embedded truth — one sentence identifying what product reality the story is built on]
+Scores (Round 2+): Emotional Truth [x/10] · Brand Fit [x/10] · Claim Integrity [x/10] · Distinctiveness [x/10]`,
+    isSystem: true,
+  },
 ];
 
 /**
