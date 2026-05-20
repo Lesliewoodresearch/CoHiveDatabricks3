@@ -5137,6 +5137,40 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // RUN FUNCTION TESTS (implementation-verification: UIFeatures + AIHelp claims)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const runFunctionTests = async () => {
+    setIsRunning(true);
+    setTestResults([]);
+    setExpandedTests(new Set());
+
+    addResult({
+      id: 'fn-start',
+      category: 'uiFeatures',
+      name: 'Function Tests Started',
+      status: 'pass',
+      message: 'Running implementation-verification tests — UI Features + AIHelp Widget claims...',
+      duration: 0,
+    });
+
+    await runUIFeaturesTests();
+    await new Promise(resolve => setTimeout(resolve, 300));
+    await runAIHelpWidgetTests();
+
+    addResult({
+      id: 'fn-complete',
+      category: 'uiFeatures',
+      name: 'Function Tests Complete',
+      status: 'pass',
+      message: 'All function tests finished.',
+      duration: 0,
+    });
+
+    setIsRunning(false);
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // RUN ALL TESTS
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -5364,13 +5398,23 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
               className="px-5 py-2.5 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
             >
               <Play className="w-4 h-4" />
-              {isRunning 
-                ? 'Running Tests...' 
-                : selectedCategory === 'all' 
-                  ? 'Run All Tests' 
+              {isRunning
+                ? 'Running Tests...'
+                : selectedCategory === 'all'
+                  ? 'Run All Tests'
                   : `Run ${TEST_CATEGORIES[selectedCategory as keyof typeof TEST_CATEGORIES]} Tests`}
             </button>
-            
+
+            <button
+              onClick={runFunctionTests}
+              disabled={isRunning}
+              className="px-5 py-2.5 bg-purple-600 text-white rounded-lg flex items-center gap-2 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
+              title="Run implementation-verification tests: UI Features + AIHelp Widget claims"
+            >
+              <Play className="w-4 h-4" />
+              {isRunning ? 'Running...' : 'Run Function Tests'}
+            </button>
+
             <button
               onClick={() => { setTestResults([]); setExpandedTests(new Set()); }}
               disabled={isRunning || testResults.length === 0}
