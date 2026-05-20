@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Filter, RefreshCw, Download, Trash2, Eye, X, ChevronDown, Pencil } from 'lucide-react';
-import { listKnowledgeBaseFiles, deleteKnowledgeBaseFile, downloadKnowledgeBaseFile, readKnowledgeBaseFile, downloadFile, KnowledgeBaseFile } from '../utils/databricksAPI';
+import { listKnowledgeBaseFiles, deleteKnowledgeBaseFile, downloadKnowledgeBaseFile, readKnowledgeBaseFile, downloadFile, updateKnowledgeBaseMetadata, KnowledgeBaseFile } from '../utils/databricksAPI';
 import { getValidSession, getCurrentUserEmail } from '../utils/databricksAuth';
 import { CircleAlert } from 'lucide-react';
+import { SpinHex } from './LoadingGem';
 
 interface ReviewViewProps {
   projectFiles: any[];
@@ -46,6 +47,8 @@ export function ReviewView({ projectFiles, onDeleteFiles }: ReviewViewProps) {
   const [renamingFile, setRenamingFile] = useState<KnowledgeBaseFile | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [renameSaving, setRenameSaving] = useState(false);
+
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Get current user email on mount and check authentication
   useEffect(() => {
@@ -225,43 +228,49 @@ export function ReviewView({ projectFiles, onDeleteFiles }: ReviewViewProps) {
   // Delete selected files
   const handleDelete = async () => {
     if (selectedFiles.size === 0) return;
-    
+
     if (!confirm(`Are you sure you want to delete ${selectedFiles.size} file(s)? This cannot be undone.`)) {
       return;
     }
-    
+
+    setIsDeleting(true);
     const filesToDelete = sortedFiles.filter(f => selectedFiles.has(f.fileId));
     let successCount = 0;
     let errorCount = 0;
-    
-    for (const file of filesToDelete) {
-      try {
-        const result = await deleteKnowledgeBaseFile(
-          file.fileId,
-          currentUserEmail,
-          'marketing-manager' // TODO: Get actual user role
-        );
-        
-        if (result.success) {
-          successCount++;
-        } else {
+
+    try {
+      for (const file of filesToDelete) {
+        try {
+          const result = await deleteKnowledgeBaseFile(
+            file.fileId,
+            currentUserEmail,
+            'marketing-manager'
+          );
+
+          if (result.success) {
+            successCount++;
+          } else {
+            errorCount++;
+            console.error('Failed to delete:', file.fileName, result.error);
+          }
+        } catch (error) {
           errorCount++;
-          console.error('Failed to delete:', file.fileName, result.error);
+          console.error('Error deleting file:', error);
         }
-      } catch (error) {
-        errorCount++;
-        console.error('Error deleting file:', error);
       }
+    } finally {
+      setIsDeleting(false);
     }
-    
+
     if (successCount > 0) {
-      alert(`Successfully deleted ${successCount} file(s)`);
       setSelectedFiles(new Set());
-      fetchFiles(); // Refresh the list
+      fetchFiles();
     }
-    
+
     if (errorCount > 0) {
       alert(`Failed to delete ${errorCount} file(s). Check console for details.`);
+    } else if (successCount > 0) {
+      alert(`✅ Successfully deleted ${successCount} file(s)`);
     }
   };
 
@@ -518,11 +527,12 @@ export function ReviewView({ projectFiles, onDeleteFiles }: ReviewViewProps) {
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-2 text-sm"
+                    disabled={isDeleting}
+                    className="px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-red-400 flex items-center gap-2 text-sm"
                     title="Delete selected files"
                   >
-                    <Trash2 className="w-4 h-4" />
-                    Delete ({selectedFiles.size})
+                    {isDeleting ? <SpinHex className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
+                    {isDeleting ? `Deleting...` : `Delete (${selectedFiles.size})`}
                   </button>
                 </>
               )}

@@ -44,9 +44,11 @@ interface StoryModalProps {
   iterationChecks?: Array<{ text: string; hexId: string; hexLabel: string }>;
   iterationCoal?: Array<{ text: string; hexId: string; hexLabel: string }>;
   iterationDirections?: string[];
+  selectedValues?: string[];
+  selectedEmotions?: string[];
   onGemSaved?: (gem: IterationGem) => void;
   onReviewConfirmed?: (items: ReviewItem[]) => void;
-  onAcceptResults?: (results: { rounds: StoryRound[]; hexId: string; hexLabel: string }) => void;
+  onAcceptResults?: (results: { rounds: StoryRound[]; hexId: string; hexLabel: string; synopsis?: string }) => void;
 }
 
 // ─── KB / Scope config (mirrors AssessmentModal) ──────────────────────────────
@@ -91,8 +93,10 @@ function buildStoryPrompt(params: {
   kbContent: string;
   roundIndex: number;
   iterationDirections?: string[];
+  selectedValues?: string[];
+  selectedEmotions?: string[];
 }): { systemPrompt: string; prompt: string } {
-  const { brand, projectType, projectTypePrompt, category, subtype, kbMode, scope, kbContent, roundIndex, iterationDirections } = params;
+  const { brand, projectType, projectTypePrompt, category, subtype, kbMode, scope, kbContent, roundIndex, iterationDirections, selectedValues, selectedEmotions } = params;
 
   const hasKbContent = kbContent.trim().length > 0;
 
@@ -154,6 +158,14 @@ Writing style:
     ? `\n\n## Additional Focus & Direction\n${iterationDirections.map(d => `- ${d}`).join('\n')}`
     : '';
 
+  const valuesSection = selectedValues && selectedValues.length > 0
+    ? `\n\n## Values to Embody\nThe story must embody these human values: ${selectedValues.join(', ')}. Weave them authentically into the consumer's journey — do not name them explicitly, but make them felt through the narrative.`
+    : '';
+
+  const emotionsSection = selectedEmotions && selectedEmotions.length > 0
+    ? `\n\n## Emotions to Evoke\nThe story should leave the reader feeling: ${selectedEmotions.join(', ')}. Build toward these emotional states through specific story moments — do not announce them, let the reader arrive there.`
+    : '';
+
   const prompt = `Generate a ${subtype.label} story (${category.label} category) for ${brand}.
 
 ${isDualPOV ? `**Perspective:** ${povLabel}\n\n` : ''}Project type: ${projectType || 'Brand strategy'}
@@ -161,7 +173,7 @@ ${isDualPOV ? `**Perspective:** ${povLabel}\n\n` : ''}Project type: ${projectTyp
 Follow these story steps exactly:
 
 ${stepsBlock}
-${kbSection}${directionsSection}
+${kbSection}${directionsSection}${valuesSection}${emotionsSection}
 
 Write the complete story now, with each step as a clearly labeled section. Make it vivid, brand-specific, and strategically useful.`;
 
@@ -184,6 +196,8 @@ export function StoryModal({
   userRole = 'user',
   modelEndpoint = 'databricks-claude-sonnet-4-6',
   iterationDirections = [],
+  selectedValues = [],
+  selectedEmotions = [],
   onGemSaved,
   onReviewConfirmed,
   onAcceptResults,
@@ -266,7 +280,7 @@ export function StoryModal({
           : i === 0 ? `${subtype.label} — Protagonist` : `${subtype.label} — Challenger`;
 
         const { systemPrompt, prompt } = buildStoryPrompt({
-          brand, projectType, projectTypePrompt, category, subtype, kbMode, scope, kbContent, roundIndex: i, iterationDirections,
+          brand, projectType, projectTypePrompt, category, subtype, kbMode, scope, kbContent, roundIndex: i, iterationDirections, selectedValues, selectedEmotions,
         });
 
         const result = await executeAIPrompt({
@@ -304,7 +318,7 @@ export function StoryModal({
     } finally {
       setIsRunning(false);
     }
-  }, [brand, projectType, category, subtype, kbMode, scope, researchFiles, kbFileNames, userEmail, userRole, modelEndpoint, iterationDirections]);
+  }, [brand, projectType, category, subtype, kbMode, scope, researchFiles, kbFileNames, userEmail, userRole, modelEndpoint, iterationDirections, selectedValues, selectedEmotions]);
 
   // Reset on close
   useEffect(() => {
@@ -428,14 +442,14 @@ export function StoryModal({
     if (items.length > 0) {
       setShowReviewPanel(true);
     } else {
-      onAcceptResults?.({ rounds, hexId, hexLabel });
+      onAcceptResults?.({ rounds, hexId, hexLabel, synopsis: synopsis ?? undefined });
       onClose();
     }
   };
 
   const handleReviewConfirmed = (items: ReviewItem[]) => {
     onReviewConfirmed?.(items);
-    onAcceptResults?.({ rounds, hexId, hexLabel });
+    onAcceptResults?.({ rounds, hexId, hexLabel, synopsis: synopsis ?? undefined });
     setShowReviewPanel(false);
     onClose();
   };

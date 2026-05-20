@@ -117,6 +117,59 @@ interface AssessmentModalPropsState {
 
 // iterationGems lives at ProcessWireframe level — see useState below
 
+// ─── Word doc utilities ───────────────────────────────────────────────────────
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function textToWordHtml(title: string, text: string): string {
+  const lines = text.split('\n');
+  let body = `<h1>${escapeHtml(title)}</h1>\n`;
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (/^={40,}$/.test(line)) {
+      // Divider line — next line is a section heading
+      i++;
+      const heading = (lines[i] || '').trim();
+      if (heading) body += `<h2>${escapeHtml(heading)}</h2>\n`;
+    } else if (/^-{3,}\s*Run \d+/.test(line)) {
+      body += `<h3>${escapeHtml(line.replace(/^-+\s*/, '').replace(/\s*-+$/, ''))}</h3>\n`;
+    } else if (line.trim() === '') {
+      body += '<p>&nbsp;</p>\n';
+    } else {
+      let fmt = escapeHtml(line);
+      if (fmt.startsWith('### ')) { body += `<h4>${fmt.slice(4)}</h4>\n`; }
+      else if (fmt.startsWith('## ')) { body += `<h3>${fmt.slice(3)}</h3>\n`; }
+      else if (fmt.startsWith('# ')) { body += `<h2>${fmt.slice(2)}</h2>\n`; }
+      else {
+        fmt = fmt.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        body += `<p>${fmt}</p>\n`;
+      }
+    }
+    i++;
+  }
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;line-height:1.6;margin:2cm}h1{font-size:18pt;border-bottom:2px solid #333;padding-bottom:6px}h2{font-size:13pt;color:#222;border-bottom:1px solid #ccc;padding-bottom:3px;margin-top:18pt}h3{font-size:11pt;color:#444;margin-top:12pt}h4{font-size:10pt;color:#555}p{margin:3pt 0}strong{font-weight:bold}em{font-style:italic}</style></head><body>${body}</body></html>`;
+}
+
+function downloadWordDoc(fileName: string, textContent: string): void {
+  const baseName = fileName.replace(/\.(txt|json|doc|docx)$/i, '');
+  const html = textToWordHtml(baseName, textContent);
+  const blob = new Blob([html], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${baseName}.doc`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
+
+function createWordDocFile(fileName: string, textContent: string): File {
+  const baseName = fileName.replace(/\.(txt|json|doc|docx)$/i, '');
+  const html = textToWordHtml(baseName, textContent);
+  return new File([html], `${baseName}.doc`, { type: 'application/msword' });
+}
+
 export default function ProcessWireframe() {
   const [activeStepId, setActiveStepId] = useState<string>('Enter');
   const [responses, setResponses] = useState<StepResponses>({});
@@ -164,6 +217,8 @@ export default function ProcessWireframe() {
   const [storyModalParams, setStoryModalParams] = useState<{
     category: StoryCategory;
     subtype: StorySubtype;
+    selectedValues: string[];
+    selectedEmotions: string[];
   } | null>(null);
 
   const [showTemplateManager, setShowTemplateManager] = useState(false);
@@ -190,6 +245,7 @@ export default function ProcessWireframe() {
   const [markdownContent, setMarkdownContent] = useState<string>('');
   const [markdownTitle, setMarkdownTitle] = useState<string>('');
   const [isGeneratingSummary, setIsGeneratingSummary] = useState<boolean>(false);
+  const [isSavingIteration, setIsSavingIteration] = useState<boolean>(false);
   
   const [sessionVersions, setSessionVersions] = useState<{ [key: string]: SessionVersion }>(loadSessionVersions());
 
@@ -1170,18 +1226,24 @@ export default function ProcessWireframe() {
   const centralHexIds = ['Luminaries', 'Consumers', 'competitors', 'Colleagues', 'cultural', 'test', 'Grade'];
   const isCentralHex = centralHexIds.includes(activeStepId);
 
-  const handleStoriesGenerate = (params: { category: StoryCategory; subtype: StorySubtype }) => {
+  const handleStoriesGenerate = (params: { category: StoryCategory; subtype: StorySubtype; selectedValues: string[]; selectedEmotions: string[] }) => {
     setStoryModalParams(params);
     setStoryModalOpen(true);
   };
 
-  const handleStoryAcceptResults = (results: { rounds: Array<{ roundNumber: number; label: string; content: string }>; hexId: string; hexLabel: string }) => {
+  const handleStoryAcceptResults = (results: { rounds: Array<{ roundNumber: number; label: string; content: string }>; hexId: string; hexLabel: string; synopsis?: string }) => {
+    const storyTypeLabel = [storyModalParams?.category?.label, storyModalParams?.subtype?.label].filter(Boolean).join(' · ');
     const execData = {
       id: `story-${Date.now()}`,
       selectedFiles: selectedResearchFiles,
-      assessmentType: [results.rounds[0]?.label ?? 'Story'],
+      assessmentType: ['Story', storyTypeLabel].filter(Boolean),
       assessment: results.rounds.map(r => `## ${r.label}\n\n${r.content}`).join('\n\n---\n\n'),
       timestamp: Date.now(),
+      synopsis: results.synopsis || '',
+      storyValues: storyModalParams?.selectedValues || [],
+      storyEmotions: storyModalParams?.selectedEmotions || [],
+      storyCategory: storyModalParams?.category?.label || '',
+      storySubtype: storyModalParams?.subtype?.label || '',
     };
     setHexExecutions(prev => ({
       ...prev,
@@ -1189,7 +1251,6 @@ export default function ProcessWireframe() {
     }));
 
     // Add each round as a story NoteEntry (brief descriptor only, not full content)
-    const storyTypeLabel = [storyModalParams?.category?.label, storyModalParams?.subtype?.label].filter(Boolean).join(' · ');
     results.rounds.forEach(round => {
       const storyEntry: NoteEntry = {
         id: `story-${Date.now()}-${round.roundNumber}`,
@@ -1379,6 +1440,7 @@ export default function ProcessWireframe() {
     setShowValidation(false);
     setIdeasFiles([]);
     setHexExecutions({});
+    setNoteEntries([{ id: `note-restart-${Date.now()}`, type: 'note', text: '' }]);
     localStorage.removeItem('cohive_responses');
     localStorage.removeItem('cohive_hex_executions');
     localStorage.removeItem('cohive_ideas_files');
@@ -1408,7 +1470,6 @@ export default function ProcessWireframe() {
                 setIterationChecks([]);
                 setIterationCoal([]);
                 setIterationDirections([]);
-                setNoteEntries([{ id: `note-enter-${Date.now()}`, type: 'note', text: '' }]);
                 setGradeScoreResults(null);
                 setGradeModalOpen(false);
                 setGradeExtractedIdeas([]);
@@ -1835,7 +1896,7 @@ export default function ProcessWireframe() {
                                   </label>
                                 ))}
                               </div>
-                              <p className="mt-3 text-xs text-gray-500 leading-relaxed">
+                              <p className="mt-3 text-sm text-gray-500 leading-relaxed">
                                 If you have a video of the brand in use or at an event, please send it to{' '}
                                 <a href="mailto:help@cohivesolutions.com" className="text-blue-600 hover:underline">help@cohivesolutions.com</a>
                                 , or load the file into a share drive and send a note with the filename and address/url.
@@ -2177,121 +2238,120 @@ export default function ProcessWireframe() {
                                 {hasHexExecutions && (
                                   <label className="flex items-center gap-2 cursor-pointer">
                                     <input type="radio" name="findingsChoice" value="Save Iteration" checked={responses[activeStepId]?.[idx] === 'Save Iteration'}
+                                      disabled={isSavingIteration}
                                       onChange={async (e) => {
                                         handleResponseChange(idx, e.target.value);
                                         if (e.target.value === 'Save Iteration' && brand && projectType) {
                                           if (!isDatabricksAuthenticated) { alert('⚠️ Please sign in to Databricks before saving.'); setShowLoginModal(true); handleResponseChange(idx, ''); return; }
                                           const userEnteredFileName = currentFileName || '';
                                           if (!userEnteredFileName) { alert('Please enter a filename in the Enter hex before saving.'); handleResponseChange(idx, ''); return; }
-                                          const { updatedSession } = generateIterationFileName(sessionVersions, brand, projectType);
-                                          setSessionVersions(prev => ({ ...prev, [updatedSession.sessionKey]: updatedSession }));
-                                          const txtFileName2 = userEnteredFileName.endsWith('.txt') ? userEnteredFileName : `${userEnteredFileName}.txt`;
-                                          const newFile: ProjectFile = { brand, projectType, fileName: txtFileName2, timestamp: Date.now() };
-                                          // Build human-readable text — readable in MyFiles and usable by summarize.js
-                                          const txtLines: string[] = [];
-                                          txtLines.push(`ITERATION: ${userEnteredFileName}`);
-                                          txtLines.push(`Brand: ${brand}`);
-                                          txtLines.push(`Project Type: ${projectType}`);
-                                          txtLines.push(`Saved: ${new Date().toLocaleDateString()}`);
-                                          txtLines.push('');
-                                          if (completedSteps.size > 0) {
-                                            txtLines.push(`Completed Hexes: ${Array.from(completedSteps).join(', ')}`);
+                                          setIsSavingIteration(true);
+                                          try {
+                                            const { updatedSession } = generateIterationFileName(sessionVersions, brand, projectType);
+                                            setSessionVersions(prev => ({ ...prev, [updatedSession.sessionKey]: updatedSession }));
+                                            const docFileName = userEnteredFileName.replace(/\.(txt|json|doc|docx)$/i, '') + '.doc';
+                                            const newFile: ProjectFile = { brand, projectType, fileName: docFileName, timestamp: Date.now() };
+                                            const txtLines: string[] = [];
+                                            txtLines.push(`ITERATION: ${userEnteredFileName}`);
+                                            txtLines.push(`Brand: ${brand}`);
+                                            txtLines.push(`Project Type: ${projectType}`);
+                                            txtLines.push(`Saved: ${new Date().toLocaleDateString()}`);
                                             txtLines.push('');
-                                          }
-                                          const hexOrder = ['research','Luminaries','stories','Consumers','competitors','Colleagues','cultural','social','Grade','Wisdom'];
-                                          const hexLabels: Record<string,string> = { research:'Research', Luminaries:'Luminaries', stories:'Stories', Consumers:'Consumers', competitors:'Competitors', Colleagues:'Colleagues', cultural:'Cultural', social:'Social', Grade:'Grade', Wisdom:'Wisdom' };
-                                          const orderedHexes = [...hexOrder.filter(h => hexExecutions[h]?.length > 0), ...Object.keys(hexExecutions).filter(h => !hexOrder.includes(h) && hexExecutions[h]?.length > 0)];
-                                          for (const hexId of orderedHexes) {
-                                            const execs = hexExecutions[hexId];
-                                            if (!execs?.length) continue;
-                                            const label = hexLabels[hexId] || hexId;
-                                            txtLines.push('='.repeat(60));
-                                            txtLines.push(`${label.toUpperCase()} HEX`);
-                                            txtLines.push('='.repeat(60));
-                                            execs.forEach((ex: any, i: number) => {
-                                              if (execs.length > 1) txtLines.push(`\n--- Run ${i + 1} ---`);
-                                              if (ex.selectedFiles?.length > 0) txtLines.push(`Files: ${ex.selectedFiles.join(', ')}`);
-                                              if (ex.assessment) txtLines.push('\n' + ex.assessment);
-                                            });
-                                            txtLines.push('');
-                                          }
-
-                                          if (iterationGems.length > 0) {
-                                            txtLines.push('='.repeat(60));
-                                            txtLines.push('GEMS (Highlighted Elements)');
-                                            txtLines.push('='.repeat(60));
-                                            iterationGems.forEach(g => txtLines.push(`[${g.hexLabel}] ${g.gemText}`));
-                                            txtLines.push('');
-                                          }
-                                          if (iterationChecks.length > 0) {
-                                            txtLines.push('='.repeat(60));
-                                            txtLines.push('CHECK (Elements of Interest)');
-                                            txtLines.push('='.repeat(60));
-                                            iterationChecks.forEach(c => txtLines.push(`[${c.hexLabel}] ${c.text}`));
-                                            txtLines.push('');
-                                          }
-                                          if (iterationCoal.length > 0) {
-                                            txtLines.push('='.repeat(60));
-                                            txtLines.push('COAL (Elements to Avoid)');
-                                            txtLines.push('='.repeat(60));
-                                            iterationCoal.forEach(c => txtLines.push(`[${c.hexLabel}] ${c.text}`));
-                                            txtLines.push('');
-                                          }
-                                          if (gradeScoreResults && (gradeScoreResults.scoreGrid || gradeScoreResults.assessments)) {
-                                            txtLines.push('='.repeat(60));
-                                            txtLines.push('GRADE: SEGMENT SCORING');
-                                            txtLines.push('='.repeat(60));
-                                            txtLines.push(formatGradeForIteration(gradeScoreResults));
-                                            txtLines.push('');
-                                          }
-                                          const noteText = noteEntries
-                                            .filter(e => e.text.trim() && e.type !== 'story')
-                                            .map(e => {
-                                              if (e.type === 'note') return e.text.trim();
-                                              const prefix = e.type === 'gem' ? 'GEM' : e.type === 'check' ? 'CHECK' : e.type === 'coal' ? 'COAL' : 'DIRECTION';
-                                              return `[${prefix}${e.hexLabel ? ' · ' + e.hexLabel : ''}] ${e.text.trim()}`;
-                                            })
-                                            .join('\n\n');
-                                          if (noteText) {
-                                            txtLines.push('='.repeat(60));
-                                            txtLines.push('USER NOTES');
-                                            txtLines.push('='.repeat(60));
-                                            txtLines.push(noteText);
-                                            txtLines.push('');
-                                          }
-
-                                          const txtContent = txtLines.join('\n');
-                                          const txtFileName = userEnteredFileName.endsWith('.txt') ? userEnteredFileName : `${userEnteredFileName}.txt`;
-                                          const blob = new Blob([txtContent], { type: 'text/plain' });
-                                          const file = createFileFromBlob(blob, txtFileName);
-                                          let scope: 'general' | 'category' | 'brand' = 'brand';
-                                          if (!brand) scope = projectType ? 'category' : 'general';
-                                          const result = await uploadToKnowledgeBase({ file, scope, category: projectType, brand: scope === 'brand' ? brand : undefined, projectType: projectType || undefined, fileType: 'Findings', tags: ['Iteration', brand, projectType].filter(Boolean) as string[], iterationType: 'iteration', includedHexes: Array.from(completedSteps), userEmail: userEmail, userRole });
-                                          if (result.success) {
-                                            alert(`✅ Upload successful! Iteration "${userEnteredFileName}" saved to your files.`);
-                                            const updatedFiles = [...projectFiles, newFile];
-                                            setProjectFiles(updatedFiles);
-                                            localStorage.setItem('cohive_projects', JSON.stringify(updatedFiles));
-                                            setIterationSaved(true);
-                                            localStorage.setItem('cohive_iteration_saved', 'true');
-                                            // Track the exact name the user saved so we can seed the next iteration's filename
-                                            const baseSaved = userEnteredFileName.replace(/\.txt$/i, '');
-                                            setLastSavedFileName(baseSaved);
-                                            localStorage.setItem('cohive_last_iteration_filename', baseSaved);
-                                            setLastAssessmentResults(null);
-                                            setIterationGems([]);
-                                            setIterationChecks([]);
-                                            setIterationCoal([]);
-                                            setIterationDirections([]);
-                                            setNoteEntries([{ id: `note-save-${Date.now()}`, type: 'note', text: '' }]);
-                                            setGradeScoreResults(null);
-                                            setGradeExtractedIdeas([]);
-                                          } else { alert(`Failed to save to Databricks: ${result.error || 'Unknown error'}`); }
+                                            if (completedSteps.size > 0) {
+                                              txtLines.push(`Completed Hexes: ${Array.from(completedSteps).join(', ')}`);
+                                              txtLines.push('');
+                                            }
+                                            const hexOrder = ['research','Luminaries','stories','Consumers','competitors','Colleagues','cultural','social','Grade','Wisdom'];
+                                            const hexLabels: Record<string,string> = { research:'Research', Luminaries:'Luminaries', stories:'Stories', Consumers:'Consumers', competitors:'Competitors', Colleagues:'Colleagues', cultural:'Cultural', social:'Social', Grade:'Grade', Wisdom:'Wisdom' };
+                                            const orderedHexes = [...hexOrder.filter(h => hexExecutions[h]?.length > 0), ...Object.keys(hexExecutions).filter(h => !hexOrder.includes(h) && hexExecutions[h]?.length > 0)];
+                                            for (const hexId of orderedHexes) {
+                                              const execs = hexExecutions[hexId];
+                                              if (!execs?.length) continue;
+                                              const label = hexLabels[hexId] || hexId;
+                                              txtLines.push('='.repeat(60));
+                                              txtLines.push(`${label.toUpperCase()} HEX`);
+                                              txtLines.push('='.repeat(60));
+                                              execs.forEach((ex: any, i: number) => {
+                                                if (execs.length > 1) txtLines.push(`\n--- Run ${i + 1} ---`);
+                                                if (ex.selectedFiles?.length > 0) txtLines.push(`Files: ${ex.selectedFiles.join(', ')}`);
+                                                if (ex.assessment) txtLines.push('\n' + ex.assessment);
+                                              });
+                                              txtLines.push('');
+                                            }
+                                            if (iterationGems.length > 0) {
+                                              txtLines.push('='.repeat(60));
+                                              txtLines.push('GEMS (Highlighted Elements)');
+                                              txtLines.push('='.repeat(60));
+                                              iterationGems.forEach(g => txtLines.push(`[${g.hexLabel}] ${g.gemText}`));
+                                              txtLines.push('');
+                                            }
+                                            if (iterationChecks.length > 0) {
+                                              txtLines.push('='.repeat(60));
+                                              txtLines.push('CHECK (Elements of Interest)');
+                                              txtLines.push('='.repeat(60));
+                                              iterationChecks.forEach(c => txtLines.push(`[${c.hexLabel}] ${c.text}`));
+                                              txtLines.push('');
+                                            }
+                                            if (iterationCoal.length > 0) {
+                                              txtLines.push('='.repeat(60));
+                                              txtLines.push('COAL (Elements to Avoid)');
+                                              txtLines.push('='.repeat(60));
+                                              iterationCoal.forEach(c => txtLines.push(`[${c.hexLabel}] ${c.text}`));
+                                              txtLines.push('');
+                                            }
+                                            if (gradeScoreResults && (gradeScoreResults.scoreGrid || gradeScoreResults.assessments)) {
+                                              txtLines.push('='.repeat(60));
+                                              txtLines.push('GRADE: SEGMENT SCORING');
+                                              txtLines.push('='.repeat(60));
+                                              txtLines.push(formatGradeForIteration(gradeScoreResults));
+                                              txtLines.push('');
+                                            }
+                                            const noteText = noteEntries
+                                              .filter(e => e.text.trim() && e.type !== 'story')
+                                              .map(e => {
+                                                if (e.type === 'note') return e.text.trim();
+                                                const prefix = e.type === 'gem' ? 'GEM' : e.type === 'check' ? 'CHECK' : e.type === 'coal' ? 'COAL' : 'DIRECTION';
+                                                return `[${prefix}${e.hexLabel ? ' · ' + e.hexLabel : ''}] ${e.text.trim()}`;
+                                              })
+                                              .join('\n\n');
+                                            if (noteText) {
+                                              txtLines.push('='.repeat(60));
+                                              txtLines.push('USER NOTES');
+                                              txtLines.push('='.repeat(60));
+                                              txtLines.push(noteText);
+                                              txtLines.push('');
+                                            }
+                                            const txtContent = txtLines.join('\n');
+                                            const file = createWordDocFile(userEnteredFileName, txtContent);
+                                            let scope: 'general' | 'category' | 'brand' = 'brand';
+                                            if (!brand) scope = projectType ? 'category' : 'general';
+                                            const result = await uploadToKnowledgeBase({ file, scope, category: projectType, brand: scope === 'brand' ? brand : undefined, projectType: projectType || undefined, fileType: 'Findings', tags: ['Iteration', brand, projectType].filter(Boolean) as string[], iterationType: 'iteration', includedHexes: Array.from(completedSteps), userEmail: userEmail, userRole });
+                                            if (result.success) {
+                                              alert(`✅ Upload successful! Iteration "${userEnteredFileName}" saved to your files.`);
+                                              handleResponseChange(idx, '');
+                                              const updatedFiles = [...projectFiles, newFile];
+                                              setProjectFiles(updatedFiles);
+                                              localStorage.setItem('cohive_projects', JSON.stringify(updatedFiles));
+                                              setIterationSaved(true);
+                                              localStorage.setItem('cohive_iteration_saved', 'true');
+                                              const baseSaved = userEnteredFileName.replace(/\.txt$/i, '');
+                                              setLastSavedFileName(baseSaved);
+                                              localStorage.setItem('cohive_last_iteration_filename', baseSaved);
+                                              setLastAssessmentResults(null);
+                                              setIterationGems([]);
+                                              setIterationChecks([]);
+                                              setIterationCoal([]);
+                                              setIterationDirections([]);
+                                              setNoteEntries([{ id: `note-save-${Date.now()}`, type: 'note', text: '' }]);
+                                              setGradeScoreResults(null);
+                                              setGradeExtractedIdeas([]);
+                                            } else { alert(`Failed to save to Databricks: ${result.error || 'Unknown error'}`); handleResponseChange(idx, ''); }
+                                          } finally { setIsSavingIteration(false); }
                                         }
                                       }}
                                       className="w-4 h-4"
                                     />
-                                    <span className="text-gray-700">Save Iteration</span>
+                                    {isSavingIteration ? <><SpinHex className="w-4 h-4" /><span className="text-gray-700">Saving...</span></> : <span className="text-gray-700">Save Iteration</span>}
                                   </label>
                                 )}
                                 <label className="flex items-center gap-2 cursor-pointer">
@@ -2369,7 +2429,7 @@ export default function ProcessWireframe() {
                                     }}
                                     className="w-4 h-4" disabled={isGeneratingSummary}
                                   />
-                                  <span className="text-gray-700">{isGeneratingSummary ? 'Generating Summary...' : 'Read'}</span>
+                                  {isGeneratingSummary ? <><SpinHex className="w-4 h-4" /><span className="text-gray-700">Generating Summary...</span></> : <span className="text-gray-700">Read</span>}
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer">
                                   <input type="radio" name="saveOrDownload" value="SaveWorkspace" checked={responses[activeStepId]?.[idx] === 'SaveWorkspace'}
@@ -2377,7 +2437,23 @@ export default function ProcessWireframe() {
                                       handleResponseChange(idx, e.target.value);
                                       if (e.target.value === 'SaveWorkspace' && brand && projectType) {
                                         const summaryFileName = responses[activeStepId]?.['summaryFileName'] || getSummaryFileName(currentFileName || '');
-                                        if (summaryFileName) { const summaryData = { brand, projectType, fileName: summaryFileName, timestamp: Date.now(), responses, selectedFiles: responses[activeStepId]?.[1]?.split(',').filter(Boolean) || [], outputOptions: responses[activeStepId]?.[2]?.split(',').filter(Boolean) || [], hexExecutions, completedSteps: Array.from(completedSteps) }; const fileName = summaryFileName.endsWith('.json') ? summaryFileName : `${summaryFileName}.json`; setFileSaverData({ fileName, content: JSON.stringify(summaryData, null, 2) }); setShowFileSaver(true); handleResponseChange(idx, ''); }
+                                        if (summaryFileName) {
+                                          const hexOrder2 = ['research','Luminaries','stories','Consumers','competitors','Colleagues','cultural','social','Grade','Wisdom'];
+                                          const hexLabels2: Record<string,string> = { research:'Research',Luminaries:'Luminaries',stories:'Stories',Consumers:'Consumers',competitors:'Competitors',Colleagues:'Colleagues',cultural:'Cultural',social:'Social',Grade:'Grade',Wisdom:'Wisdom' };
+                                          const sumLines: string[] = [`SUMMARY: ${summaryFileName}`,`Brand: ${brand}`,`Project Type: ${projectType}`,`Saved: ${new Date().toLocaleDateString()}`,``];
+                                          const orderedH = [...hexOrder2.filter(h => hexExecutions[h]?.length > 0), ...Object.keys(hexExecutions).filter(h => !hexOrder2.includes(h) && hexExecutions[h]?.length > 0)];
+                                          for (const hid of orderedH) {
+                                            const execs = hexExecutions[hid];
+                                            if (!execs?.length) continue;
+                                            sumLines.push('='.repeat(60)); sumLines.push(`${(hexLabels2[hid] || hid).toUpperCase()} HEX`); sumLines.push('='.repeat(60));
+                                            execs.forEach((ex: any, i: number) => { if (execs.length > 1) sumLines.push(`\n--- Run ${i + 1} ---`); if (ex.selectedFiles?.length > 0) sumLines.push(`Files: ${ex.selectedFiles.join(', ')}`); if (ex.assessment) sumLines.push('\n' + ex.assessment); });
+                                            sumLines.push('');
+                                          }
+                                          const sumContent = sumLines.join('\n');
+                                          const docName = summaryFileName.replace(/\.(txt|json|doc|docx)$/i, '') + '.doc';
+                                          setFileSaverData({ fileName: docName, content: textToWordHtml(summaryFileName, sumContent) });
+                                          setShowFileSaver(true); handleResponseChange(idx, '');
+                                        }
                                       }
                                     }}
                                     className="w-4 h-4"
@@ -2390,7 +2466,20 @@ export default function ProcessWireframe() {
                                       handleResponseChange(idx, e.target.value);
                                       if (e.target.value === 'Download' && brand && projectType) {
                                         const summaryFileName = responses[activeStepId]?.['summaryFileName'] || getSummaryFileName(currentFileName || '');
-                                        if (summaryFileName) { const summaryData = { brand, projectType, fileName: summaryFileName, timestamp: Date.now(), responses, selectedFiles: responses[activeStepId]?.[1]?.split(',').filter(Boolean) || [], outputOptions: responses[activeStepId]?.[2]?.split(',').filter(Boolean) || [], hexExecutions, completedSteps: Array.from(completedSteps) }; downloadFile(summaryFileName.endsWith('.json') ? summaryFileName : `${summaryFileName}.json`, JSON.stringify(summaryData, null, 2), 'application/json'); alert('✅ Summary downloaded to your computer!'); handleResponseChange(idx, ''); }
+                                        if (summaryFileName) {
+                                          const hexOrder3 = ['research','Luminaries','stories','Consumers','competitors','Colleagues','cultural','social','Grade','Wisdom'];
+                                          const hexLabels3: Record<string,string> = { research:'Research',Luminaries:'Luminaries',stories:'Stories',Consumers:'Consumers',competitors:'Competitors',Colleagues:'Colleagues',cultural:'Cultural',social:'Social',Grade:'Grade',Wisdom:'Wisdom' };
+                                          const dlLines: string[] = [`SUMMARY: ${summaryFileName}`,`Brand: ${brand}`,`Project Type: ${projectType}`,`Saved: ${new Date().toLocaleDateString()}`,``];
+                                          const orderedH2 = [...hexOrder3.filter(h => hexExecutions[h]?.length > 0), ...Object.keys(hexExecutions).filter(h => !hexOrder3.includes(h) && hexExecutions[h]?.length > 0)];
+                                          for (const hid of orderedH2) {
+                                            const execs = hexExecutions[hid];
+                                            if (!execs?.length) continue;
+                                            dlLines.push('='.repeat(60)); dlLines.push(`${(hexLabels3[hid] || hid).toUpperCase()} HEX`); dlLines.push('='.repeat(60));
+                                            execs.forEach((ex: any, i: number) => { if (execs.length > 1) dlLines.push(`\n--- Run ${i + 1} ---`); if (ex.selectedFiles?.length > 0) dlLines.push(`Files: ${ex.selectedFiles.join(', ')}`); if (ex.assessment) dlLines.push('\n' + ex.assessment); });
+                                            dlLines.push('');
+                                          }
+                                          downloadWordDoc(summaryFileName, dlLines.join('\n')); alert('✅ Summary downloaded to your computer!'); handleResponseChange(idx, '');
+                                        }
                                       }
                                     }}
                                     className="w-4 h-4"
@@ -2614,6 +2703,8 @@ export default function ProcessWireframe() {
           projectTypePrompt={projectTypeConfigs.find(pt => pt.projectType === (responses['Enter']?.[1]?.trim() || ''))?.prompt || ''}
           category={storyModalParams.category}
           subtype={storyModalParams.subtype}
+          selectedValues={storyModalParams.selectedValues}
+          selectedEmotions={storyModalParams.selectedEmotions}
           researchFiles={researchFiles}
           kbFileNames={selectedResearchFiles}
           userEmail={userEmail}

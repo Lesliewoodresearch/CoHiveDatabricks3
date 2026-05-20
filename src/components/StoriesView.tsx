@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Sparkles } from 'lucide-react';
-import { STORY_CATEGORIES, type StoryCategory, type StorySubtype } from '@/data/storyTypes';
+import { STORY_CATEGORIES, STORY_VALUES, STORY_EMOTIONS, type StoryCategory, type StorySubtype } from '@/data/storyTypes';
 import gemIcon from 'figma:asset/53dc6cf554f69e479cfbd60a46741f158d11dd21.png';
 import { CoalIcon } from './GemCheckCoalReviewPanel';
+
+const MAX_SELECTIONS = 3;
 
 interface StoriesViewProps {
   brand: string;
   iterationDirections: string[];
-  onGenerate: (params: { category: StoryCategory; subtype: StorySubtype }) => void;
+  onGenerate: (params: { category: StoryCategory; subtype: StorySubtype; selectedValues: string[]; selectedEmotions: string[] }) => void;
   onAddIterationDirection?: (direction: string) => void;
   onSaveRecommendation?: (recommendation: string, hexId: string) => void;
   userEmail?: string;
@@ -36,6 +38,8 @@ export function StoriesView({
 }: StoriesViewProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedSubtypeId, setSelectedSubtypeId] = useState<string | null>(null);
+  const [selectedValues, setSelectedValues] = useState<string[]>([]);
+  const [selectedEmotions, setSelectedEmotions] = useState<string[]>([]);
   const [showDirectionModal, setShowDirectionModal] = useState(false);
   const [directionText, setDirectionText] = useState('');
   const [sendToKnowledgeBase, setSendToKnowledgeBase] = useState(false);
@@ -54,9 +58,21 @@ export function StoriesView({
     setSelectedSubtypeId(cat?.subtypes.length === 1 ? cat.subtypes[0].id : null);
   };
 
+  const toggleValue = (v: string) => {
+    setSelectedValues(prev =>
+      prev.includes(v) ? prev.filter(x => x !== v) : prev.length < MAX_SELECTIONS ? [...prev, v] : prev
+    );
+  };
+
+  const toggleEmotion = (e: string) => {
+    setSelectedEmotions(prev =>
+      prev.includes(e) ? prev.filter(x => x !== e) : prev.length < MAX_SELECTIONS ? [...prev, e] : prev
+    );
+  };
+
   const handleGenerate = () => {
     if (!selectedCategory || !selectedSubtype) return;
-    onGenerate({ category: selectedCategory, subtype: selectedSubtype });
+    onGenerate({ category: selectedCategory, subtype: selectedSubtype, selectedValues, selectedEmotions });
   };
 
   return (
@@ -109,6 +125,74 @@ export function StoriesView({
           </div>
         ))}
       </div>
+
+      {/* Values selector */}
+      {selectedSubtype && (
+        <div className="border-2 border-gray-200 rounded-lg p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-900 font-semibold text-sm">Values <span className="text-gray-400 font-normal">(optional, max 3)</span></span>
+            {selectedValues.length > 0 && (
+              <button onClick={() => setSelectedValues([])} className="text-xs text-gray-400 hover:text-gray-600">Clear</button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {STORY_VALUES.map(v => {
+              const checked = selectedValues.includes(v);
+              const disabled = !checked && selectedValues.length >= MAX_SELECTIONS;
+              return (
+                <button
+                  key={v}
+                  onClick={() => toggleValue(v)}
+                  disabled={disabled}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                    checked
+                      ? 'bg-purple-700 border-purple-700 text-white'
+                      : disabled
+                      ? 'bg-gray-50 border-gray-200 text-gray-300 cursor-not-allowed'
+                      : 'bg-white border-gray-300 text-gray-700 hover:border-purple-400 hover:text-purple-700'
+                  }`}
+                >
+                  {v}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Emotions selector */}
+      {selectedSubtype && (
+        <div className="border-2 border-gray-200 rounded-lg p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-900 font-semibold text-sm">Emotions to evoke <span className="text-gray-400 font-normal">(optional, max 3)</span></span>
+            {selectedEmotions.length > 0 && (
+              <button onClick={() => setSelectedEmotions([])} className="text-xs text-gray-400 hover:text-gray-600">Clear</button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {STORY_EMOTIONS.map(e => {
+              const checked = selectedEmotions.includes(e);
+              const disabled = !checked && selectedEmotions.length >= MAX_SELECTIONS;
+              return (
+                <button
+                  key={e}
+                  onClick={() => toggleEmotion(e)}
+                  disabled={disabled}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                    checked
+                      ? 'bg-indigo-600 border-indigo-600 text-white'
+                      : disabled
+                      ? 'bg-gray-50 border-gray-200 text-gray-300 cursor-not-allowed'
+                      : 'bg-white border-gray-300 text-gray-700 hover:border-indigo-400 hover:text-indigo-700'
+                  }`}
+                >
+                  {e}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Generate button */}
       <button

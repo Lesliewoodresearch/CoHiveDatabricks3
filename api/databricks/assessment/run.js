@@ -315,6 +315,32 @@ function buildPersonaIdentityBlock(persona) {
   return lines.join('\n');
 }
 
+// ─── Story context block ───────────────────────────────────────────────────────
+
+function buildStoryContextBlock(storyExecution) {
+  if (!storyExecution) return '';
+  const synopsis = storyExecution.synopsis || '';
+  const fullText = (storyExecution.assessment || '').trim();
+  const truncated = fullText.length > 2000 ? fullText.slice(0, 2000) + '\n\n[... story continues ...]' : fullText;
+  const values = storyExecution.storyValues || [];
+  const emotions = storyExecution.storyEmotions || [];
+  const category = storyExecution.storyCategory || '';
+  const subtype = storyExecution.storySubtype || '';
+  const storyType = [category, subtype].filter(Boolean).join(' · ') || 'Brand Story';
+  const metaParts = [
+    `Type: ${storyType}`,
+    values.length > 0 ? `Values: ${values.join(', ')}` : '',
+    emotions.length > 0 ? `Emotions to evoke: ${emotions.join(', ')}` : '',
+  ].filter(Boolean);
+
+  return `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BRAND STORY WRITTEN THIS ITERATION:
+${metaParts.join(' | ')}
+${synopsis ? `\nStrategic Synopsis: ${synopsis}\n` : ''}
+${truncated}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+}
+
 // ─── Task description builder ──────────────────────────────────────────────────
 
 function buildTaskDescription({
@@ -460,7 +486,7 @@ ${projectTypePrompt}`;
 function buildModeratorOpeningPrompt({
   brand, projectType, hexLabel, hexId, assessmentTypeLabel,
   taskDescription, personaList, kbFileNames, kbMode, requestMode, scope,
-  gemsBlock = '', iterationContextBlock = '',
+  gemsBlock = '', iterationContextBlock = '', storyBlock = '',
 }) {
   const kbModeLabel = kbMode === 'hard-forbidden'
     ? 'Knowledge Base ONLY — General Knowledge FORBIDDEN'
@@ -485,6 +511,7 @@ KB Files: ${kbFileNames.join(', ')}
 
 TASK:
 ${taskDescription}
+${storyBlock ? `\n${storyBlock}` : ''}
 ${gemsBlock ? `\n${gemsBlock}\n\nUse the gems above to tell personas what "going in the right direction" looks like for this brand. They are directional calibration — not constraints.` : ''}
 ${iterationContextBlock ? `\n${iterationContextBlock}` : ''}
 
@@ -634,13 +661,16 @@ function buildRound1PersonaPrompt({
   persona, kbContext, kbModeInstructions, brand, projectType,
   hexLabel, hexId, taskDescription, assessmentTypeLabel, projectTypePrompt,
   requestMode, ideaElements, gemsBlock = '', iterationContextBlock = '',
-  zappiQuestionsBlock = '',
+  zappiQuestionsBlock = '', storyBlock = '',
 }) {
   const name = persona.name || persona.identity?.name || 'Expert';
   const personaBlock = buildPersonaIdentityBlock(persona);
 
   // Big Idea has its own structured Round 1 format
   const isBigIdea = projectType === 'Big Idea';
+
+  const hasStory = !!storyBlock;
+  const hasIdeas = (ideaElements?.length > 0);
 
   const modeBlock = isBigIdea
     ? `ROUND 1 MODE: BIG IDEA GENERATION
@@ -655,6 +685,21 @@ For each of your 3 ideas:
 4. STATE what makes it distinctive — why could ONLY ${brand} own this?
 
 Your 3 ideas must be genuinely different — not variations on a single theme. Surprise the room.`
+    : hasStory && requestMode === 'get-inspired'
+    ? `ROUND 1 MODE: ADVERTISING DEVELOPMENT
+A brand story has been written for ${brand} (see above). Your task is to develop it into advertising.
+Generate 3+ specific, executable advertising ideas that bring this story to life — different formats, channels, or angles.
+${hasIdeas ? 'Also consider the loaded ideas alongside the story — build on whichever is strongest.' : ''}
+Each idea must be concrete enough to brief a creative team: medium, format, the core execution, and why it fits the story.`
+    : hasStory && !hasIdeas
+    ? `ROUND 1 MODE: ADVERTISING ASSESSMENT
+A brand story has been written for ${brand} (see above). Your task is to assess it as advertising creative.
+Evaluate it rigorously: what works emotionally and strategically, what's weak, where it would succeed or fail in market.
+Score it 1–10 as advertising. Recommend specific, concrete improvements.`
+    : hasStory && hasIdeas
+    ? `ROUND 1 MODE: COMBINED ASSESSMENT — Story + Ideas
+A brand story AND additional ideas are both available for ${brand} (see above and task below).
+Assess both together: how do they relate? Which is stronger? Score each 1–10. Recommend how to combine or strengthen them.`
     : requestMode === 'get-inspired'
     ? `ROUND 1 MODE: GENERATIVE
 Generate 3+ original, specific, actionable ideas. Do not assess or hedge. Be creative and bold.
@@ -698,6 +743,7 @@ ${kbContext}
 
 PROJECT TYPE CONTEXT:
 ${projectTypePrompt}
+${storyBlock ? `\n${storyBlock}` : ''}
 ${gemsBlock ? `\n${gemsBlock}` : ''}
 ${iterationContextBlock ? `\n${iterationContextBlock}` : ''}
 
@@ -738,7 +784,7 @@ function buildDebatePersonaPrompt({
   persona, kbContext, kbModeInstructions, brand, projectType = '',
   hexLabel, hexId, taskDescription, assessmentTypeLabel, projectTypePrompt,
   priorTranscript, roundNumber, allPersonaNames, requestMode, ideaElements,
-  gemsBlock = '', iterationContextBlock = '',
+  gemsBlock = '', iterationContextBlock = '', storyBlock = '',
 }) {
   const name = persona.name || persona.identity?.name || 'Expert';
   const personaBlock = buildPersonaIdentityBlock(persona);
@@ -781,6 +827,7 @@ ${kbContext}
 
 PROJECT TYPE CONTEXT:
 ${projectTypePrompt}
+${storyBlock ? `\n${storyBlock}` : ''}
 ${gemsBlock ? `\n${gemsBlock}` : ''}
 ${iterationContextBlock ? `\n${iterationContextBlock}` : ''}
 
@@ -909,18 +956,23 @@ function buildIterationContextBlock({ hexExecutions = {}, iterationGems = [], cu
     .filter(hid => hid !== currentHexId && hexExecutions[hid]?.length > 0)
     .map(hid => {
       const executions = hexExecutions[hid];
-      // Take the most recent execution for each hex
       const latest = executions[executions.length - 1];
       const assessment = (latest.assessment || '').trim();
       if (!assessment) return null;
-      const truncated = assessment.length > 500
-        ? assessment.substring(0, 500) + '… [truncated]'
-        : assessment;
       const typeLabel = Array.isArray(latest.assessmentType)
         ? latest.assessmentType.join(', ')
         : (latest.assessmentType || 'assessment');
-      return `### ${hid} (${typeLabel})
-${truncated}`;
+      // Stories get a larger window and synopsis as lead
+      if (hid === 'stories') {
+        const synopsis = latest.synopsis ? `Synopsis: ${latest.synopsis}\n\n` : '';
+        const limit = 2000;
+        const body = assessment.length > limit ? assessment.substring(0, limit) + '… [truncated]' : assessment;
+        return `### Brand Story (${typeLabel})\n${synopsis}${body}`;
+      }
+      const truncated = assessment.length > 500
+        ? assessment.substring(0, 500) + '… [truncated]'
+        : assessment;
+      return `### ${hid} (${typeLabel})\n${truncated}`;
     })
     .filter(Boolean);
 
@@ -1159,13 +1211,18 @@ async function callModel({
 
   const result = await resp.json();
   const content = result.choices?.[0]?.message?.content || '';
+  const finishReason = result.choices?.[0]?.finish_reason || 'unknown';
+
+  if (finishReason === 'length') {
+    console.warn(`[Assessment] ⚠️ TRUNCATED [${label}] — hit maxTokens (${maxTokens}). Response: ${content.length} chars.`);
+  }
 
   logEvent({
     eventType: 'prompt_response',
-    severity: 'info',
+    severity: finishReason === 'length' ? 'warn' : 'info',
     userEmail, brand, projectType, hexId,
-    message: `Response [${label}]: ${content.length} chars`,
-    details: { label, modelEndpoint, responseLength: content.length },
+    message: `Response [${label}]: ${content.length} chars | finish_reason: ${finishReason}`,
+    details: { label, modelEndpoint, responseLength: content.length, finishReason, maxTokens },
   });
 
   return content;
@@ -1665,7 +1722,18 @@ ${iterationDirections.map((d, i) => `${i + 1}. ${d}`).join('\n')}
       userSolution: cleanedUserSolution,   // cleaned — prior markers stripped
       projectType, projectTypePrompt, scope,
     });
-    const taskDescription = warGamesCompetitorBlock + rawTaskDescription;
+
+    // Extract the most recent story from this iteration (if any)
+    const storyExecution = hexExecutions['stories']?.slice(-1)[0] || null;
+    const storyBlock = buildStoryContextBlock(storyExecution);
+
+    // When a story exists, prepend a clear task framing so personas know what they're working on
+    const storyTaskPrefix = storyBlock
+      ? (requestMode === 'get-inspired'
+          ? `A brand story has been written for ${brand} (see BRAND STORY section below). Your primary task is to develop it into advertising — generate specific, executable ideas for formats, channels, and executions that bring it to life.${(ideaElements?.length > 0) ? ' Also consider the loaded ideas alongside the story.' : ''}\n\n`
+          : `A brand story has been written for ${brand} (see BRAND STORY section below). Treat it as advertising creative — assess what works emotionally and strategically, what's weak, and recommend specific improvements.${(ideaElements?.length > 0) ? ' Assess any loaded ideas together with the story.' : ''}\n\n`)
+      : '';
+    const taskDescription = storyTaskPrefix + warGamesCompetitorBlock + rawTaskDescription;
 
     // Shuffle personas, load full persona data
     const basePersonas = selectedPersonas?.length > 0 ? [...selectedPersonas] : ['General Expert'];
@@ -1695,6 +1763,7 @@ ${iterationDirections.map((d, i) => `${i + 1}. ${d}`).join('\n')}
       projectTypePrompt, requestMode, ideaElements, scope,
       gemsBlock: combinedSignals,  // KB gems + iteration signals + prior persona context
       iterationContextBlock,       // prior hex results + iteration gems
+      storyBlock,                  // full story written this iteration (if any)
       hasExampleFiles,             // true if any selected KB files are Example type
       exampleFileNames: exampleFiles.map(f => f.fileName),
       zappiQuestionsBlock: (includeZappiQuestions && hexId === 'Grade')

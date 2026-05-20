@@ -4,7 +4,8 @@
   ],
   "functions": {
     "api/**/*.js": {
-      "includeFiles": "src/**"
+      "includeFiles": "src/**",
+      "maxDuration": 300
     }
   },
   "buildCommand": "vite build",

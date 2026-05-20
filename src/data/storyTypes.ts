@@ -265,42 +265,6 @@ export const STORY_CATEGORIES: StoryCategory[] = [
     ],
   },
   {
-    id: 'values-based',
-    label: 'Values Based',
-    description: "Wirthin Perception Bridge — from product attributes to human terminal values",
-    subtypes: [
-      {
-        id: 'perception-bridge',
-        label: 'Perception Bridge',
-        arc: 'rise',
-        arcDescription: 'Attributes → functional benefits → emotional benefits → terminal values',
-        dualPOV: false,
-        steps: [
-          {
-            label: 'The Attribute',
-            instruction: 'Start with a concrete, observable product or brand attribute — a feature, a material, a process, a specification. Keep it tangible and specific. This is where the brand lives; the CONSUMER is the one who encounters it.',
-          },
-          {
-            label: 'Functional Benefit',
-            instruction: 'Translate the attribute into what it does FOR THE CONSUMER: the practical outcome in their life, the problem solved, the performance delivered. The consumer asks "so what does that mean for me?" — answer it from their perspective.',
-          },
-          {
-            label: 'Emotional Benefit',
-            instruction: 'Go deeper into the CONSUMER\'s experience: what does the functional benefit make them feel? Show the emotional payoff — confidence, relief, pride, connection, freedom. The consumer is the one feeling this; the brand is what made it possible.',
-          },
-          {
-            label: 'Terminal Value',
-            instruction: 'Reach the CONSUMER\'s deepest human motivation: the fundamental value this connects to — security, belonging, achievement, self-expression, legacy, peace of mind. Show why this brand ultimately matters to who the consumer wants to be, not what the brand wants to be.',
-          },
-          {
-            label: 'The Narrative Bridge',
-            instruction: 'Weave the four levels into a single, cohesive story told from the CONSUMER\'S perspective — their encounter with the attribute, the practical change it makes in their life, the feeling it unlocks, and the deeper human truth it serves. The brand is the constant enabler; the consumer is the one whose life is being described. The bridge should feel inevitable, not constructed.',
-          },
-        ],
-      },
-    ],
-  },
-  {
     id: 'dystopian',
     label: 'Dystopian',
     description: 'Worlds of control, collapse, and the cost of authentic choice',
@@ -478,6 +442,32 @@ export const STORY_CATEGORIES: StoryCategory[] = [
     ],
   },
 ];
+
+export const STORY_VALUES = [
+  'Freedom',
+  'Belonging',
+  'Achievement',
+  'Security',
+  'Self-expression',
+  'Adventure',
+  'Authenticity',
+  'Legacy',
+  'Joy',
+  'Wisdom',
+] as const;
+
+export const STORY_EMOTIONS = [
+  'Inspired',
+  'Nostalgic',
+  'Proud',
+  'Curious',
+  'Reassured',
+  'Excited',
+  'Moved',
+  'Hopeful',
+  'Empowered',
+  'Amused',
+] as const;
 
 export function getStoryCategory(id: string): StoryCategory | undefined {
   return STORY_CATEGORIES.find(c => c.id === id);

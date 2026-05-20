@@ -936,7 +936,7 @@ export function ResearcherModes({
           {(userRole === 'administrator' || userRole === 'data-scientist') && <button onClick={() => handleModeChange('workspace')} className={`px-4 py-2 rounded-lg transition-colors ${current === 'workspace' ? 'bg-orange-600 text-white' : 'bg-white border-2 border-gray-300 text-gray-700 hover:border-orange-500 hover:bg-orange-50'}`}>Workspace</button>}
           {(userRole === 'administrator' || userRole === 'data-scientist') && <button onClick={() => { handleModeChange('custom-prompt'); setCpView('list'); setCpResult(null); setCpError(null); }} className={`px-4 py-2 rounded-lg transition-colors ${current === 'custom-prompt' ? 'bg-teal-600 text-white' : 'bg-white border-2 border-gray-300 text-gray-700 hover:border-teal-500 hover:bg-teal-50'}`}>Custom Prompt</button>}
         </div>
-        <button onClick={async () => { onRefreshFiles?.(); await refreshPendingQueues(); alert('✓ Refreshed!'); }} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"><RefreshCw className="w-4 h-4" />Refresh</button>
+        <button onClick={async () => { setIsLoadingQueues(true); try { await Promise.all([onRefreshFiles?.(), refreshPendingQueues()]); } finally { setIsLoadingQueues(false); } }} disabled={isLoadingQueues} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 flex items-center gap-2">{isLoadingQueues ? <SpinHex className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />}{isLoadingQueues ? 'Refreshing...' : 'Refresh'}</button>
       </div>
     </div>
   );
