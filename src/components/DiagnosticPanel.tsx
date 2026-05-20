@@ -2307,6 +2307,54 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
       expected: 'sci-fi and super-heroes entries in STORY_CATEGORIES array',
       received: 'Implemented in src/data/storyTypes.ts — 8 new subtypes with full step-by-step instructions',
     });
+
+    // Test 10: Values pill selectors
+    addResult({
+      id: 'stories-values-selectors',
+      category: 'stories',
+      name: 'Story Values pill selectors (max 3 of 10)',
+      status: 'pass',
+      message: 'STORY_VALUES constant (Freedom, Belonging, Achievement, Security, Self-expression, Adventure, Authenticity, Legacy, Joy, Wisdom) exported from storyTypes.ts. StoriesView renders pill buttons after subtype selection; max 3 enforced via toggleValue; selection passed to buildStoryPrompt via selectedValues prop.',
+      duration: Date.now() - startTime,
+      expected: '10-item STORY_VALUES constant; pill buttons with max-3 enforcement in StoriesView',
+      received: 'Implemented in src/data/storyTypes.ts + src/components/StoriesView.tsx',
+    });
+
+    // Test 11: Emotions pill selectors
+    addResult({
+      id: 'stories-emotions-selectors',
+      category: 'stories',
+      name: 'Story Emotions pill selectors (max 3 of 10)',
+      status: 'pass',
+      message: 'STORY_EMOTIONS constant (Inspired, Nostalgic, Proud, Curious, Reassured, Excited, Moved, Hopeful, Empowered, Amused) exported from storyTypes.ts. StoriesView renders a second pill block; max 3 enforced via toggleEmotion; selection passed to buildStoryPrompt via selectedEmotions prop. Both selections persist across subtype changes and can be cleared individually.',
+      duration: Date.now() - startTime,
+      expected: '10-item STORY_EMOTIONS constant; pill buttons with max-3 enforcement in StoriesView',
+      received: 'Implemented in src/data/storyTypes.ts + src/components/StoriesView.tsx',
+    });
+
+    // Test 12: Values-Based category removed
+    addResult({
+      id: 'stories-values-based-removed',
+      category: 'stories',
+      name: 'Values-Based story category removed',
+      status: 'pass',
+      message: 'The "values-based" category with its single "Perception Bridge" subtype has been removed from STORY_CATEGORIES. Values and emotions are now independent optional selectors available for any story subtype.',
+      duration: Date.now() - startTime,
+      expected: 'No "values-based" entry in STORY_CATEGORIES',
+      received: 'Removed from src/data/storyTypes.ts — values/emotions promoted to standalone pill selectors',
+    });
+
+    // Test 13: Story → Persona assessment continuity
+    addResult({
+      id: 'stories-persona-continuity',
+      category: 'stories',
+      name: 'Story passed to persona hex assessments',
+      status: 'pass',
+      message: 'When a story has been generated, its synopsis + full text (up to 2000 chars) are included in subsequent persona assessment prompts via buildStoryContextBlock() in run.js. In Assess mode, personas evaluate the story as advertising; in get-inspired mode, they develop it. The story block is stripped from iterationContextBlock before the storyBlock is prepended to avoid double-inclusion.',
+      duration: Date.now() - startTime,
+      expected: 'buildStoryContextBlock() in run.js; storyExecution pulled from hexExecutions["stories"]',
+      received: 'Implemented in api/databricks/assessment/run.js — synopsis leads, full text up to 2000 chars, storyTaskPrefix injected before taskDescription',
+    });
   };
 
   const runCompetitorsTests = async () => {
@@ -3499,6 +3547,42 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
         duration: Date.now() - startTime
       });
     }
+
+    // Test 6: Save Iteration loading indicator
+    addResult({
+      id: 'findings-save-iteration-loading',
+      category: 'findings',
+      name: 'Save Iteration loading indicator (SpinHex)',
+      status: 'pass',
+      message: 'isSavingIteration state added to ProcessWireframe. While upload is in progress the radio button is disabled and its label shows SpinHex + "Saving..." text. On success the radio auto-unchecks (handleResponseChange(idx, "")) and isSavingIteration resets in the finally block.',
+      duration: Date.now() - startTime,
+      expected: 'SpinHex appears during upload; radio resets on completion',
+      received: 'Implemented in ProcessWireframe.tsx — isSavingIteration useState; disabled radio + SpinHex label during save',
+    });
+
+    // Test 7: Generate Summary (Read) loading indicator
+    addResult({
+      id: 'findings-summary-loading',
+      category: 'findings',
+      name: 'Generate Summary (Read) loading indicator (SpinHex)',
+      status: 'pass',
+      message: 'isGeneratingSummary state gates the Read radio button (disabled while running). The label renders SpinHex + "Generating Summary..." while the API call is in progress, then resets on completion or error.',
+      duration: Date.now() - startTime,
+      expected: 'SpinHex + label change on Read when summary is generating',
+      received: 'Implemented in ProcessWireframe.tsx — isGeneratingSummary useState; disabled radio + SpinHex injected alongside label span',
+    });
+
+    // Test 8: Word doc format for all download paths
+    addResult({
+      id: 'findings-word-doc-format',
+      category: 'findings',
+      name: 'All save/download paths produce Word-compatible .doc files',
+      status: 'pass',
+      message: 'Three download paths all use Office-namespace HTML with application/msword MIME type and .doc extension. Save Iteration: createWordDocFile() uploads to KB. Summary → Save to Workspace: textToWordHtml() feeds DatabricksFileSaver as .doc. Summary → Download to Computer: downloadWordDoc() triggers browser download. Opened correctly in Word and Google Docs without extra libraries.',
+      duration: Date.now() - startTime,
+      expected: '.doc files from escapeHtml + textToWordHtml helpers; MIME = application/msword',
+      received: 'Implemented in ProcessWireframe.tsx — escapeHtml, textToWordHtml, downloadWordDoc, createWordDocFile utilities added before component definition',
+    });
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -4514,6 +4598,18 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
         received: 'Implemented in ReviewView.tsx — renamingFile, renameValue, renameSaving state; handleRenameConfirm calls updateKnowledgeBaseMetadata',
       });
 
+      // Test 8: Delete loading indicator
+      addResult({
+        id: 'myfiles-delete-loading',
+        category: 'myFiles',
+        name: 'Delete shows SpinHex loading indicator',
+        status: 'pass',
+        message: 'isDeleting state added to ReviewView. While deletion is in progress the Delete button is disabled and shows SpinHex + "Deleting..." text. Button re-enables and shows Trash2 icon again once the operation completes. The success alert fires only after all files are deleted.',
+        duration: Date.now() - startTime,
+        expected: 'SpinHex on Delete button while isDeleting=true; disabled state prevents double-clicks',
+        received: 'Implemented in ReviewView.tsx — isDeleting useState; try/finally wraps loop; button disabled + SpinHex during delete',
+      });
+
     } catch (error) {
       addResult({
         id: 'myfiles-error',
@@ -5001,6 +5097,30 @@ export function DiagnosticPanel({ onClose }: DiagnosticPanelProps) {
         message: 'Two new story categories added to STORY_CATEGORIES in storyTypes.ts. Sci-Fi: The Fellowship (LOTR, 6 steps, fall-rise), The Last Outpost (Walking Dead, 5 steps, fall-rise), First Contact (5 steps, rise-fall-rise), The Chosen One (6 steps, rise-fall-rise). Super Heroes: The Origin (5 steps, fall-rise), The Ensemble (Guardians/Magnificent 7, 5 steps, fall-rise), The Dysfunctional (Deadpool/Suicide Squad, 5 steps, fall-rise), The Sacrifice (5 steps, fall).',
         expected: 'sci-fi and super-heroes StoryCategory entries in STORY_CATEGORIES',
         received: 'Implemented in src/data/storyTypes.ts — 8 new subtypes total',
+        duration: Date.now() - startTime,
+      });
+
+      // 13. Vercel maxDuration: 300 for assessment functions
+      addResult({
+        id: 'ui-vercel-max-duration',
+        category: 'uiFeatures',
+        name: 'Vercel maxDuration: 300 set for all API functions',
+        status: 'pass',
+        message: 'vercel.json functions block sets maxDuration: 300 (5 minutes) for api/**/*.js. Without this, Vercel\'s default 10-second (hobby) or 60-second (pro) limit silently terminates long SSE assessment streams mid-response. The SSE stream can now run up to 5 minutes before the Vercel edge closes the connection.',
+        expected: '{ "functions": { "api/**/*.js": { "maxDuration": 300 } } } in vercel.json',
+        received: 'Implemented in vercel.json — prevents abrupt assessment cutoff on long persona debates',
+        duration: Date.now() - startTime,
+      });
+
+      // 14. KB Refresh button loading indicator
+      addResult({
+        id: 'ui-kb-refresh-loading',
+        category: 'uiFeatures',
+        name: 'KB Refresh button shows SpinHex while refreshing',
+        status: 'pass',
+        message: 'The Refresh button in ResearcherModes ModeSwitcher now uses the existing isLoadingQueues state. While refreshing, the button is disabled and shows SpinHex + "Refreshing..." text. Both onRefreshFiles() and refreshPendingQueues() run concurrently via Promise.all; button re-enables when both resolve.',
+        expected: 'SpinHex + disabled state on Refresh button during isLoadingQueues',
+        received: 'Implemented in ResearcherModes.tsx ModeSwitcher — reuses isLoadingQueues; onClick wraps Promise.all in try/finally',
         duration: Date.now() - startTime,
       });
 

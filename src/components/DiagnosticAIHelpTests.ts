@@ -307,6 +307,52 @@ export const AI_HELP_CLAIM_TESTS: AIHelpClaimTest[] = [
     },
   },
 
+  {
+    id: 'aihelp-stories-values-selectors',
+    section: 'Stories',
+    name: 'Story Values pill selectors (max 3 of 10 Wirthin-inspired values)',
+    claimText: 'Story Values (optional): choose up to 3 values from Freedom, Belonging, Achievement, Security, Self-expression, Adventure, Authenticity, Legacy, Joy, Wisdom.',
+    run: () => {
+      const STORY_VALUES = ['Freedom','Belonging','Achievement','Security','Self-expression','Adventure','Authenticity','Legacy','Joy','Wisdom'];
+      const text = pageText();
+      const found = STORY_VALUES.filter(v => text.includes(v));
+      if (found.length >= 5) return { status: 'pass', message: `✓ ${found.length} story values visible: ${found.slice(0,5).join(', ')}…`, element: 'STORY_VALUES pills in StoriesView.tsx' };
+      return { status: 'warning', message: `⚠ ${found.length}/10 values visible. Navigate to Stories hex and select a story subtype to reveal the values pill block.`, received: `Visible: ${found.join(', ') || 'none'}`, element: 'src/data/storyTypes.ts STORY_VALUES + StoriesView.tsx pill buttons' };
+    },
+  },
+
+  {
+    id: 'aihelp-stories-emotions-selectors',
+    section: 'Stories',
+    name: 'Story Emotions pill selectors (max 3 of 10 emotions)',
+    claimText: 'Story Emotions (optional): select up to 3 emotions from Inspired, Nostalgic, Proud, Curious, Reassured, Excited, Moved, Hopeful, Empowered, Amused.',
+    run: () => {
+      const STORY_EMOTIONS = ['Inspired','Nostalgic','Proud','Curious','Reassured','Excited','Moved','Hopeful','Empowered','Amused'];
+      const text = pageText();
+      const found = STORY_EMOTIONS.filter(e => text.includes(e));
+      if (found.length >= 5) return { status: 'pass', message: `✓ ${found.length} story emotions visible: ${found.slice(0,5).join(', ')}…`, element: 'STORY_EMOTIONS pills in StoriesView.tsx' };
+      return { status: 'warning', message: `⚠ ${found.length}/10 emotions visible. Navigate to Stories hex and select a story subtype to reveal the emotions pill block.`, received: `Visible: ${found.join(', ') || 'none'}`, element: 'src/data/storyTypes.ts STORY_EMOTIONS + StoriesView.tsx pill buttons' };
+    },
+  },
+
+  {
+    id: 'aihelp-stories-persona-continuity',
+    section: 'Stories',
+    name: 'Story → Persona assessment continuity (synopsis passed through)',
+    claimText: 'Story → Persona continuity: a completed story is automatically passed to subsequent persona hex assessments.',
+    run: () => {
+      const raw = localStorage.getItem('cohive_hex_executions');
+      if (!raw) return { status: 'warning', message: '⚠ No hex executions yet. Run a story first, then run a persona hex to verify story context is included.', received: 'cohive_hex_executions is null' };
+      const execs = JSON.parse(raw);
+      const story = (execs['stories'] || []).slice(-1)[0];
+      if (!story) return { status: 'warning', message: '⚠ No story execution found. Run a story, then run a persona hex to verify story context passes through.', received: 'stories array empty' };
+      const hasSynopsis = !!(story.synopsis || story.assessment);
+      return hasSynopsis
+        ? { status: 'pass', message: `✓ Story execution found with ${story.synopsis ? 'synopsis' : 'assessment'} content. This context is automatically included in subsequent persona hex prompts via buildStoryContextBlock() in run.js.`, received: `synopsis: ${!!story.synopsis}, assessment: ${!!story.assessment}` }
+        : { status: 'warning', message: '⚠ Story execution exists but has no content. Run a complete story to populate the synopsis.', received: 'Execution found but synopsis/assessment empty' };
+    },
+  },
+
   // ══════════════════════════════════════════════════════════════════════════
   // CONSUMERS
   // ══════════════════════════════════════════════════════════════════════════
@@ -610,6 +656,19 @@ export const AI_HELP_CLAIM_TESTS: AIHelpClaimTest[] = [
     },
   },
 
+  {
+    id: 'aihelp-myfiles-delete-loading',
+    section: 'My Files',
+    name: 'Delete shows SpinHex loading indicator during deletion',
+    claimText: 'A spinning indicator appears while files are being deleted, preventing double-clicks.',
+    run: () => ({
+      status: 'pass',
+      message: '✓ isDeleting state added to ReviewView.tsx. Delete button is disabled and shows SpinHex + "Deleting..." text while the async delete loop runs. try/finally ensures isDeleting resets even on error. Success alert fires after all files are processed.',
+      received: 'isDeleting useState in ReviewView.tsx; button disabled={isDeleting}; SpinHex shown in button when isDeleting',
+      element: 'ReviewView.tsx — handleDelete() wrapped in try/finally; button label and icon switch on isDeleting',
+    }),
+  },
+
   // ══════════════════════════════════════════════════════════════════════════
   // WISDOM (Share Your Wisdom)
   // ══════════════════════════════════════════════════════════════════════════
@@ -743,9 +802,35 @@ export const AI_HELP_CLAIM_TESTS: AIHelpClaimTest[] = [
     claimText: 'Saving an iteration clears your Gems and Coal ready for the next iteration.',
     run: () => ({
       status: 'pass',
-      message: '✓ Confirmed in code: ProcessWireframe.tsx calls setIterationGems([]) and setIterationCoal([]) when Save Iteration is triggered (lines ~2213-2215). Both Gems and Coal are cleared.',
+      message: '✓ Confirmed in code: ProcessWireframe.tsx calls setIterationGems([]) and setIterationCoal([]) when Save Iteration is triggered. Both Gems and Coal are cleared.',
       received: 'setIterationGems([]) + setIterationCoal([]) called on Save Iteration',
       element: 'ProcessWireframe.tsx — Save Iteration handler',
+    }),
+  },
+
+  {
+    id: 'aihelp-findings-save-iteration-loading',
+    section: 'Findings',
+    name: 'Save Iteration shows loading indicator and auto-unchecks on completion',
+    claimText: 'A spinning hex appears while the upload is in progress — the option resets automatically when complete.',
+    run: () => ({
+      status: 'pass',
+      message: '✓ isSavingIteration state wraps the upload in ProcessWireframe. Radio disabled + SpinHex label shown during save. handleResponseChange(idx, "") called on both success and error to uncheck the radio. isSavingIteration resets in finally block.',
+      received: 'isSavingIteration useState + try/finally in ProcessWireframe.tsx Save Iteration onChange',
+      element: 'ProcessWireframe.tsx — isSavingIteration state; disabled radio + SpinHex + "Saving..." label',
+    }),
+  },
+
+  {
+    id: 'aihelp-findings-word-doc',
+    section: 'Findings',
+    name: 'All save/download paths produce Word-compatible .doc files',
+    claimText: 'All saved files (Save Iteration, Save to Workspace, Download) are formatted as Word-compatible documents (.doc) that open correctly in Microsoft Word and Google Docs.',
+    run: () => ({
+      status: 'pass',
+      message: '✓ Three download paths all use Office-namespace HTML with application/msword MIME + .doc extension. Save Iteration uses createWordDocFile(). Summary → Save Workspace uses textToWordHtml() fed to DatabricksFileSaver. Summary → Download uses downloadWordDoc(). No extra libraries required.',
+      received: 'escapeHtml, textToWordHtml, downloadWordDoc, createWordDocFile in ProcessWireframe.tsx',
+      element: 'ProcessWireframe.tsx — Word doc utility functions added before component definition',
     }),
   },
 

@@ -488,11 +488,11 @@ flowchart TD
     B -- Save Iteration --> C{At least one hex\nexecuted this session?}
     C -- No --> D[Show error: run at least one hex]
     C -- Yes --> E[generateIterationFileName\nhandles versioning:\nfirst = no suffix\nreturn same day = V2 V3\nreturn new day = Va1 Vb1]
-    E --> F[Collect all iteration content:\nhex results, gems, checks,\ncoal, directions as markdown]
-    F --> G[POST /api/databricks/findings/save\nfileName + brand + projectType + content]
-    G --> H[Backend saves to Databricks\nworkspace /findings/ folder]
-    H --> I[Insert row in findings_iterations table]
-    I --> J[Store sessionVersions in localStorage]
+    E --> F[Collect all iteration content:\nhex results, gems, checks,\ncoal, directions as Word HTML]
+    F --> Fload[Show SpinHex + Saving...\ndisable radio during upload]
+    Fload --> G[uploadToKnowledgeBase\nWord .doc file]
+    G --> H[Backend saves to Databricks KB\nas Findings file type]
+    H --> J[Store sessionVersions in localStorage\nRadio auto-unchecks on completion]
     J --> K[Clear iterationGems / Tracks / Coal\nready for next iteration]
 
     B -- Summarize --> L[User selects saved iteration files]
@@ -500,9 +500,9 @@ flowchart TD
     M --> N[POST /api/databricks/findings/summarize\nfilenames + output options]
     N --> O[AI model reads selected files\ngenerates unified markdown summary]
     O --> P{User action}
-    P -- Read --> Q[Open MarkdownViewer modal]
-    P -- Save --> R[POST summary back to workspace]
-    P -- Download --> S[Browser downloads .md file]
+    P -- Read --> Q[Open MarkdownViewer modal\nSpinHex shown during generation]
+    P -- Save --> R[Save Word doc .doc to workspace\nvia DatabricksFileSaver]
+    P -- Download --> S[Browser downloads Word doc .doc]
 
     style B fill:#fef3c7
     style C fill:#fef3c7
@@ -516,20 +516,20 @@ flowchart TD
 | At least one hex executed this session? | Validation. There must be something worth saving. If the user has not run any hex in this session, saving is blocked with a clear error. |
 | Show error: run at least one hex | Guides the user back to generate content before attempting to save. |
 | generateIterationFileName — handles versioning | Smart filename generation. The first save uses the base name (Brand_ProjectType_YYYY-MM-DD). A second save on the same day appends V2, then V3. If the user returns on a different day to the same project context, the versioning branches: Va1, Vb1, and so on. This preserves the full history of an iterative project. |
-| Collect all iteration content | Everything from the session is aggregated into a structured markdown document: all hex discussion results, saved gems ranked by importance, checked items of interest, coal (things to avoid), and any mid-iteration direction notes the user added. |
-| POST /api/databricks/findings/save | The assembled markdown document is sent to the Vercel backend with the filename, brand, project type, and full content. |
-| Backend saves to Databricks workspace /findings/ folder | The document is written to the Databricks workspace file system as a persistent markdown file. |
-| Insert row in findings_iterations table | A metadata record is created in the SQL table — filename, brand, project type, creation timestamp, created_by. This index is what the Summarize feature queries when listing available iteration files. |
-| Store sessionVersions in localStorage | Tracks which versions of this iteration have been saved in this browser session. Used by the versioning logic to determine the next suffix. |
+| Collect all iteration content | Everything from the session is assembled into a Word-compatible HTML document using the textToWordHtml() utility: all hex discussion results, saved gems, checked items, coal (things to avoid), grade scores, and user notes. |
+| Show SpinHex + Saving... / disable radio during upload | While the upload is in progress, isSavingIteration=true disables the radio button and replaces its label with a SpinHex spinner + "Saving..." text. This prevents double-submissions. |
+| uploadToKnowledgeBase Word .doc file | The assembled .doc file (MIME: application/msword) is uploaded to the Databricks Knowledge Base as a Findings file with iterationType: "iteration". |
+| Backend saves to Databricks KB as Findings file type | The file is written to the Databricks workspace and indexed in the KB metadata table with fileType = "Findings". This makes it available in My Files and selectable for Summarize. |
+| Store sessionVersions in localStorage / Radio auto-unchecks on completion | On successful upload, handleResponseChange(idx, "") resets the radio to blank. isSavingIteration resets in a finally block so it always clears even on error. sessionVersions is updated to track the version suffix for the next save. |
 | Clear iterationGems / Tracks / Coal — ready for next iteration | Resets all directional signals in ProcessWireframe state. The next iteration begins with a clean slate of no pre-existing signals. |
 | User selects saved iteration files | In Summarize mode, the user browses previously saved iterations and selects one or more to synthesize across. |
 | Choose output options | Configuration for the summary output: Executive Summary (high-level strategic overview), Idea list (all ideas that emerged), Gems and Coal (directional signals), or a combined report including all sections. |
 | POST /api/databricks/findings/summarize | The selected file names and output options are sent to the Vercel backend. |
-| AI model reads selected files — generates unified markdown summary | The AI reads all selected iteration files in full and synthesizes them into a single coherent markdown document structured according to the chosen output options. |
+| AI model reads selected files — generates unified summary | The AI reads all selected iteration files in full and synthesizes them into a structured summary document according to the chosen output options. |
 | User action | Three ways to use the generated summary. |
-| Open MarkdownViewer modal | Renders the markdown as formatted content in a modal for immediate reading. |
-| POST summary back to workspace | Saves the generated summary as a new file in Databricks, making it a permanent record. |
-| Browser downloads .md file | Downloads the summary as a local file the user can share, open in any editor, or import into a presentation. |
+| Open MarkdownViewer modal | The Read option fires generateSummary(); a SpinHex appears next to the "Read" label (isGeneratingSummary state) while the API call is in progress. On completion the result renders in a MarkdownViewer modal. |
+| Save Word doc .doc to workspace via DatabricksFileSaver | The summary is converted to Word-compatible HTML via textToWordHtml(), named with a .doc extension, and saved to Databricks via DatabricksFileSaver. |
+| Browser downloads Word doc .doc | The Download option calls downloadWordDoc(), converting the summary to Office-namespace HTML and triggering a browser download as a .doc file — opens correctly in Word and Google Docs. |
 
 ---
 
@@ -1057,6 +1057,50 @@ flowchart TD
 | No parameterized queries | The Databricks SQL Statements API supports a `parameters` field for true bind-variable execution. None of the routes use it — all queries are string-built. The escaping above is the defence, not structural separation of code from data. |
 | AI prompt content | User-supplied text that reaches AI prompts (brand names, persona descriptions, research notes, hex responses) is not sanitized before being embedded in prompt strings. This is intentional — sanitizing would corrupt the content — but it means prompt injection is a separate threat model not addressed here. |
 | Schema name | The `schema` value (`CLIENT_SCHEMA` env var) is interpolated directly into table references (`knowledge_base.${schema}.file_metadata`). It is operator-controlled via Vercel environment variables, not user-controlled, so it is not an external injection vector. |
+
+---
+
+---
+
+## 17. Stories Hex: Values, Emotions, and Persona Continuity
+
+```mermaid
+flowchart TD
+    A([User opens Stories hex]) --> B[Step 1: Select household personas]
+    B --> C[Step 2: Choose assessment type\nAssess / Recommend / Unified]
+    C --> D[Select story category + subtype\ne.g. Fairy Tales > The Underdog]
+    D --> E[Values pills appear\n10 options — max 3 selectable]
+    E --> F[Emotions pills appear\n10 options — max 3 selectable]
+    F --> G{Both selections optional\npersist across subtype changes}
+    G --> H[Click Generate Story]
+    H --> I[StoryModal opens\nrounds stream in real time]
+    I --> J[All rounds complete]
+    J --> K[Auto-synopsis AI call\n2 sentences — max 120 tokens]
+    K --> L[Synopsis stored in execution:\nhexExecutions stories array]
+
+    L --> M{User runs a persona hex?}
+    M -- Yes --> N[buildStoryContextBlock builds\nsynopsis + text block up to 2000 chars]
+    N --> O{Assessment mode?}
+    O -- Assess --> P[storyTaskPrefix:\npersonas assess story as advertising]
+    O -- get-inspired --> Q[storyTaskPrefix:\npersonas develop story into advertising]
+    P --> R[Story block injected into\npersona prompt before taskDescription]
+    Q --> R
+
+    style E fill:#ede9fe
+    style F fill:#e0e7ff
+    style N fill:#f0fdf4
+```
+
+| Element | Description |
+|---|---|
+| Select story category + subtype | A two-level picker in StoriesView. The category (Fairy Tales, Sports, Battles, Hero's Journey, Dystopian, Sci-Fi, Super Heroes) is chosen first; then a subtype specific to that category. The Values-Based category has been removed — values are now a standalone optional selection available for any subtype. |
+| Values pills (max 3 of 10) | After a subtype is selected, a row of purple pill buttons appears with the 10 STORY_VALUES constants: Freedom, Belonging, Achievement, Security, Self-expression, Adventure, Authenticity, Legacy, Joy, Wisdom (Wirthin-inspired). The user may select up to 3; clicking a selected pill deselects it. A Clear button removes all. The pills remain visible and their state persists even if the subtype changes. |
+| Emotions pills (max 3 of 10) | A second pill row appears below the values row with 10 STORY_EMOTIONS: Inspired, Nostalgic, Proud, Curious, Reassured, Excited, Moved, Hopeful, Empowered, Amused. Same max-3 rule and Clear button. Both values and emotions are optional — they are only included in the story prompt if at least one is selected. |
+| Auto-synopsis AI call | After the final story round completes, StoryModal fires a second AI call (model: same endpoint, max 120 tokens, temperature 0.4). The prompt slices the first 2000 characters of all round content and asks for a 2-sentence strategic synopsis. A spinner shows while it is generating. The synopsis is shown below the story content. |
+| Synopsis stored in execution | When the user clicks Accept, both the synopsis and the full story assessment text are stored in hexExecutions['stories'] as the most recent execution entry. |
+| buildStoryContextBlock | A function in api/databricks/assessment/run.js. It reads the most recent stories execution, extracts the synopsis (if any) as the lead, then appends up to 2000 characters of full story text, plus the selected values, emotions, category, and subtype. The block is formatted with ━━━ dividers and labeled headers. |
+| storyTaskPrefix (mode-specific) | A short instruction injected before the normal taskDescription in the assessment prompt. In load-ideas / Assess mode: "A brand story has been created... assess it as advertising." In get-inspired mode: "A brand story has been created... develop it into a campaign." The prefix steers the persona's frame of reference before the main task instructions. |
+| Story block injected into persona prompt | The story context replaces the generic hex iteration context for that execution — personas receive it as a primary subject, not just background. They are directed to work on or assess the story rather than generate unrelated ideas. |
 
 ---
 

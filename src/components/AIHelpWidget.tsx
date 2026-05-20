@@ -94,9 +94,12 @@ const HELP_MANUAL: Record<string, { guess: string; steps: string[] }> = {
     steps: [
       "Step 1: Select one or more stories household personas.",
       "Step 2: Choose your assessment type — Assess, Recommend, or Unified.",
+      "Story Values (optional): After selecting a subtype, choose up to 3 values from a fixed list (Freedom, Belonging, Achievement, Security, Self-expression, Adventure, Authenticity, Legacy, Joy, Wisdom) to shape the story's emotional foundation.",
+      "Story Emotions (optional): Also select up to 3 emotions (Inspired, Nostalgic, Proud, Curious, Reassured, Excited, Moved, Hopeful, Empowered, Amused) to set the desired emotional tone. Both selections persist until changed.",
       "Click Execute. Each stories evaluates from their specific household context — routines, family dynamics, purchase patterns.",
       "Stories compare their household realities directly in debate rounds.",
-      "Story Categories: Choose from Fairy Tales, Sports, Battles, Hero's Journey, Values Based, Dystopian, Sci-Fi, and Super Heroes. Sci-Fi includes The Fellowship (Lord of the Rings-style), The Last Outpost (Walking Dead-style), First Contact, and The Chosen One. Super Heroes includes The Origin, The Ensemble (Guardians of the Galaxy / Magnificent 7 style), The Dysfunctional (Deadpool / Suicide Squad style), and The Sacrifice.",
+      "Story Categories: Choose from Fairy Tales, Sports, Battles, Hero's Journey, Dystopian, Sci-Fi, and Super Heroes. Sci-Fi includes The Fellowship (Lord of the Rings-style), The Last Outpost (Walking Dead-style), First Contact, and The Chosen One. Super Heroes includes The Origin, The Ensemble (Guardians of the Galaxy / Magnificent 7 style), The Dysfunctional (Deadpool / Suicide Squad style), and The Sacrifice.",
+      "Story → Persona continuity: A completed story is automatically passed to subsequent persona hex assessments. The AI synopsis and full story text are included as primary subject matter — personas will assess or develop it as advertising depending on the mode.",
       "Auto-Synopsis: After all story rounds complete, a 2-sentence strategic synopsis is automatically generated and shown below the story — summarising the key insight for strategy use.",
       "Fullscreen: Click the expand icon (⤢) in the top-right corner of the results window to make it cover the full screen. Click the compress icon to return to normal size.",
       "Report Suggestions or Bugs: Check the 'Report Suggestions or Bugs' checkbox in the stories panel. A text box will appear — type your message and click Send. Your feedback is sent privately to the CoHive team with your current context.",
@@ -219,9 +222,10 @@ const HELP_MANUAL: Record<string, { guess: string; steps: string[] }> = {
   Findings: {
     guess: "save your iteration or generate a summary",
     steps: [
-      "Choose 'Save Iteration' to save all current hex results to Databricks. At least one hex must have been executed.",
-      "Choose 'Summarise' to generate an AI-powered summary across selected iteration files.",
+      "Choose 'Save Iteration' to save all current hex results to Databricks. At least one hex must have been executed. A spinning hex appears while the upload is in progress — the option resets automatically when complete.",
+      "Choose 'Summarise' to generate an AI-powered summary across selected iteration files. A spinning hex appears next to 'Read' while the summary is being generated.",
       "For a summary: select files to include, choose output options (Executive Summary, ideas list, gems, etc.), then click Read, Save to Workspace, or Download.",
+      "All saved files (Save Iteration, Save to Workspace, Download) are formatted as Word-compatible documents (.doc) that open correctly in Microsoft Word and Google Docs.",
       "Make sure you are signed into Databricks before saving.",
       "Saving an iteration clears your Gems, Tracks, and Coal ready for the next iteration.",
     ],
