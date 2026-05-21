@@ -9,6 +9,7 @@ import { ResearcherModes } from './ResearcherModes';
 import { CentralHexView } from './CentralHexView';
 import { AIHelpWidget } from './AIHelpWidget';
 import { DiagnosticPanel } from './DiagnosticPanel';
+import { LogViewer } from './LogViewer';
 import { ReviewView } from './ReviewView';
 import { DatabricksOAuthLogin } from './DatabricksOAuthLogin';
 import { DatabricksFileSaver } from './DatabricksFileSaver';
@@ -178,6 +179,7 @@ export default function ProcessWireframe() {
   const [templates, setTemplates] = useState<UserTemplate[]>([]);
   const [currentTemplateId, setCurrentTemplateId] = useState<string>('');
   const [showDiagnosticPanel, setShowDiagnosticPanel] = useState(false);
+  const [showLogViewer, setShowLogViewer] = useState(false);
   const [projectFiles, setProjectFiles] = useState<ProjectFile[]>([]);
   const [ideasFiles, setIdeasFiles] = useState<IdeasFile[]>([]);
   const [researchFiles, setResearchFiles] = useState<ResearchFile[]>([]);
@@ -1529,12 +1531,22 @@ export default function ProcessWireframe() {
               )}
               {/* Diagnostic Panel button - Only for Test@cohive.com */}
               {(localStorage.getItem('cohive_pending_email') || '').toLowerCase() === 'test@cohive.com' && (
-                <button 
-                  className="w-full px-4 py-2 border-2 border-orange-400 text-orange-600 rounded flex items-center gap-2 hover:bg-orange-50" 
+                <button
+                  className="w-full px-4 py-2 border-2 border-orange-400 text-orange-600 rounded flex items-center gap-2 hover:bg-orange-50"
                   onClick={() => setShowDiagnosticPanel(true)}
                 >
                   <Settings className="w-4 h-4" />
                   Unit Testing
+                </button>
+              )}
+              {/* Activity Log Viewer - Administrators and Research Leaders only */}
+              {(userRole === 'administrator' || userRole === 'research-leader') && (
+                <button
+                  className="w-full px-4 py-2 border-2 border-indigo-400 text-indigo-600 rounded flex items-center gap-2 hover:bg-indigo-50"
+                  onClick={() => setShowLogViewer(true)}
+                >
+                  <Database className="w-4 h-4" />
+                  Activity Log
                 </button>
               )}
             </div>
@@ -2721,6 +2733,10 @@ export default function ProcessWireframe() {
 
       {showDiagnosticPanel && (
         <DiagnosticPanel onClose={() => setShowDiagnosticPanel(false)} />
+      )}
+
+      {showLogViewer && (
+        <LogViewer onClose={() => setShowLogViewer(false)} userEmail={userEmail} />
       )}
 
       
