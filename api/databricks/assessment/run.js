@@ -1192,21 +1192,39 @@ async function callModel({
     },
   });
 
-  const resp = await fetch(
+  const makeBody = (includeTemp) => JSON.stringify(
+    includeTemp ? { messages, max_tokens: maxTokens, temperature } : { messages, max_tokens: maxTokens }
+  );
+
+  let resp = await fetch(
     `https://${workspaceHost}/serving-endpoints/${modelEndpoint}/invocations`,
     {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ messages, max_tokens: maxTokens, temperature }),
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: makeBody(true),
     }
   );
 
   if (!resp.ok) {
     const errData = await resp.json().catch(() => ({}));
-    throw new Error(`Model call failed [${label}]: ${errData.message || resp.statusText}`);
+    // Some models reject custom temperature — retry without it
+    if (errData?.error?.param === 'temperature' || errData?.error?.code === 'unsupported_value') {
+      console.warn(`[Assessment] Model ${modelEndpoint} rejected temperature=${temperature}, retrying without it`);
+      resp = await fetch(
+        `https://${workspaceHost}/serving-endpoints/${modelEndpoint}/invocations`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+          body: makeBody(false),
+        }
+      );
+      if (!resp.ok) {
+        const retryErr = await resp.json().catch(() => ({}));
+        throw new Error(`Model call failed [${label}]: ${retryErr?.error?.message || retryErr?.message || resp.statusText}`);
+      }
+    } else {
+      throw new Error(`Model call failed [${label}]: ${errData?.error?.message || errData?.message || resp.statusText}`);
+    }
   }
 
   const result = await resp.json();
