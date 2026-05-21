@@ -45,6 +45,18 @@ export async function getRoleForEmail(email, workspaceHost, accessToken, warehou
     return 'administrator';
   }
 
+  // Server-side admin email override — set ADMIN_EMAILS in Vercel env vars as a
+  // comma-separated list to bootstrap admin access before the user_roles table is
+  // populated (e.g. "lesliewoodmedia@gmail.com,other@example.com").
+  const adminEmails = (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean);
+  if (adminEmails.includes(email.toLowerCase())) {
+    CACHE.set(email, { role: 'administrator', expiresAt: Date.now() + CACHE_TTL_MS });
+    return 'administrator';
+  }
+
   try {
     const esc = (s) => String(s).replace(/'/g, "''");
 
