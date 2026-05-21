@@ -454,6 +454,9 @@ export const STORY_VALUES = [
   'Legacy',
   'Joy',
   'Wisdom',
+  'Inclusivity',
+  'Spontaneity',
+  'Optimism',
 ] as const;
 
 export const STORY_EMOTIONS = [
@@ -467,6 +470,12 @@ export const STORY_EMOTIONS = [
   'Hopeful',
   'Empowered',
   'Amused',
+  'Relief',
+  'Ease',
+  'Belonging',
+  'Warmth',
+  'Comfort in self',
+  'Lightness/Playfulness',
 ] as const;
 
 export function getStoryCategory(id: string): StoryCategory | undefined {
